@@ -8,7 +8,7 @@ const GameEngine = {
         if (ratio >= 1.5) return 1.5;
         if (ratio >= 1.0) return 1.0;
         if (ratio >= 0.5) return 0.5;
-        return 0;
+        return 0.25;
     },
     calcularRegeneracionEnergia: (magJugador, magRival) => {
         let energia = 10;
