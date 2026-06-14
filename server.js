@@ -10,18 +10,14 @@ const io = require('socket.io')(http, {
 });
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
- 
+
 // ── CONEXIÓN MONGODB ──
-
-
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://mrtSpill:p3Lr9hWAkM9iTtq5@ac-tlf2b3l-shard-00-00.mwaqd74.mongodb.net:27017,ac-tlf2b3l-shard-00-01.mwaqd74.mongodb.net:27017,ac-tlf2b3l-shard-00-02.mwaqd74.mongodb.net:27017/loop?ssl=true&replicaSet=atlas-10e4ba-shard-0&authSource=admin&retryWrites=true&w=majority';
-
-
 
 mongoose.connect(MONGO_URI)
     .then(() => console.log('✅ Conectado a MongoDB Atlas'))
     .catch(err => console.error('❌ Error MongoDB:', err.message));
- 
+
 // ── ESQUEMAS ──
 const personajeSchema = new mongoose.Schema({
     nombre: String,
@@ -36,27 +32,29 @@ const personajeSchema = new mongoose.Schema({
     tas: { type: Array, default: [] },
     tps: { type: Array, default: [] }
 });
- 
+
 const cuentaSchema = new mongoose.Schema({
     nombre: { type: String, unique: true, required: true },
     password: { type: String, required: true },
     dinero: { type: Number, default: 0 },
     nivel: { type: Number, default: 1 },
     experiencia: { type: Number, default: 0 },
+    foto: { type: String, default: '' },
     personajes: [personajeSchema]
 }, { timestamps: true });
- 
+
 const Cuenta = mongoose.model('Cuenta', cuentaSchema);
- 
+
 app.use(express.static('public'));
- app.get('/socket.io/socket.io.js', (req, res) => {
+app.get('/socket.io/socket.io.js', (req, res) => {
     res.sendFile(require.resolve('socket.io/client-dist/socket.io.js'));
 });
+
 let players = [];
- 
+
 io.on('connection', (socket) => {
     console.log('🔌 Cliente conectado:', socket.id);
- 
+
     // ── CREAR CUENTA ──
     socket.on('crearCuenta', async ({ nombre, password }) => {
         console.log('📝 Intento de crear cuenta:', nombre);
@@ -75,6 +73,7 @@ io.on('connection', (socket) => {
                 dinero: cuenta.dinero,
                 nivel: cuenta.nivel,
                 experiencia: cuenta.experiencia,
+                foto: cuenta.foto,
                 personajes: cuenta.personajes
             });
         } catch (err) {
@@ -82,7 +81,7 @@ io.on('connection', (socket) => {
             socket.emit('errorCuenta', 'Error al crear la cuenta.');
         }
     });
- 
+
     // ── INICIAR SESIÓN ──
     socket.on('iniciarSesion', async ({ nombre, password }) => {
         console.log('🔑 Intento de login:', nombre);
@@ -104,6 +103,7 @@ io.on('connection', (socket) => {
                 dinero: cuenta.dinero,
                 nivel: cuenta.nivel,
                 experiencia: cuenta.experiencia,
+                foto: cuenta.foto,
                 personajes: cuenta.personajes
             });
         } catch (err) {
@@ -111,18 +111,40 @@ io.on('connection', (socket) => {
             socket.emit('errorLogin', 'Error al iniciar sesión.');
         }
     });
- 
+
+    // ── ACTUALIZAR PERFIL ──
+    socket.on('actualizarPerfil', async ({ cuenta_id, nombre, password, foto }) => {
+        try {
+            const update = {};
+            if (foto) update.foto = foto;
+            if (nombre) update.nombre = nombre;
+            if (password) update.password = bcrypt.hashSync(password, 10);
+
+            const cuenta = await Cuenta.findByIdAndUpdate(cuenta_id, update, { new: true });
+            if (!cuenta) { socket.emit('errorPerfil', 'Cuenta no encontrada.'); return; }
+
+            console.log('✅ Perfil actualizado:', cuenta.nombre);
+            socket.emit('perfilActualizado', {
+                nombre: cuenta.nombre,
+                foto: cuenta.foto || ''
+            });
+        } catch (err) {
+            console.error('❌ Error actualizando perfil:', err.message);
+            socket.emit('errorPerfil', 'Error al actualizar el perfil.');
+        }
+    });
+
     // ── GUARDAR PERSONAJE ──
     socket.on('guardarPersonaje', async (datos) => {
         console.log('📨 Personaje recibido de', socket.id, ':', datos);
- 
+
         const suma = datos.fuerza + datos.resistencia + datos.velocidad + datos.magia + datos.suerte;
         if (suma !== 25 || datos.fuerza < 2 || datos.resistencia < 2 || datos.velocidad < 2 || datos.magia < 2 || datos.suerte < 2) {
             console.log('❌ Stats inválidos, suma:', suma);
             socket.emit('errorPersonaje', 'Los puntos deben sumar 25 (mínimo 2 por categoría).');
             return;
         }
- 
+
         try {
             if (datos.cuenta_id) {
                 const cuenta = await Cuenta.findById(datos.cuenta_id);
@@ -141,7 +163,7 @@ io.on('connection', (socket) => {
                     socket.emit('personajeGuardado', datos);
                 }
             }
- 
+
             // Lógica original de partida
             const player = players.find(p => p.id === socket.id);
             if (player) {
@@ -156,19 +178,19 @@ io.on('connection', (socket) => {
             socket.emit('errorPersonaje', 'Error al guardar el personaje.');
         }
     });
- 
+
     // ── LÓGICA ORIGINAL DE PARTIDA ──
     if (players.length < 2) {
         const rol = players.length === 0 ? 'Jugador 1' : 'Jugador 2';
         players.push({ id: socket.id, role: rol, personaje: null });
         socket.emit('asignarRol', rol);
     }
- 
+
     socket.on('disconnect', () => {
         players = players.filter(p => p.id !== socket.id);
         console.log('❌ Cliente desconectado:', socket.id);
     });
 });
- 
+
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
