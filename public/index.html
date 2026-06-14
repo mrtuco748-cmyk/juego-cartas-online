@@ -121,6 +121,25 @@
         .scroll-panel::-webkit-scrollbar-thumb { background: #4a3010; border-radius: 2px; }
 
         .vacio-msg { color: #4a3010; font-size: 10px; letter-spacing: 2px; text-align: center; padding: 20px 0; }
+
+
+        .radial-container { position: relative; width: 150px; height: 150px; margin: 20px auto; }
+.central-btn { width: 80px; height: 80px; border-radius: 50%; background: #d4a060; border: none; cursor: pointer; position: relative; z-index: 10; }
+
+.accion-btn {
+    position: absolute; width: 50px; height: 50px; border-radius: 50%;
+    background: #333; color: white; display: none; border: none; cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+/* Animación de despliegue */
+.radial-container.active .accion-btn { display: block; }
+.radial-container.active #btnAtacar { top: -60px; left: 15px; }
+.radial-container.active #btnDef { top: 10px; left: -60px; }
+.radial-container.active #btnCarta { top: 10px; left: 90px; }
+.radial-container.active #btnHab { top: 80px; left: 15px; }
+
+        
     </style>
 </head>
 <body>
@@ -288,6 +307,20 @@
     </div>
 </div>
 
+
+<div id="pantallaCombate">
+    <div id="logBatalla"></div>
+
+    <div id="menuRadial" class="radial-container">
+        <button id="btnAtacar" class="accion-btn">⚔️</button>
+        <button id="btnDef" class="accion-btn">🛡️</button>
+        <button id="btnCarta" class="accion-btn">🃏</button>
+        <button id="btnHab" class="accion-btn">✨</button>
+        <button id="btnCentral" class="central-btn">ACCIÓN</button>
+    </div>
+</div>
+
+    
 <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
 <script>
     const socket = io('https://juego-cartas-online-production.up.railway.app', {
