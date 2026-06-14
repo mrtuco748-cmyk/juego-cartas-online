@@ -43,7 +43,9 @@ const cuentaSchema = new mongoose.Schema({
 const Cuenta = mongoose.model('Cuenta', cuentaSchema);
  
 app.use(express.static('public'));
- 
+ app.get('/socket.io/socket.io.js', (req, res) => {
+    res.sendFile(require.resolve('socket.io/client-dist/socket.io.js'));
+});
 let players = [];
  
 io.on('connection', (socket) => {
