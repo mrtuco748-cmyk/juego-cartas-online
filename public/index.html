@@ -124,20 +124,27 @@
 
 
         .radial-container { position: relative; width: 150px; height: 150px; margin: 20px auto; }
-.central-btn { width: 80px; height: 80px; border-radius: 50%; background: #d4a060; border: none; cursor: pointer; position: relative; z-index: 10; }
-
+.central-btn { 
+    width: 80px; height: 80px; border-radius: 50%; 
+    background: linear-gradient(180deg, #c85030 0%, #7a2010 100%);
+    color: #fffbe8; font-family: 'Cinzel', serif; font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    border: 2px solid #8a3020; cursor: pointer; position: absolute;
+    top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; 
+}
 .accion-btn {
     position: absolute; width: 50px; height: 50px; border-radius: 50%;
-    background: #333; color: white; display: none; border: none; cursor: pointer;
-    transition: all 0.3s ease;
+    background: radial-gradient(circle, #2a1e0c, #181008);
+    color: white; border: 2px solid #4a3010; cursor: pointer;
+    font-size: 18px; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
 }
-
-/* Animación de despliegue */
-.radial-container.active .accion-btn { display: block; }
-.radial-container.active #btnAtacar { top: -60px; left: 15px; }
-.radial-container.active #btnDef { top: 10px; left: -60px; }
-.radial-container.active #btnCarta { top: 10px; left: 90px; }
-.radial-container.active #btnHab { top: 80px; left: 15px; }
+.radial-container.active .accion-btn { opacity: 1; pointer-events: all; }
+.radial-container.active #btnAtacar { transform: translate(-50%, -50%) translateY(-80px); }
+.radial-container.active #btnDef    { transform: translate(-50%, -50%) translateX(-80px); }
+.radial-container.active #btnCarta  { transform: translate(-50%, -50%) translateX(80px); }
+.radial-container.active #btnHab    { transform: translate(-50%, -50%) translateY(80px); }
 
         
     </style>
@@ -308,7 +315,7 @@
 </div>
 
 
-<div id="pantallaCombate">
+<div id="pantallaCombate" class="pantalla">
     <div id="logBatalla"></div>
 
     <div id="menuRadial" class="radial-container">
@@ -622,6 +629,12 @@
     ['fuerza','resistencia','velocidad','magia','suerte'].forEach(id => {
         document.getElementById(id).addEventListener('input', actualizarTotal);
     });
+
+    document.getElementById('btnCentral').addEventListener('click', () => {
+    document.getElementById('menuRadial').classList.toggle('active');
+});
+
+    
 </script>
 </body>
 </html>
