@@ -217,6 +217,12 @@ io.on('connection', (socket) => {
 
             console.log(`⚔️ Partida iniciada: ${jugador1.personaje.nombre} vs ${jugador2.personaje.nombre}`);
 
+            const socketJ1 = io.sockets.sockets.get(jugador1.socketId);
+const socketJ2 = io.sockets.sockets.get(jugador2.socketId);
+if (socketJ1) socketJ1.join(partidaId);
+if (socketJ2) socketJ2.join(partidaId);
+            
+            
             io.to(jugador1.socketId).emit('rivalEncontrado', {
                 partidaId,
                 yo:    { ...jugador1.personaje, hp: 100, energia: 50 },
@@ -225,6 +231,9 @@ io.on('connection', (socket) => {
                 esmiTurno: true
             });
 
+                
+
+            
             io.to(jugador2.socketId).emit('rivalEncontrado', {
                 partidaId,
                 yo:    { ...jugador2.personaje, hp: 100, energia: 50 },
