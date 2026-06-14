@@ -55,12 +55,12 @@ io.on('connection', (socket) => {
         if (!partida || partida.turnoActual !== socket.id) return;
 
         if (tipo === 'atacar') {
-            const multi = GameEngine.calcularCritico(atacante.velocidad, defensor.velocidad);
+            
             const dado = Math.floor(Math.random() * 6) + 1;
-const danoBruto = dado + atacante.fuerza;
-const danoFinal = Math.max(0, danoBruto - defensor.resistencia);
-const multi = GameEngine.calcularCritico(atacante.velocidad, defensor.velocidad);
-const dano = Math.floor(danoFinal * (1 + multi));
+            const danoBruto = dado + atacante.fuerza;
+            const danoFinal = Math.max(0, danoBruto - defensor.resistencia);
+            const multi = GameEngine.calcularCritico(atacante.velocidad, defensor.velocidad);
+            const dano = Math.floor(danoFinal * (1 + multi));
 
             // Aplicar daño
             if (socket.id === partida.jugador1.socketId) {
