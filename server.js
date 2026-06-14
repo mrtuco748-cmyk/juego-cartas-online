@@ -1,3 +1,5 @@
+const GameEngine = require('./gameEngine');
+
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
@@ -47,6 +49,28 @@ let partidas = {};   // partidas activas
 io.on('connection', (socket) => {
     console.log('🔌 Cliente conectado:', socket.id);
 
+    // ── LÓGICA DE COMBATE (NUEVO) ──
+    socket.on('ejecutarAccion', ({ partidaId, tipo, atacante, defensor }) => {
+        const partida = partidas[partidaId];
+        if (!partida || partida.turnoActual !== socket.id) return;
+
+        if (tipo === 'atacar') {
+            const multi = GameEngine.calcularCritico(atacante.velocidad, defensor.velocidad);
+            const dano = Math.floor(atacante.fuerza * (1 + multi));
+            
+            // Aplicar daño
+            if (socket.id === partida.jugador1.socketId) {
+                partida.jugador2.hp -= dano;
+            } else {
+                partida.jugador1.hp -= dano;
+            }
+
+            io.to(partidaId).emit('logBatalla', `${atacante.nombre} ataca causando ${dano} de daño (Crítico x${multi})`);
+            io.to(partidaId).emit('actualizarEstado', { j1: partida.jugador1.hp, j2: partida.jugador2.hp });
+        }
+    });
+
+    
     // ── CREAR CUENTA ──
     socket.on('crearCuenta', async ({ nombre, password }) => {
         console.log('📝 Intento de crear cuenta:', nombre);
