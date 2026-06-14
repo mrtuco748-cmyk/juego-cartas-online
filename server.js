@@ -43,13 +43,13 @@ app.get('/socket.io/socket.io.js', (req, res) => {
 });
 
 // ── ESTADO DEL SERVIDOR ──
-let colaEspera = []; // jugadores buscando partida
-let partidas = {};   // partidas activas
+let colaEspera = [];
+let partidas = {};
 
 io.on('connection', (socket) => {
     console.log('🔌 Cliente conectado:', socket.id);
 
-    // ── LÓGICA DE COMBATE (NUEVO) ──
+    // ── LÓGICA DE COMBATE ──
     socket.on('ejecutarAccion', ({ partidaId, tipo, atacante, defensor }) => {
         const partida = partidas[partidaId];
         if (!partida || partida.turnoActual !== socket.id) return;
@@ -57,7 +57,7 @@ io.on('connection', (socket) => {
         if (tipo === 'atacar') {
             const multi = GameEngine.calcularCritico(atacante.velocidad, defensor.velocidad);
             const dano = Math.floor(atacante.fuerza * (1 + multi));
-            
+
             // Aplicar daño
             if (socket.id === partida.jugador1.socketId) {
                 partida.jugador2.hp -= dano;
@@ -65,17 +65,51 @@ io.on('connection', (socket) => {
                 partida.jugador1.hp -= dano;
             }
 
-            io.to(partidaId).emit('logBatalla', `${atacante.nombre} ataca causando ${dano} de daño (Crítico x${multi})`);
-            io.to(partidaId).emit('actualizarEstado', {
-    j1: partida.jugador1.hp,
-    j2: partida.jugador2.hp,
-    socketJ1: partida.jugador1.socketId,
-    turnoActual: partida.turnoActual
-});
+            // Regenerar energía al atacante
+            const energiaGanada = GameEngine.calcularRegeneracionEnergia(atacante.magia, defensor.magia);
+            if (socket.id === partida.jugador1.socketId) {
+                partida.jugador1.energia = Math.min(100, partida.jugador1.energia + energiaGanada);
+            } else {
+                partida.jugador2.energia = Math.min(100, partida.jugador2.energia + energiaGanada);
+            }
+
+            io.to(partidaId).emit('logBatalla', `${atacante.nombre} ataca causando ${dano} de daño${multi > 0 ? ` (¡Crítico x${multi}!)` : ''}`);
+
+            // Verificar fin de partida
+            const hpRival = socket.id === partida.jugador1.socketId
+                ? partida.jugador2.hp
+                : partida.jugador1.hp;
+
+            if (hpRival <= 0) {
+                io.to(partidaId).emit('logBatalla', `💀 ${defensor.nombre} ha caído. ¡${atacante.nombre} gana!`);
+                io.to(partidaId).emit('actualizarEstado', {
+                    j1: partida.jugador1.hp,
+                    j2: partida.jugador2.hp,
+                    j1energia: partida.jugador1.energia,
+                    j2energia: partida.jugador2.energia,
+                    socketJ1: partida.jugador1.socketId,
+                    turnoActual: partida.turnoActual
+                });
+                io.to(partidaId).emit('finPartida', { ganador: socket.id });
+                delete partidas[partidaId];
+            } else {
+                // Cambiar turno
+                partida.turnoActual = socket.id === partida.jugador1.socketId
+                    ? partida.jugador2.socketId
+                    : partida.jugador1.socketId;
+
+                io.to(partidaId).emit('actualizarEstado', {
+                    j1: partida.jugador1.hp,
+                    j2: partida.jugador2.hp,
+                    j1energia: partida.jugador1.energia,
+                    j2energia: partida.jugador2.energia,
+                    socketJ1: partida.jugador1.socketId,
+                    turnoActual: partida.turnoActual
+                });
+            }
         }
     });
 
-    
     // ── CREAR CUENTA ──
     socket.on('crearCuenta', async ({ nombre, password }) => {
         console.log('📝 Intento de crear cuenta:', nombre);
@@ -163,9 +197,7 @@ io.on('connection', (socket) => {
     socket.on('buscarPartida', ({ cuenta_id, personaje }) => {
         console.log('🔍 Buscando partida para:', personaje.nombre);
 
-        // Quitar si ya estaba en cola
         colaEspera = colaEspera.filter(j => j.socketId !== socket.id);
-
         colaEspera.push({ socketId: socket.id, cuenta_id, personaje });
         socket.emit('esperandoRival');
 
@@ -183,25 +215,23 @@ io.on('connection', (socket) => {
                 turno: 1
             };
 
-            const datosPartida1 = {
+            console.log(`⚔️ Partida iniciada: ${jugador1.personaje.nombre} vs ${jugador2.personaje.nombre}`);
+
+            io.to(jugador1.socketId).emit('rivalEncontrado', {
                 partidaId,
-                yo: { ...jugador1.personaje, hp: 100, energia: 50 },
+                yo:    { ...jugador1.personaje, hp: 100, energia: 50 },
                 rival: { nombre: jugador2.personaje.nombre, clase: jugador2.personaje.clase, hp: 100, energia: 50 },
                 turnoActual: jugador1.socketId,
                 esmiTurno: true
-            };
+            });
 
-            const datosPartida2 = {
+            io.to(jugador2.socketId).emit('rivalEncontrado', {
                 partidaId,
-                yo: { ...jugador2.personaje, hp: 100, energia: 50 },
+                yo:    { ...jugador2.personaje, hp: 100, energia: 50 },
                 rival: { nombre: jugador1.personaje.nombre, clase: jugador1.personaje.clase, hp: 100, energia: 50 },
                 turnoActual: jugador1.socketId,
                 esmiTurno: false
-            };
-
-            console.log(`⚔️ Partida iniciada: ${jugador1.personaje.nombre} vs ${jugador2.personaje.nombre}`);
-            io.to(jugador1.socketId).emit('rivalEncontrado', datosPartida1);
-            io.to(jugador2.socketId).emit('rivalEncontrado', datosPartida2);
+            });
         }
     });
 
@@ -212,6 +242,16 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
+        // Notificar al rival si había partida activa
+        for (const [id, partida] of Object.entries(partidas)) {
+            if (partida.jugador1.socketId === socket.id || partida.jugador2.socketId === socket.id) {
+                const rivalId = partida.jugador1.socketId === socket.id
+                    ? partida.jugador2.socketId
+                    : partida.jugador1.socketId;
+                io.to(rivalId).emit('finPartida', { ganador: rivalId, motivo: 'El rival se desconectó.' });
+                delete partidas[id];
+            }
+        }
         colaEspera = colaEspera.filter(j => j.socketId !== socket.id);
         console.log('❌ Cliente desconectado:', socket.id);
     });
