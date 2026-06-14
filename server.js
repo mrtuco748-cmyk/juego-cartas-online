@@ -201,54 +201,66 @@ io.on('connection', (socket) => {
 
     // ── BUSCAR PARTIDA ──
     socket.on('buscarPartida', ({ cuenta_id, personaje }) => {
-        console.log('🔍 Buscando partida para:', personaje.nombre);
+    console.log('🔍 Buscando partida para:', personaje.nombre);
+    colaEspera = colaEspera.filter(j => j.socketId !== socket.id);
+    colaEspera.push({ socketId: socket.id, cuenta_id, personaje });
+    socket.emit('esperandoRival');
 
-        colaEspera = colaEspera.filter(j => j.socketId !== socket.id);
-        colaEspera.push({ socketId: socket.id, cuenta_id, personaje });
-        socket.emit('esperandoRival');
+    if (colaEspera.length >= 2) {
+        const jugador1 = colaEspera.shift();
+        const jugador2 = colaEspera.shift();
+        const partidaId = `${jugador1.socketId}-${jugador2.socketId}`;
 
-        if (colaEspera.length >= 2) {
-            const jugador1 = colaEspera.shift();
-            const jugador2 = colaEspera.shift();
+        partidas[partidaId] = {
+            id: partidaId,
+            jugador1: { ...jugador1, hp: 100, energia: 50 },
+            jugador2: { ...jugador2, hp: 100, energia: 50 },
+            turnoActual: jugador1.socketId,
+            turno: 1
+        };
 
-            const partidaId = `${jugador1.socketId}-${jugador2.socketId}`;
+        console.log(`⚔️ Partida iniciada: ${jugador1.personaje.nombre} vs ${jugador2.personaje.nombre}`);
 
-            partidas[partidaId] = {
-                id: partidaId,
-                jugador1: { ...jugador1, hp: 100, energia: 50 },
-                jugador2: { ...jugador2, hp: 100, energia: 50 },
-                turnoActual: jugador1.socketId,
-                turno: 1
-            };
+        const socketJ1 = io.sockets.sockets.get(jugador1.socketId);
+        const socketJ2 = io.sockets.sockets.get(jugador2.socketId);
+        if (socketJ1) socketJ1.join(partidaId);
+        if (socketJ2) socketJ2.join(partidaId);
 
-            console.log(`⚔️ Partida iniciada: ${jugador1.personaje.nombre} vs ${jugador2.personaje.nombre}`);
+        io.to(jugador1.socketId).emit('rivalEncontrado', {
+            partidaId,
+            yo: { ...jugador1.personaje, hp: 100, energia: 50 },
+            rival: {
+                nombre: jugador2.personaje.nombre,
+                clase: jugador2.personaje.clase,
+                hp: 100, energia: 50,
+                fuerza: jugador2.personaje.fuerza,
+                resistencia: jugador2.personaje.resistencia,
+                velocidad: jugador2.personaje.velocidad,
+                magia: jugador2.personaje.magia,
+                suerte: jugador2.personaje.suerte
+            },
+            turnoActual: jugador1.socketId,
+            esmiTurno: true
+        });
 
-            const socketJ1 = io.sockets.sockets.get(jugador1.socketId);
-const socketJ2 = io.sockets.sockets.get(jugador2.socketId);
-if (socketJ1) socketJ1.join(partidaId);
-if (socketJ2) socketJ2.join(partidaId);
-            
-            
-            io.to(jugador1.socketId).emit('rivalEncontrado', {
-                partidaId,
-                yo:    { ...jugador1.personaje, hp: 100, energia: 50 },
-                rival: { nombre: jugador2.personaje.nombre, clase: jugador2.personaje.clase, hp: 100, energia: 50 },
-                turnoActual: jugador1.socketId,
-                esmiTurno: true
-            });
-
-                
-
-            
-            io.to(jugador2.socketId).emit('rivalEncontrado', {
-                partidaId,
-                yo:    { ...jugador2.personaje, hp: 100, energia: 50 },
-                rival: { nombre: jugador1.personaje.nombre, clase: jugador1.personaje.clase, hp: 100, energia: 50 },
-                turnoActual: jugador1.socketId,
-                esmiTurno: false
-            });
-        }
-    });
+        io.to(jugador2.socketId).emit('rivalEncontrado', {
+            partidaId,
+            yo: { ...jugador2.personaje, hp: 100, energia: 50 },
+            rival: {
+                nombre: jugador1.personaje.nombre,
+                clase: jugador1.personaje.clase,
+                hp: 100, energia: 50,
+                fuerza: jugador1.personaje.fuerza,
+                resistencia: jugador1.personaje.resistencia,
+                velocidad: jugador1.personaje.velocidad,
+                magia: jugador1.personaje.magia,
+                suerte: jugador1.personaje.suerte
+            },
+            turnoActual: jugador1.socketId,
+            esmiTurno: false
+        });
+    }
+});
 
     // ── CANCELAR BÚSQUEDA ──
     socket.on('cancelarBusqueda', () => {
