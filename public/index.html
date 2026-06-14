@@ -616,7 +616,9 @@
 ══════════════════════════════════════════ -->
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    const socket = io();
+    const socket = io('https://juego-cartas-online-production.up.railway.app', {
+    transports: ['websocket', 'polling']
+});
 
     let cuentaActual = null;
 
