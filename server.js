@@ -66,7 +66,12 @@ io.on('connection', (socket) => {
             }
 
             io.to(partidaId).emit('logBatalla', `${atacante.nombre} ataca causando ${dano} de daño (Crítico x${multi})`);
-            io.to(partidaId).emit('actualizarEstado', { j1: partida.jugador1.hp, j2: partida.jugador2.hp });
+            io.to(partidaId).emit('actualizarEstado', {
+    j1: partida.jugador1.hp,
+    j2: partida.jugador2.hp,
+    socketJ1: partida.jugador1.socketId,
+    turnoActual: partida.turnoActual
+});
         }
     });
 
