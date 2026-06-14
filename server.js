@@ -56,7 +56,11 @@ io.on('connection', (socket) => {
 
         if (tipo === 'atacar') {
             const multi = GameEngine.calcularCritico(atacante.velocidad, defensor.velocidad);
-            const dano = Math.floor(atacante.fuerza * (1 + multi));
+            const dado = Math.floor(Math.random() * 6) + 1;
+const danoBruto = dado + atacante.fuerza;
+const danoFinal = Math.max(0, danoBruto - defensor.resistencia);
+const multi = GameEngine.calcularCritico(atacante.velocidad, defensor.velocidad);
+const dano = Math.floor(danoFinal * (1 + multi));
 
             // Aplicar daño
             if (socket.id === partida.jugador1.socketId) {
@@ -73,7 +77,9 @@ io.on('connection', (socket) => {
                 partida.jugador2.energia = Math.min(100, partida.jugador2.energia + energiaGanada);
             }
 
-            io.to(partidaId).emit('logBatalla', `${atacante.nombre} ataca causando ${dano} de daño${multi > 0 ? ` (¡Crítico x${multi}!)` : ''}`);
+            io.to(partidaId).emit('logBatalla', 
+    `${atacante.nombre} ataca — Dado: ${dado} + F:${atacante.fuerza} - R:${defensor.resistencia} = ${danoFinal}${multi > 0 ? ` (¡Crítico x${1+multi}!)` : ''} → ${dano} daño`
+);
 
             // Verificar fin de partida
             const hpRival = socket.id === partida.jugador1.socketId
