@@ -17,7 +17,6 @@
             font-family: 'Cinzel', Georgia, serif;
         }
 
-        /* ── PANTALLAS ── */
         .pantalla { display: none; }
         .pantalla.activa { display: flex; }
 
@@ -29,403 +28,104 @@
             min-height: 100vh;
             width: 100%;
         }
+        .splash-bg { position: fixed; inset: 0; background: radial-gradient(ellipse at center, #1a0e08 0%, #050302 100%); z-index: 0; }
+        .splash-content { position: relative; z-index: 1; text-align: center; }
+        .splash-title { font-size: 6em; font-weight: 900; color: #c85030; letter-spacing: 20px; text-shadow: 0 0 40px rgba(200,80,48,0.6); margin-bottom: 10px; animation: pulse 3s ease-in-out infinite; }
+        .splash-sub { color: #6a3a18; font-size: 0.9em; letter-spacing: 8px; margin-bottom: 60px; }
+        @keyframes pulse { 0%,100% { text-shadow: 0 0 40px rgba(200,80,48,0.6); } 50% { text-shadow: 0 0 80px rgba(200,80,48,0.9); } }
+        .splash-btn { background: linear-gradient(180deg, #c85030 0%, #7a2010 40%, #8a2515 60%, #c04020 100%); color: #fffbe8; border: none; font-family: 'Cinzel', serif; font-size: 1.1em; font-weight: 700; letter-spacing: 5px; padding: 16px 60px; cursor: pointer; clip-path: polygon(16px 0%, calc(100% - 16px) 0%, 100% 50%, calc(100% - 16px) 100%, 16px 100%, 0% 50%); transition: filter 0.2s; }
+        .splash-btn:hover { filter: brightness(1.3); }
 
-        .splash-bg {
-            position: fixed;
-            inset: 0;
-            background: radial-gradient(ellipse at center, #1a0e08 0%, #050302 100%);
-            z-index: 0;
-        }
-
-        .splash-content {
-            position: relative;
-            z-index: 1;
-            text-align: center;
-        }
-
-        .splash-title {
-            font-size: 6em;
-            font-weight: 900;
-            color: #c85030;
-            letter-spacing: 20px;
-            text-shadow: 0 0 40px rgba(200,80,48,0.6), 0 0 80px rgba(200,80,48,0.3);
-            margin-bottom: 10px;
-            animation: pulse 3s ease-in-out infinite;
-        }
-
-        .splash-sub {
-            color: #6a3a18;
-            font-size: 0.9em;
-            letter-spacing: 8px;
-            margin-bottom: 60px;
-        }
-
-        @keyframes pulse {
-            0%, 100% { text-shadow: 0 0 40px rgba(200,80,48,0.6), 0 0 80px rgba(200,80,48,0.3); }
-            50% { text-shadow: 0 0 60px rgba(200,80,48,0.9), 0 0 120px rgba(200,80,48,0.5); }
-        }
-
-        /* ── CONTENEDOR CENTRAL ── */
+        /* ── CONTENEDOR ── */
         #contenedor {
             width: 360px;
             background: radial-gradient(ellipse at center top, #1a0e08 0%, #0a0604 100%);
             border: 3px solid #4a3010;
             border-radius: 8px;
-            box-shadow: 0 0 40px rgba(0,0,0,0.9), inset 0 0 60px rgba(0,0,0,0.5);
+            box-shadow: 0 0 40px rgba(0,0,0,0.9);
             overflow: hidden;
             position: relative;
         }
+        #contenedor::before { content: ''; position: absolute; inset: 0; border: 1px solid #6a4020; border-radius: 6px; pointer-events: none; z-index: 10; }
 
-        #contenedor::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border: 1px solid #6a4020;
-            border-radius: 6px;
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        /* ── TOP BAR ── */
-        .top-bar {
-            background: linear-gradient(180deg, #1c1209 0%, #120c06 100%);
-            border-bottom: 2px solid #3a2008;
-            padding: 8px 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .top-icon-btn {
-            width: 32px; height: 32px;
-            background: radial-gradient(circle, #2a3a5c, #162040);
-            border: 2px solid #3a5888;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            color: #7ab0f0;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        .resource-bar {
-            background: linear-gradient(180deg, #1c1209 0%, #120c06 100%);
-            border-bottom: 2px solid #3a2008;
-            padding: 6px 10px;
-            display: flex;
-            justify-content: space-around;
-            gap: 6px;
-        }
-
-        .coin-badge {
-            background: rgba(0,0,0,0.6);
-            border: 1px solid #5a3a10;
-            border-radius: 4px;
-            padding: 4px 8px;
-            display: flex; align-items: center; gap: 4px;
-            color: #c8a040;
-            font-size: 12px;
-        }
-
-        .header-banner {
-            height: 60px;
-            background: linear-gradient(180deg, #1a0a04 0%, #0d0804 100%);
-            display: flex; align-items: center; justify-content: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .header-banner::after {
-            content: '';
-            position: absolute;
-            bottom: 0; left: 0; right: 0; height: 2px;
-            background: linear-gradient(90deg, transparent, #8b4020, #cc6030, #8b4020, transparent);
-        }
-
+        .top-bar { background: linear-gradient(180deg, #1c1209 0%, #120c06 100%); border-bottom: 2px solid #3a2008; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; }
+        .top-icon-btn { width: 32px; height: 32px; background: radial-gradient(circle, #2a3a5c, #162040); border: 2px solid #3a5888; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #7ab0f0; font-size: 14px; cursor: pointer; }
+        .resource-bar { background: linear-gradient(180deg, #1c1209 0%, #120c06 100%); border-bottom: 2px solid #3a2008; padding: 6px 10px; display: flex; justify-content: space-around; gap: 6px; }
+        .coin-badge { background: rgba(0,0,0,0.6); border: 1px solid #5a3a10; border-radius: 4px; padding: 4px 8px; display: flex; align-items: center; gap: 4px; color: #c8a040; font-size: 12px; }
+        .header-banner { height: 60px; background: linear-gradient(180deg, #1a0a04 0%, #0d0804 100%); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        .header-banner::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #8b4020, #cc6030, #8b4020, transparent); }
         .demon-eyes { display: flex; gap: 20px; }
-        .demon-eye {
-            width: 8px; height: 5px;
-            background: #ff4400;
-            border-radius: 50%;
-            box-shadow: 0 0 8px #ff2200, 0 0 16px #ff0000;
-        }
-
-        /* ── MAIN PANEL ── */
-        .main-panel {
-            background: linear-gradient(180deg, #130e0a 0%, #0e0a07 100%);
-            border: 2px solid #2a1a08;
-            margin: 8px;
-            border-radius: 4px;
-            padding: 16px 14px;
-        }
-
-        .ornament {
-            text-align: center;
-            color: #5a3a18;
-            font-size: 16px;
-            margin: 4px 0;
-            letter-spacing: 4px;
-        }
-
-        /* ── BOTONES ── */
-        .main-btn {
-            display: block;
-            width: 100%;
-            margin: 10px 0;
-            padding: 13px 0;
-            font-family: 'Cinzel', serif;
-            font-size: 15px;
-            font-weight: 700;
-            letter-spacing: 3px;
-            color: #fffbe8;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
-            cursor: pointer;
-            border: none;
-            position: relative;
-            clip-path: polygon(12px 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0% 50%);
-            background: linear-gradient(180deg, #c85030 0%, #7a2010 40%, #8a2515 60%, #c04020 100%);
-            transition: filter 0.15s;
-        }
-
+        .demon-eye { width: 8px; height: 5px; background: #ff4400; border-radius: 50%; box-shadow: 0 0 8px #ff2200, 0 0 16px #ff0000; }
+        .main-panel { background: linear-gradient(180deg, #130e0a 0%, #0e0a07 100%); border: 2px solid #2a1a08; margin: 8px; border-radius: 4px; padding: 16px 14px; }
+        .ornament { text-align: center; color: #5a3a18; font-size: 16px; margin: 4px 0; letter-spacing: 4px; }
+        .main-btn { display: block; width: 100%; margin: 10px 0; padding: 13px 0; font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; letter-spacing: 3px; color: #fffbe8; text-shadow: 0 1px 3px rgba(0,0,0,0.8); cursor: pointer; border: none; position: relative; clip-path: polygon(12px 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0% 50%); background: linear-gradient(180deg, #c85030 0%, #7a2010 40%, #8a2515 60%, #c04020 100%); transition: filter 0.15s; }
         .main-btn:hover { filter: brightness(1.25); }
         .main-btn:active { filter: brightness(0.85); }
+        .main-btn.secundario { font-size: 13px; padding: 10px 0; background: linear-gradient(180deg, #5a2e10 0%, #3a1808 100%); letter-spacing: 2px; }
+        .bottom-row { display: flex; justify-content: space-between; padding: 10px 14px 14px; gap: 8px; position: relative; }
+        .round-btn { flex: 1; height: 68px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #c8a050; text-transform: uppercase; text-align: center; line-height: 1.3; cursor: pointer; border: 2px solid #4a3010; background: radial-gradient(circle, #2a1e0c 0%, #181008 100%); transition: filter 0.15s; }
+        .round-btn:hover { filter: brightness(1.3); }
+        .round-btn.activo { border-color: #c85030; color: #d4a060; }
 
-        .main-btn.secundario {
-            font-size: 13px;
-            padding: 10px 0;
-            background: linear-gradient(180deg, #5a2e10 0%, #3a1808 100%);
-            letter-spacing: 2px;
-        }
-
-        /* ── FORMULARIOS ── */
-        .panel-titulo {
-            color: #d4a060;
-            font-size: 13px;
-            text-align: center;
-            letter-spacing: 3px;
-            margin-bottom: 14px;
-            text-shadow: 0 0 10px rgba(200,140,40,0.4);
-        }
-
-        .campo {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            margin-bottom: 10px;
-        }
-
-        .campo label {
-            color: #9a7040;
-            font-size: 9px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        .campo input {
-            background: rgba(0,0,0,0.5);
-            border: 1px solid #4a3010;
-            border-radius: 3px;
-            color: #d4b060;
-            font-family: 'Cinzel', serif;
-            font-size: 12px;
-            padding: 7px 10px;
-            outline: none;
-            width: 100%;
-        }
-
-        .campo input:focus { border-color: #8a5020; }
-
-        .msg-error {
-            color: #ff6040;
-            font-size: 10px;
-            letter-spacing: 1px;
-            text-align: center;
-            margin: 6px 0;
-            min-height: 14px;
-        }
-
-        .msg-ok {
-            color: #60d060;
-            font-size: 10px;
-            letter-spacing: 1px;
-            text-align: center;
-            margin: 6px 0;
-        }
-
-        .divider {
-            border: none;
-            border-top: 1px solid #2a1808;
-            margin: 10px 0;
-        }
-
-        /* ── TABS AUTH ── */
-        .tabs {
-            display: flex;
-            margin-bottom: 14px;
-            border-bottom: 1px solid #3a2008;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 8px 0;
-            text-align: center;
-            font-size: 10px;
-            letter-spacing: 2px;
-            color: #6a4018;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: 0.2s;
-        }
-
-        .tab.activo {
-            color: #d4a060;
-            border-bottom: 2px solid #c85030;
-        }
-
+        /* ── FORMS ── */
+        .panel-titulo { color: #d4a060; font-size: 13px; text-align: center; letter-spacing: 3px; margin-bottom: 14px; }
+        .campo { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+        .campo label { color: #9a7040; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; }
+        .campo input, .campo select { background: rgba(0,0,0,0.5); border: 1px solid #4a3010; border-radius: 3px; color: #d4b060; font-family: 'Cinzel', serif; font-size: 12px; padding: 7px 10px; outline: none; width: 100%; }
+        .campo input:focus, .campo select:focus { border-color: #8a5020; }
+        .msg-error { color: #ff6040; font-size: 10px; letter-spacing: 1px; text-align: center; margin: 6px 0; min-height: 14px; }
+        .msg-ok { color: #60d060; font-size: 10px; letter-spacing: 1px; text-align: center; margin: 6px 0; }
+        .divider { border: none; border-top: 1px solid #2a1808; margin: 10px 0; }
+        .tabs { display: flex; margin-bottom: 14px; border-bottom: 1px solid #3a2008; }
+        .tab { flex: 1; padding: 8px 0; text-align: center; font-size: 10px; letter-spacing: 2px; color: #6a4018; cursor: pointer; border-bottom: 2px solid transparent; transition: 0.2s; }
+        .tab.activo { color: #d4a060; border-bottom: 2px solid #c85030; }
         .tab-panel { display: none; }
         .tab-panel.activo { display: block; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0; }
+        .stat-item { display: flex; align-items: center; gap: 6px; }
+        .stat-label { color: #9a7040; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; width: 70px; }
+        .stat-input { width: 44px; background: rgba(0,0,0,0.5); border: 1px solid #4a3010; border-radius: 3px; color: #d4b060; font-family: 'Cinzel', serif; font-size: 12px; padding: 4px 6px; outline: none; text-align: center; }
 
-        /* ── BOTTOM ROW ── */
-        .bottom-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 14px 14px;
-            gap: 8px;
-            position: relative;
-        }
+        /* ── CARDS PERSONAJES ── */
+        .pj-card { background: rgba(0,0,0,0.4); border: 1px solid #3a2008; border-radius: 4px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.2s; display: flex; align-items: center; gap: 10px; }
+        .pj-card:hover { border-color: #8a5020; }
+        .pj-card.seleccionado { border-color: #c85030; background: rgba(200,80,48,0.1); }
+        .pj-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #4a3010; background: #1a0e08; display: flex; align-items: center; justify-content: center; color: #5a3a18; font-size: 18px; flex-shrink: 0; overflow: hidden; }
+        .pj-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .pj-info { flex: 1; }
+        .pj-nombre { color: #d4a060; font-size: 11px; letter-spacing: 2px; }
+        .pj-clase { color: #6a4018; font-size: 9px; letter-spacing: 1px; margin-top: 2px; }
+        .pj-stats { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+        .pj-stat { color: #9a7040; font-size: 8px; background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 2px; }
 
-        .round-btn {
-            flex: 1;
-            height: 68px;
-            border-radius: 50%;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            font-family: 'Cinzel', serif;
-            font-size: 9px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            color: #c8a050;
-            text-transform: uppercase;
-            text-align: center;
-            line-height: 1.3;
-            cursor: pointer;
-            border: 2px solid #4a3010;
-            background: radial-gradient(circle, #2a1e0c 0%, #181008 100%);
-            transition: filter 0.15s;
-        }
+        /* ── COLA DE ESPERA ── */
+        .espera-container { text-align: center; padding: 20px 0; }
+        .espera-spinner { width: 50px; height: 50px; border: 3px solid #2a1808; border-top: 3px solid #c85030; border-radius: 50%; margin: 16px auto; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        .round-btn:hover { filter: brightness(1.3); }
+        /* ── POPUP ── */
+        .popup-overlay { display: none; position: fixed; inset: 0; z-index: 100; align-items: center; justify-content: center; }
+        .popup-overlay.visible { display: flex; }
+        .popup-bg { position: absolute; inset: 0; background: rgba(0,0,0,0.7); }
+        .popup-box { position: relative; z-index: 1; width: 320px; background: radial-gradient(ellipse at center top, #1a0e08 0%, #0a0604 100%); border: 2px solid #4a3010; border-radius: 8px; padding: 20px; box-shadow: 0 0 40px rgba(0,0,0,0.9); max-height: 90vh; overflow-y: auto; }
+
+        h3 { color: #d4a060; text-align: center; font-size: 13px; letter-spacing: 2px; margin: 20px 0; }
 
         /* ── MENU SCREENS ── */
+        #pantallaMenu, #pantallaPersonajes, #pantallaCreacion, #pantallaSeleccionPJ, #pantallaEspera { display: none; }
         #pantallaMenu { display: block; }
-        #pantallaCreacion { display: none; }
 
-        h3 {
-            color: #d4a060;
-            text-align: center;
-            font-size: 13px;
-            letter-spacing: 2px;
-            margin: 20px 0;
-        }
+        .scroll-panel { max-height: 280px; overflow-y: auto; padding-right: 4px; }
+        .scroll-panel::-webkit-scrollbar { width: 4px; }
+        .scroll-panel::-webkit-scrollbar-track { background: #0a0604; }
+        .scroll-panel::-webkit-scrollbar-thumb { background: #4a3010; border-radius: 2px; }
 
-        /* SPLASH BTN */
-        .splash-btn {
-            background: linear-gradient(180deg, #c85030 0%, #7a2010 40%, #8a2515 60%, #c04020 100%);
-            color: #fffbe8;
-            border: none;
-            font-family: 'Cinzel', serif;
-            font-size: 1.1em;
-            font-weight: 700;
-            letter-spacing: 5px;
-            padding: 16px 60px;
-            cursor: pointer;
-            clip-path: polygon(16px 0%, calc(100% - 16px) 0%, 100% 50%, calc(100% - 16px) 100%, 16px 100%, 0% 50%);
-            transition: filter 0.2s;
-        }
-
-        .splash-btn:hover { filter: brightness(1.3); }
-
-        /* USER INFO BAR */
-        #userBar {
-            display: none;
-            background: rgba(0,0,0,0.4);
-            border-bottom: 1px solid #3a2008;
-            padding: 5px 10px;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        #userBar.visible { display: flex; }
-
-        .user-name {
-            color: #d4a060;
-            font-size: 10px;
-            letter-spacing: 2px;
-        }
-
-        .logout-btn {
-            color: #6a3010;
-            font-size: 9px;
-            letter-spacing: 1px;
-            cursor: pointer;
-            border: 1px solid #3a1808;
-            border-radius: 3px;
-            padding: 2px 6px;
-            background: transparent;
-            font-family: 'Cinzel', serif;
-        }
-
-        .logout-btn:hover { color: #c85030; border-color: #c85030; }
-
-        /* STAT GRID */
-        .stat-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-            margin: 8px 0;
-        }
-
-        .stat-item { display: flex; align-items: center; gap: 6px; }
-
-        .stat-label {
-            color: #9a7040;
-            font-size: 9px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            width: 70px;
-        }
-
-        .stat-input {
-            width: 44px;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid #4a3010;
-            border-radius: 3px;
-            color: #d4b060;
-            font-family: 'Cinzel', serif;
-            font-size: 12px;
-            padding: 4px 6px;
-            outline: none;
-            text-align: center;
-        }
-
-        .class-select {
-            flex: 1;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid #4a3010;
-            border-radius: 3px;
-            color: #d4b060;
-            font-family: 'Cinzel', serif;
-            font-size: 11px;
-            padding: 5px 8px;
-            outline: none;
-            width: 100%;
-        }
+        .vacio-msg { color: #4a3010; font-size: 10px; letter-spacing: 2px; text-align: center; padding: 20px 0; }
     </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════
-     PANTALLA 1: SPLASH
-══════════════════════════════════════════ -->
+<!-- SPLASH -->
 <div id="splash" class="pantalla activa">
     <div class="splash-bg"></div>
     <div class="splash-content">
@@ -435,207 +135,152 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     PANTALLA 2: AUTH (Crear / Iniciar sesión)
-══════════════════════════════════════════ -->
+<!-- AUTH -->
 <div id="auth" class="pantalla">
     <div id="contenedor">
-
         <div class="header-banner">
-            <div class="demon-eyes">
-                <div class="demon-eye"></div>
-                <div class="demon-eye"></div>
-            </div>
+            <div class="demon-eyes"><div class="demon-eye"></div><div class="demon-eye"></div></div>
         </div>
-
         <div class="main-panel">
             <div class="tabs">
                 <div class="tab activo" onclick="cambiarTab('login')">INICIAR SESIÓN</div>
                 <div class="tab" onclick="cambiarTab('registro')">CREAR CUENTA</div>
             </div>
-
-            <!-- LOGIN -->
             <div id="tabLogin" class="tab-panel activo">
-                <div class="campo">
-                    <label>Nombre</label>
-                    <input type="text" id="loginNombre" placeholder="Tu nombre de cuenta">
-                </div>
-                <div class="campo">
-                    <label>Contraseña</label>
-                    <input type="password" id="loginPass" placeholder="••••••••">
-                </div>
+                <div class="campo"><label>Nombre</label><input type="text" id="loginNombre" placeholder="Tu nombre de cuenta"></div>
+                <div class="campo"><label>Contraseña</label><input type="password" id="loginPass" placeholder="••••••••"></div>
                 <div class="msg-error" id="errorLogin"></div>
                 <button class="main-btn" onclick="iniciarSesion()">ENTRAR</button>
             </div>
-
-            <!-- REGISTRO -->
             <div id="tabRegistro" class="tab-panel">
-                <div class="campo">
-                    <label>Nombre de cuenta</label>
-                    <input type="text" id="regNombre" placeholder="Elige un nombre único">
-                </div>
-                <div class="campo">
-                    <label>Contraseña</label>
-                    <input type="password" id="regPass" placeholder="••••••••">
-                </div>
-                <div class="campo">
-                    <label>Repetir contraseña</label>
-                    <input type="password" id="regPass2" placeholder="••••••••">
-                </div>
+                <div class="campo"><label>Nombre de cuenta</label><input type="text" id="regNombre" placeholder="Elige un nombre único"></div>
+                <div class="campo"><label>Contraseña</label><input type="password" id="regPass" placeholder="••••••••"></div>
+                <div class="campo"><label>Repetir contraseña</label><input type="password" id="regPass2" placeholder="••••••••"></div>
                 <div class="msg-error" id="errorRegistro"></div>
                 <button class="main-btn" onclick="crearCuenta()">CREAR CUENTA</button>
             </div>
         </div>
-
     </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     PANTALLA 3: MENÚ PRINCIPAL
-══════════════════════════════════════════ -->
+<!-- MENÚ PRINCIPAL -->
 <div id="menu" class="pantalla">
     <div id="contenedor">
-
         <div class="top-bar">
             <div class="top-icon-btn">ℹ</div>
-            <div id="userBar" class="visible" style="display:flex; align-items:center; gap:8px; background:none; border:none; padding:0;">
-                <span class="user-name" id="userNameDisplay">—</span>
-                <button class="logout-btn" onclick="cerrarSesion()">SALIR</button>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <div id="topFoto" style="width:28px; height:28px; border-radius:50%; border:1px solid #4a3010; background:#1a0e08; display:flex; align-items:center; justify-content:center; color:#5a3a18; font-size:14px; overflow:hidden;">👤</div>
+                <span style="color:#d4a060; font-size:10px; letter-spacing:2px;" id="userNameDisplay">—</span>
+                <button onclick="cerrarSesion()" style="color:#6a3010; font-size:9px; letter-spacing:1px; cursor:pointer; border:1px solid #3a1808; border-radius:3px; padding:2px 6px; background:transparent; font-family:'Cinzel',serif;">SALIR</button>
             </div>
             <div class="top-icon-btn" onclick="abrirConfig()">⚙</div>
         </div>
-
         <div class="resource-bar">
             <div class="coin-badge">💰 <span id="dineroDisplay">0</span></div>
             <div class="coin-badge">⭐ Nv.<span id="nivelDisplay">1</span></div>
             <div class="coin-badge">✦ Exp.<span id="expDisplay">0</span></div>
         </div>
-
         <div class="header-banner">
-            <div class="demon-eyes">
-                <div class="demon-eye"></div>
-                <div class="demon-eye"></div>
-            </div>
+            <div class="demon-eyes"><div class="demon-eye"></div><div class="demon-eye"></div></div>
         </div>
 
         <div class="main-panel">
+
+            <!-- MENÚ PRINCIPAL -->
             <div id="pantallaMenu">
                 <div class="ornament">✦ ❧ ✦</div>
-                <button class="main-btn" onclick="irACrearPersonaje()">JUGAR</button>
+                <button class="main-btn" onclick="irASeleccionPJ()">JUGAR</button>
                 <div class="ornament" style="font-size:14px; margin:2px 0">☙ ✦ ❧</div>
                 <button class="main-btn" style="font-size:14px; padding:11px 0; background:linear-gradient(180deg,#b84020 0%,#6a1808 40%,#7a1d0e 60%,#b03018 100%)">PRÁCTICA</button>
                 <div class="ornament" style="font-size:13px; margin:2px 0">✦ ❦ ✦</div>
                 <button class="main-btn" style="font-size:13px; padding:10px 0; background:linear-gradient(180deg,#a83818 0%,#601508 40%,#701a0c 60%,#a02818 100%)">EL ARENA</button>
             </div>
 
-            <div id="pantallaCreacion" style="display:none;">
+            <!-- PERSONAJES -->
+            <div id="pantallaPersonajes">
+                <div class="panel-titulo">⚔ MIS PERSONAJES ⚔</div>
+                <div class="scroll-panel" id="listaPJs"></div>
+                <hr class="divider">
+                <button class="main-btn" style="font-size:12px; padding:10px 0" onclick="irACrearPJ()">+ CREAR PERSONAJE</button>
+                <button class="main-btn secundario" onclick="irAMenuDesdeSeccion()">← VOLVER</button>
+            </div>
+
+            <!-- CREAR PERSONAJE -->
+            <div id="pantallaCreacion">
                 <div class="panel-titulo">⚔ FORJA TU HÉROE ⚔</div>
                 <form id="formPersonaje">
-                    <div class="campo">
-                        <label>Nombre del héroe</label>
-                        <input type="text" id="nombre" placeholder="Nombre del héroe" required>
-                    </div>
+                    <div class="campo"><label>Nombre del héroe</label><input type="text" id="nombre" placeholder="Nombre del héroe" required></div>
                     <hr class="divider">
                     <div class="stat-grid">
-                        <div class="stat-item">
-                            <span class="stat-label">Fuerza</span>
-                            <input class="stat-input" type="number" id="fuerza" value="5" min="2">
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Resistencia</span>
-                            <input class="stat-input" type="number" id="resistencia" value="5" min="2">
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Velocidad</span>
-                            <input class="stat-input" type="number" id="velocidad" value="5" min="2">
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Magia</span>
-                            <input class="stat-input" type="number" id="magia" value="5" min="2">
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Suerte</span>
-                            <input class="stat-input" type="number" id="suerte" value="5" min="2">
-                        </div>
+                        <div class="stat-item"><span class="stat-label">Fuerza</span><input class="stat-input" type="number" id="fuerza" value="5" min="2"></div>
+                        <div class="stat-item"><span class="stat-label">Resistencia</span><input class="stat-input" type="number" id="resistencia" value="5" min="2"></div>
+                        <div class="stat-item"><span class="stat-label">Velocidad</span><input class="stat-input" type="number" id="velocidad" value="5" min="2"></div>
+                        <div class="stat-item"><span class="stat-label">Magia</span><input class="stat-input" type="number" id="magia" value="5" min="2"></div>
+                        <div class="stat-item"><span class="stat-label">Suerte</span><input class="stat-input" type="number" id="suerte" value="5" min="2"></div>
                     </div>
+                    <div style="color:#9a7040; font-size:9px; text-align:right; letter-spacing:1px; margin-top:2px;">Total: <span id="totalStats">25</span>/25</div>
                     <hr class="divider">
                     <div class="campo">
                         <label>Clase</label>
-                        <select class="class-select" id="clase">
-                            <optgroup label="── Clase Magia ──">
-                                <option value="Chaman">Chamán</option>
-                                <option value="Sacerdote">Sacerdote</option>
-                                <option value="Druida">Druida</option>
-                            </optgroup>
-                            <optgroup label="── Clase Fuerza ──">
-                                <option value="Guerrero">Guerrero</option>
-                                <option value="Paladin">Paladín</option>
-                                <option value="Berserker">Berserker</option>
-                            </optgroup>
-                            <optgroup label="── Clase Resistencia ──">
-                                <option value="Acorazado">Acorazado</option>
-                                <option value="Ogro">Ogro</option>
-                                <option value="Golem">Golem</option>
-                            </optgroup>
-                            <optgroup label="── Clase Velocidad ──">
-                                <option value="Picaro">Pícaro</option>
-                                <option value="Ninja">Ninja</option>
-                                <option value="Cazador">Cazador</option>
-                            </optgroup>
-                            <optgroup label="── Clase Magia ──">
-                                <option value="Mago">Mago</option>
-                                <option value="MagoMaestro">Mago Maestro</option>
-                                <option value="MagoGuerrero">Mago Guerrero</option>
-                            </optgroup>
-                            <optgroup label="── Clase Especial ──">
-                                <option value="SemiDios">Semi-Dios</option>
-                                <option value="Demonio">Demonio</option>
-                                <option value="Titan">Titán</option>
-                            </optgroup>
+                        <select id="clase">
+                            <optgroup label="── Magia ──"><option value="Chaman">Chamán</option><option value="Sacerdote">Sacerdote</option><option value="Druida">Druida</option></optgroup>
+                            <optgroup label="── Fuerza ──"><option value="Guerrero">Guerrero</option><option value="Paladin">Paladín</option><option value="Berserker">Berserker</option></optgroup>
+                            <optgroup label="── Resistencia ──"><option value="Acorazado">Acorazado</option><option value="Ogro">Ogro</option><option value="Golem">Golem</option></optgroup>
+                            <optgroup label="── Velocidad ──"><option value="Picaro">Pícaro</option><option value="Ninja">Ninja</option><option value="Cazador">Cazador</option></optgroup>
+                            <optgroup label="── Magia Avanzada ──"><option value="Mago">Mago</option><option value="MagoMaestro">Mago Maestro</option><option value="MagoGuerrero">Mago Guerrero</option></optgroup>
+                            <optgroup label="── Especial ──"><option value="SemiDios">Semi-Dios</option><option value="Demonio">Demonio</option><option value="Titan">Titán</option></optgroup>
                         </select>
                     </div>
                     <hr class="divider">
                     <div class="msg-error" id="errorPersonaje"></div>
-                    <button type="submit" class="main-btn" style="font-size:13px; padding:11px 0; margin-top:4px">ENTRAR AL COMBATE</button>
-                    <button type="button" class="main-btn secundario" onclick="volverAlMenu()">← VOLVER</button>
+                    <button type="submit" class="main-btn" style="font-size:13px; padding:11px 0; margin-top:4px">CREAR PERSONAJE</button>
+                    <button type="button" class="main-btn secundario" onclick="irAPersonajes()">← VOLVER</button>
                 </form>
             </div>
+
+            <!-- SELECCIÓN DE PJ PARA JUGAR -->
+            <div id="pantallaSeleccionPJ">
+                <div class="panel-titulo">⚔ ELIGE TU PERSONAJE ⚔</div>
+                <div class="scroll-panel" id="listaPJsJugar"></div>
+                <div class="msg-error" id="errorSeleccion"></div>
+                <hr class="divider">
+                <button class="main-btn" style="font-size:13px; padding:11px 0" onclick="confirmarSeleccion()">ENTRAR A BATALLA</button>
+                <button class="main-btn secundario" onclick="irAMenuDesdeSeccion()">← VOLVER</button>
+            </div>
+
+            <!-- ESPERA -->
+            <div id="pantallaEspera">
+                <div class="espera-container">
+                    <div class="panel-titulo">⚔ BUSCANDO RIVAL ⚔</div>
+                    <div class="espera-spinner"></div>
+                    <div style="color:#6a4018; font-size:10px; letter-spacing:2px; margin-top:8px;" id="esperaMsg">Esperando oponente...</div>
+                    <hr class="divider">
+                    <button class="main-btn secundario" onclick="cancelarEspera()">CANCELAR</button>
+                </div>
+            </div>
+
         </div>
 
         <div class="bottom-row">
-            <div class="round-btn">TIENDA</div>
-            <div class="round-btn">PERSO<br>NAJES</div>
-            <div class="round-btn">EQUI<br>PAMIENTO</div>
+            <div class="round-btn" id="btnTienda" onclick="cambiarSeccion('tienda')">TIENDA</div>
+            <div class="round-btn" id="btnPersonajes" onclick="cambiarSeccion('personajes')">PERSO<br>NAJES</div>
+            <div class="round-btn" id="btnEquipamiento" onclick="cambiarSeccion('equipamiento')">EQUI<br>PAMIENTO</div>
         </div>
-
     </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     SCRIPTS
-══════════════════════════════════════════ -->
-    <!-- POPUP CONFIGURACIÓN -->
-<div id="popupConfig" style="display:none; position:fixed; inset:0; z-index:100; display:none; align-items:center; justify-content:center;">
-    <div onclick="cerrarConfig()" style="position:absolute; inset:0; background:rgba(0,0,0,0.7);"></div>
-    <div style="position:relative; z-index:1; width:320px; background:radial-gradient(ellipse at center top, #1a0e08 0%, #0a0604 100%); border:2px solid #4a3010; border-radius:8px; padding:20px; box-shadow:0 0 40px rgba(0,0,0,0.9);">
+<!-- POPUP CONFIGURACIÓN -->
+<div id="popupConfig" class="popup-overlay">
+    <div class="popup-bg" onclick="cerrarConfig()"></div>
+    <div class="popup-box">
         <div style="text-align:center; color:#d4a060; font-size:12px; letter-spacing:4px; margin-bottom:16px;">⚙ CONFIGURACIÓN</div>
         <div style="text-align:center; margin-bottom:14px;">
-            <img id="configFotoPreview" src="" style="width:70px; height:70px; border-radius:50%; border:2px solid #4a3010; object-fit:cover; display:none;">
-            <div id="configFotoPlaceholder" style="width:70px; height:70px; border-radius:50%; border:2px solid #4a3010; background:#1a0e08; margin:0 auto; display:flex; align-items:center; justify-content:center; color:#5a3a18; font-size:24px;">👤</div>
+            <div id="configFotoPreview" style="width:70px; height:70px; border-radius:50%; border:2px solid #4a3010; background:#1a0e08; margin:0 auto; display:flex; align-items:center; justify-content:center; color:#5a3a18; font-size:28px; overflow:hidden;">👤</div>
         </div>
-        <hr style="border:none; border-top:1px solid #2a1808; margin:10px 0;">
-        <div class="campo">
-            <label>URL de foto de perfil</label>
-            <input type="text" id="configFotoUrl" placeholder="https://... (debe ser una URL de imagen)">
-        </div>
-        <div class="campo">
-            <label>Nuevo nombre de usuario</label>
-            <input type="text" id="configNombre" placeholder="Dejar vacío para no cambiar">
-        </div>
-        <div class="campo">
-            <label>Nueva contraseña</label>
-            <input type="password" id="configPass" placeholder="Dejar vacío para no cambiar">
-        </div>
+        <hr class="divider">
+        <div class="campo"><label>URL de foto de perfil (debe ser una URL de imagen)</label><input type="text" id="configFotoUrl" placeholder="https://i.imgur.com/..."></div>
+        <div class="campo"><label>Nuevo nombre de usuario</label><input type="text" id="configNombre" placeholder="Dejar vacío para no cambiar"></div>
+        <div class="campo"><label>Nueva contraseña</label><input type="password" id="configPass" placeholder="Dejar vacío para no cambiar"></div>
         <div class="msg-error" id="errorConfig"></div>
         <div class="msg-ok" id="okConfig"></div>
         <button class="main-btn" style="font-size:12px; padding:10px 0; margin-top:6px" onclick="guardarConfig()">GUARDAR CAMBIOS</button>
@@ -643,61 +288,15 @@
     </div>
 </div>
 
-
-
-    
 <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
 <script>
-const socket = io('https://juego-cartas-online-production.up.railway.app', {
-    transports: ['polling', 'websocket']
-});
+    const socket = io('https://juego-cartas-online-production.up.railway.app', {
+        transports: ['polling', 'websocket']
+    });
 
-
-function abrirConfig() {
-    document.getElementById('errorConfig').textContent = '';
-    document.getElementById('okConfig').textContent = '';
-    document.getElementById('configFotoUrl').value = cuentaActual.foto || '';
-    document.getElementById('configNombre').value = '';
-    document.getElementById('configPass').value = '';
-    if (cuentaActual.foto) {
-        document.getElementById('configFotoPreview').src = cuentaActual.foto;
-        document.getElementById('configFotoPreview').style.display = 'block';
-        document.getElementById('configFotoPlaceholder').style.display = 'none';
-    }
-    document.getElementById('popupConfig').style.display = 'flex';
-}
-
-function cerrarConfig() {
-    document.getElementById('popupConfig').style.display = 'none';
-}
-
-function guardarConfig() {
-    const foto = document.getElementById('configFotoUrl').value.trim();
-    const nombre = document.getElementById('configNombre').value.trim();
-    const password = document.getElementById('configPass').value;
-    const err = document.getElementById('errorConfig');
-
-    if (foto && !foto.startsWith('http')) {
-        err.textContent = 'La foto debe ser una URL válida (debe empezar con http)';
-        return;
-    }
-    err.textContent = '';
-    socket.emit('actualizarPerfil', { cuenta_id: cuentaActual.id, nombre, password, foto });
-}
-
-socket.on('perfilActualizado', (datos) => {
-    cuentaActual = { ...cuentaActual, ...datos };
-    document.getElementById('okConfig').textContent = '✅ Perfil actualizado correctamente.';
-    document.getElementById('errorConfig').textContent = '';
-    actualizarUI(cuentaActual);
-});
-
-socket.on('errorPerfil', (msg) => {
-    document.getElementById('errorConfig').textContent = msg;
-});
-
-    
     let cuentaActual = null;
+    let pjSeleccionado = null;
+    let seccionActual = 'menu';
 
     // ── NAVEGACIÓN ──
     function mostrarPantalla(id) {
@@ -705,14 +304,58 @@ socket.on('errorPerfil', (msg) => {
         document.getElementById(id).classList.add('activa');
     }
 
-    function irAAuth() { mostrarPantalla('auth'); }
-
-    function cerrarSesion() {
-        cuentaActual = null;
-        mostrarPantalla('auth');
+    function mostrarSeccionMenu(id) {
+        ['pantallaMenu','pantallaPersonajes','pantallaCreacion','pantallaSeleccionPJ','pantallaEspera'].forEach(s => {
+            document.getElementById(s).style.display = 'none';
+        });
+        document.getElementById(id).style.display = 'block';
     }
 
-    // ── TABS ──
+    function irAAuth() { mostrarPantalla('auth'); }
+    function cerrarSesion() { cuentaActual = null; pjSeleccionado = null; mostrarPantalla('auth'); }
+
+    function irAMenuDesdeSeccion() {
+        mostrarSeccionMenu('pantallaMenu');
+        document.querySelectorAll('.round-btn').forEach(b => b.classList.remove('activo'));
+        seccionActual = 'menu';
+    }
+
+    function cambiarSeccion(seccion) {
+        seccionActual = seccion;
+        document.querySelectorAll('.round-btn').forEach(b => b.classList.remove('activo'));
+
+        if (seccion === 'personajes') {
+            document.getElementById('btnPersonajes').classList.add('activo');
+            renderizarPersonajes();
+            mostrarSeccionMenu('pantallaPersonajes');
+        } else if (seccion === 'tienda') {
+            document.getElementById('btnTienda').classList.add('activo');
+            mostrarSeccionMenu('pantallaMenu');
+        } else if (seccion === 'equipamiento') {
+            document.getElementById('btnEquipamiento').classList.add('activo');
+            mostrarSeccionMenu('pantallaMenu');
+        }
+    }
+
+    function irAPersonajes() {
+        renderizarPersonajes();
+        mostrarSeccionMenu('pantallaPersonajes');
+    }
+
+    function irACrearPJ() { mostrarSeccionMenu('pantallaCreacion'); }
+
+    function irASeleccionPJ() {
+        pjSeleccionado = null;
+        if (!cuentaActual || cuentaActual.personajes.length === 0) {
+            mostrarSeccionMenu('pantallaSeleccionPJ');
+            document.getElementById('listaPJsJugar').innerHTML = '<div class="vacio-msg">No tenés personajes creados.<br>Creá uno primero.</div>';
+            return;
+        }
+        renderizarSeleccionPJ();
+        mostrarSeccionMenu('pantallaSeleccionPJ');
+    }
+
+    // ── TABS AUTH ──
     function cambiarTab(tab) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('activo'));
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('activo'));
@@ -731,11 +374,9 @@ socket.on('errorPerfil', (msg) => {
         const pass = document.getElementById('regPass').value;
         const pass2 = document.getElementById('regPass2').value;
         const err = document.getElementById('errorRegistro');
-
         if (!nombre || !pass) { err.textContent = 'Completá todos los campos.'; return; }
         if (pass !== pass2) { err.textContent = 'Las contraseñas no coinciden.'; return; }
         if (pass.length < 4) { err.textContent = 'La contraseña debe tener al menos 4 caracteres.'; return; }
-
         err.textContent = '';
         socket.emit('crearCuenta', { nombre, password: pass });
     }
@@ -744,30 +385,125 @@ socket.on('errorPerfil', (msg) => {
         const nombre = document.getElementById('loginNombre').value.trim();
         const pass = document.getElementById('loginPass').value;
         const err = document.getElementById('errorLogin');
-
         if (!nombre || !pass) { err.textContent = 'Completá todos los campos.'; return; }
-
         err.textContent = '';
         socket.emit('iniciarSesion', { nombre, password: pass });
     }
 
-    // ── MENÚ ──
-    function irACrearPersonaje() {
-        document.getElementById('pantallaMenu').style.display = 'none';
-        document.getElementById('pantallaCreacion').style.display = 'block';
-    }
-
-    function volverAlMenu() {
-        document.getElementById('pantallaCreacion').style.display = 'none';
-        document.getElementById('pantallaMenu').style.display = 'block';
-        document.getElementById('errorPersonaje').textContent = '';
-    }
-
+    // ── UI ──
     function actualizarUI(cuenta) {
         document.getElementById('userNameDisplay').textContent = cuenta.nombre.toUpperCase();
         document.getElementById('dineroDisplay').textContent = cuenta.dinero;
         document.getElementById('nivelDisplay').textContent = cuenta.nivel;
         document.getElementById('expDisplay').textContent = cuenta.experiencia;
+        const topFoto = document.getElementById('topFoto');
+        if (cuenta.foto) {
+            topFoto.innerHTML = `<img src="${cuenta.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+        } else {
+            topFoto.innerHTML = '👤';
+        }
+    }
+
+    // ── RENDERIZAR PERSONAJES ──
+    function renderizarPersonajes() {
+        const lista = document.getElementById('listaPJs');
+        if (!cuentaActual || cuentaActual.personajes.length === 0) {
+            lista.innerHTML = '<div class="vacio-msg">Aún no tenés personajes.<br>¡Creá tu primer héroe!</div>';
+            return;
+        }
+        lista.innerHTML = cuentaActual.personajes.map((pj, i) => `
+            <div class="pj-card">
+                <div class="pj-avatar">⚔</div>
+                <div class="pj-info">
+                    <div class="pj-nombre">${pj.nombre}</div>
+                    <div class="pj-clase">${pj.clase}</div>
+                    <div class="pj-stats">
+                        <span class="pj-stat">FUE ${pj.fuerza}</span>
+                        <span class="pj-stat">RES ${pj.resistencia}</span>
+                        <span class="pj-stat">VEL ${pj.velocidad}</span>
+                        <span class="pj-stat">MAG ${pj.magia}</span>
+                        <span class="pj-stat">SUE ${pj.suerte}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderizarSeleccionPJ() {
+        const lista = document.getElementById('listaPJsJugar');
+        lista.innerHTML = cuentaActual.personajes.map((pj, i) => `
+            <div class="pj-card" id="pjjugar-${i}" onclick="seleccionarPJ(${i})">
+                <div class="pj-avatar">⚔</div>
+                <div class="pj-info">
+                    <div class="pj-nombre">${pj.nombre}</div>
+                    <div class="pj-clase">${pj.clase}</div>
+                    <div class="pj-stats">
+                        <span class="pj-stat">FUE ${pj.fuerza}</span>
+                        <span class="pj-stat">RES ${pj.resistencia}</span>
+                        <span class="pj-stat">VEL ${pj.velocidad}</span>
+                        <span class="pj-stat">MAG ${pj.magia}</span>
+                        <span class="pj-stat">SUE ${pj.suerte}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function seleccionarPJ(i) {
+        pjSeleccionado = cuentaActual.personajes[i];
+        document.querySelectorAll('#listaPJsJugar .pj-card').forEach(c => c.classList.remove('seleccionado'));
+        document.getElementById(`pjjugar-${i}`).classList.add('seleccionado');
+        document.getElementById('errorSeleccion').textContent = '';
+    }
+
+    function confirmarSeleccion() {
+        if (!pjSeleccionado) {
+            document.getElementById('errorSeleccion').textContent = 'Seleccioná un personaje primero.';
+            return;
+        }
+        mostrarSeccionMenu('pantallaEspera');
+        socket.emit('buscarPartida', { cuenta_id: cuentaActual.id, personaje: pjSeleccionado });
+    }
+
+    function cancelarEspera() {
+        socket.emit('cancelarBusqueda');
+        irAMenuDesdeSeccion();
+    }
+
+    // ── CONTADOR DE STATS ──
+    function actualizarTotal() {
+        const stats = ['fuerza','resistencia','velocidad','magia','suerte'];
+        const total = stats.reduce((sum, s) => sum + (parseInt(document.getElementById(s).value) || 0), 0);
+        document.getElementById('totalStats').textContent = total;
+        document.getElementById('totalStats').style.color = total === 25 ? '#60d060' : '#ff6040';
+    }
+
+    // ── CONFIG ──
+    function abrirConfig() {
+        document.getElementById('errorConfig').textContent = '';
+        document.getElementById('okConfig').textContent = '';
+        document.getElementById('configFotoUrl').value = cuentaActual.foto || '';
+        document.getElementById('configNombre').value = '';
+        document.getElementById('configPass').value = '';
+        const preview = document.getElementById('configFotoPreview');
+        if (cuentaActual.foto) {
+            preview.innerHTML = `<img src="${cuentaActual.foto}" style="width:100%;height:100%;object-fit:cover;">`;
+        } else {
+            preview.innerHTML = '👤';
+        }
+        document.getElementById('popupConfig').classList.add('visible');
+    }
+
+    function cerrarConfig() { document.getElementById('popupConfig').classList.remove('visible'); }
+
+    function guardarConfig() {
+        const foto = document.getElementById('configFotoUrl').value.trim();
+        const nombre = document.getElementById('configNombre').value.trim();
+        const password = document.getElementById('configPass').value;
+        const err = document.getElementById('errorConfig');
+        if (foto && !foto.startsWith('http')) { err.textContent = 'La foto debe ser una URL válida (debe empezar con http).'; return; }
+        err.textContent = '';
+        socket.emit('actualizarPerfil', { cuenta_id: cuentaActual.id, nombre, password, foto });
     }
 
     // ── SOCKET EVENTOS ──
@@ -775,27 +511,44 @@ socket.on('errorPerfil', (msg) => {
         cuentaActual = cuenta;
         actualizarUI(cuenta);
         mostrarPantalla('menu');
+        mostrarSeccionMenu('pantallaMenu');
     });
 
-    socket.on('errorCuenta', (msg) => {
-        document.getElementById('errorRegistro').textContent = msg;
-    });
+    socket.on('errorCuenta', (msg) => { document.getElementById('errorRegistro').textContent = msg; });
 
     socket.on('loginExitoso', (cuenta) => {
         cuentaActual = cuenta;
         actualizarUI(cuenta);
         mostrarPantalla('menu');
+        mostrarSeccionMenu('pantallaMenu');
     });
 
-    socket.on('errorLogin', (msg) => {
-        document.getElementById('errorLogin').textContent = msg;
+    socket.on('errorLogin', (msg) => { document.getElementById('errorLogin').textContent = msg; });
+
+    socket.on('asignarRol', (rol) => { console.log('🎮 Rol asignado:', rol); });
+
+    socket.on('perfilActualizado', (datos) => {
+        cuentaActual = { ...cuentaActual, ...datos };
+        document.getElementById('okConfig').textContent = '✅ Perfil actualizado correctamente.';
+        document.getElementById('errorConfig').textContent = '';
+        actualizarUI(cuentaActual);
     });
 
-    socket.on('asignarRol', (rol) => {
-        console.log('🎮 Rol asignado:', rol);
+    socket.on('errorPerfil', (msg) => { document.getElementById('errorConfig').textContent = msg; });
+
+    socket.on('esperandoRival', () => {
+        document.getElementById('esperaMsg').textContent = 'Esperando oponente...';
     });
 
-    // ── FORMULARIO PERSONAJE (lógica original preservada) ──
+    socket.on('rivalEncontrado', (datos) => {
+        document.getElementById('esperaMsg').textContent = '¡Rival encontrado! Iniciando batalla...';
+        setTimeout(() => {
+            // Acá irá la pantalla de combate
+            console.log('Partida iniciada:', datos);
+        }, 1500);
+    });
+
+    // ── FORMULARIO PERSONAJE ──
     document.getElementById('formPersonaje').onsubmit = (e) => {
         e.preventDefault();
         socket.emit('guardarPersonaje', {
@@ -811,22 +564,30 @@ socket.on('errorPerfil', (msg) => {
     };
 
     socket.on('personajeGuardado', (p) => {
-        console.log('✅ Personaje guardado:', p);
+        if (!cuentaActual.personajes) cuentaActual.personajes = [];
+        cuentaActual.personajes.push(p);
+        document.getElementById('errorPersonaje').textContent = '';
+        document.getElementById('formPersonaje').reset();
+        document.getElementById('totalStats').textContent = '25';
+        irAPersonajes();
     });
 
-    socket.on('errorPersonaje', (msg) => {
-        document.getElementById('errorPersonaje').textContent = msg;
-    });
+    socket.on('errorPersonaje', (msg) => { document.getElementById('errorPersonaje').textContent = msg; });
 
     socket.on('confirmacion', (msg) => {
-        document.getElementById('pantallaCreacion').innerHTML = `<h3>${msg}</h3>`;
+        document.getElementById('pantallaEspera').innerHTML = `<h3>${msg}</h3>`;
     });
 
     socket.on('partidaLista', (msg) => {
         document.getElementById('contenedor').innerHTML = `
             <div style="padding:60px 20px; text-align:center;">
-                <h1 style="color:#d4a060; font-size:1.2em; letter-spacing:3px; text-shadow:0 0 20px rgba(200,140,40,0.5)">${msg}</h1>
+                <h1 style="color:#d4a060; font-size:1.2em; letter-spacing:3px;">${msg}</h1>
             </div>`;
+    });
+
+    // Contador stats en tiempo real
+    ['fuerza','resistencia','velocidad','magia','suerte'].forEach(id => {
+        document.getElementById(id).addEventListener('input', actualizarTotal);
     });
 </script>
 </body>
