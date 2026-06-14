@@ -502,7 +502,7 @@
                 <span class="user-name" id="userNameDisplay">—</span>
                 <button class="logout-btn" onclick="cerrarSesion()">SALIR</button>
             </div>
-            <div class="top-icon-btn">⚙</div>
+            <div class="top-icon-btn" onclick="abrirConfig()">⚙</div>
         </div>
 
         <div class="resource-bar">
@@ -614,12 +614,89 @@
 <!-- ══════════════════════════════════════════
      SCRIPTS
 ══════════════════════════════════════════ -->
+    <!-- POPUP CONFIGURACIÓN -->
+<div id="popupConfig" style="display:none; position:fixed; inset:0; z-index:100; display:none; align-items:center; justify-content:center;">
+    <div onclick="cerrarConfig()" style="position:absolute; inset:0; background:rgba(0,0,0,0.7);"></div>
+    <div style="position:relative; z-index:1; width:320px; background:radial-gradient(ellipse at center top, #1a0e08 0%, #0a0604 100%); border:2px solid #4a3010; border-radius:8px; padding:20px; box-shadow:0 0 40px rgba(0,0,0,0.9);">
+        <div style="text-align:center; color:#d4a060; font-size:12px; letter-spacing:4px; margin-bottom:16px;">⚙ CONFIGURACIÓN</div>
+        <div style="text-align:center; margin-bottom:14px;">
+            <img id="configFotoPreview" src="" style="width:70px; height:70px; border-radius:50%; border:2px solid #4a3010; object-fit:cover; display:none;">
+            <div id="configFotoPlaceholder" style="width:70px; height:70px; border-radius:50%; border:2px solid #4a3010; background:#1a0e08; margin:0 auto; display:flex; align-items:center; justify-content:center; color:#5a3a18; font-size:24px;">👤</div>
+        </div>
+        <hr style="border:none; border-top:1px solid #2a1808; margin:10px 0;">
+        <div class="campo">
+            <label>URL de foto de perfil</label>
+            <input type="text" id="configFotoUrl" placeholder="https://... (debe ser una URL de imagen)">
+        </div>
+        <div class="campo">
+            <label>Nuevo nombre de usuario</label>
+            <input type="text" id="configNombre" placeholder="Dejar vacío para no cambiar">
+        </div>
+        <div class="campo">
+            <label>Nueva contraseña</label>
+            <input type="password" id="configPass" placeholder="Dejar vacío para no cambiar">
+        </div>
+        <div class="msg-error" id="errorConfig"></div>
+        <div class="msg-ok" id="okConfig"></div>
+        <button class="main-btn" style="font-size:12px; padding:10px 0; margin-top:6px" onclick="guardarConfig()">GUARDAR CAMBIOS</button>
+        <button class="main-btn secundario" style="margin-top:4px" onclick="cerrarConfig()">CERRAR</button>
+    </div>
+</div>
+
+
+
+    
 <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
 <script>
 const socket = io('https://juego-cartas-online-production.up.railway.app', {
     transports: ['polling', 'websocket']
 });
 
+
+function abrirConfig() {
+    document.getElementById('errorConfig').textContent = '';
+    document.getElementById('okConfig').textContent = '';
+    document.getElementById('configFotoUrl').value = cuentaActual.foto || '';
+    document.getElementById('configNombre').value = '';
+    document.getElementById('configPass').value = '';
+    if (cuentaActual.foto) {
+        document.getElementById('configFotoPreview').src = cuentaActual.foto;
+        document.getElementById('configFotoPreview').style.display = 'block';
+        document.getElementById('configFotoPlaceholder').style.display = 'none';
+    }
+    document.getElementById('popupConfig').style.display = 'flex';
+}
+
+function cerrarConfig() {
+    document.getElementById('popupConfig').style.display = 'none';
+}
+
+function guardarConfig() {
+    const foto = document.getElementById('configFotoUrl').value.trim();
+    const nombre = document.getElementById('configNombre').value.trim();
+    const password = document.getElementById('configPass').value;
+    const err = document.getElementById('errorConfig');
+
+    if (foto && !foto.startsWith('http')) {
+        err.textContent = 'La foto debe ser una URL válida (debe empezar con http)';
+        return;
+    }
+    err.textContent = '';
+    socket.emit('actualizarPerfil', { cuenta_id: cuentaActual.id, nombre, password, foto });
+}
+
+socket.on('perfilActualizado', (datos) => {
+    cuentaActual = { ...cuentaActual, ...datos };
+    document.getElementById('okConfig').textContent = '✅ Perfil actualizado correctamente.';
+    document.getElementById('errorConfig').textContent = '';
+    actualizarUI(cuentaActual);
+});
+
+socket.on('errorPerfil', (msg) => {
+    document.getElementById('errorConfig').textContent = msg;
+});
+
+    
     let cuentaActual = null;
 
     // ── NAVEGACIÓN ──
