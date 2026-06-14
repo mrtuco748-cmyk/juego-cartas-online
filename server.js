@@ -7,9 +7,8 @@ const bcrypt = require('bcryptjs');
  
 // ── CONEXIÓN MONGODB ──
 
+const MONGO_URI = process.env.MONGO_URI;
 
-
-const MONGO_URI = 'mongodb://mrtSpill:p3Lr9hWAkM9iTtq5@ac-tlf2b3l-shard-00-00.mwaqd74.mongodb.net:27017,ac-tlf2b3l-shard-00-01.mwaqd74.mongodb.net:27017,ac-tlf2b3l-shard-00-02.mwaqd74.mongodb.net:27017/loop?ssl=true&replicaSet=atlas-10e4ba-shard-0&authSource=admin&retryWrites=true&w=majority';
 
 mongoose.connect(MONGO_URI)
     .then(() => console.log('✅ Conectado a MongoDB Atlas'))
