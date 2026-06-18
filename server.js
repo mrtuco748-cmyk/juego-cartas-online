@@ -54,65 +54,121 @@ io.on('connection', (socket) => {
         const partida = partidas[partidaId];
         if (!partida || partida.turnoActual !== socket.id) return;
 
+        const soyJ1 = socket.id === partida.jugador1.socketId;
+        const yo = soyJ1 ? partida.jugador1 : partida.jugador2;
+        const rival = soyJ1 ? partida.jugador2 : partida.jugador1;
+
+        if (partida.accionesUsadas.includes(tipo) && tipo !== 'ta') {
+            socket.emit('errorAccion', 'Ya usaste esa acción este turno.');
+            return;
+        }
+
+        partida.accionesUsadas.push(tipo);
+
+        // ── ATACAR ──
         if (tipo === 'atacar') {
-            
             const dado = Math.floor(Math.random() * 6) + 1;
-            const danoBruto = dado + atacante.fuerza;
-            const danoFinal = Math.max(0, danoBruto - defensor.resistencia);
+            let danoFinal = Math.max(0, dado + atacante.fuerza - defensor.resistencia);
+            let logMsg = `${atacante.nombre} ataca — Dado: ${dado}`;
+
+            // Revisar si el rival tiene pose activa
+            if (rival.pose) {
+                const { tipo: poseTipo, valor: poseValor } = rival.pose;
+                if (poseTipo === 'esquivar') {
+                    if (poseValor > dado) {
+                        danoFinal = 0;
+                        logMsg += ` — ¡${rival.personaje.nombre} ESQUIVA!`;
+                    }
+                } else if (poseTipo === 'parry') {
+                    if (poseValor === (dado + atacante.fuerza)) {
+                        danoFinal = 0;
+                        partida.turnoMareado = socket.id;
+                        logMsg += ` — ¡${rival.personaje ? rival.personaje.nombre : defensor.nombre} hace PARRY! ${atacante.nombre} pierde 1 turno.`;
+                    }
+                }
+                rival.pose = null;
+            }
+
             const multi = GameEngine.calcularCritico(atacante.velocidad, defensor.velocidad);
             const dano = Math.floor(danoFinal * (1 + multi));
 
-            // Aplicar daño
-            if (socket.id === partida.jugador1.socketId) {
-                partida.jugador2.hp -= dano;
-            } else {
-                partida.jugador1.hp -= dano;
-            }
+            rival.hp -= dano;
 
-            // Regenerar energía al atacante
             const energiaGanada = GameEngine.calcularRegeneracionEnergia(atacante.magia, defensor.magia);
-            if (socket.id === partida.jugador1.socketId) {
-                partida.jugador1.energia = Math.min(100, partida.jugador1.energia + energiaGanada);
+            yo.energia = Math.min(100, yo.energia + energiaGanada);
+
+            logMsg += multi > 0 ? ` (¡Crítico x${1+multi}!) → ${dano} daño` : ` → ${dano} daño`;
+            io.to(partidaId).emit('logBatalla', logMsg);
+        }
+
+        // ── DESCANSAR ──
+        if (tipo === 'descansar') {
+            yo.hp = Math.min(100, yo.hp + 5);
+            yo.energia = Math.min(100, yo.energia + 5);
+            io.to(partidaId).emit('logBatalla', `${atacante.nombre} descansa → +5 HP, +5 energía`);
+        }
+
+        // ── POSE (esquivar / parry) ──
+        if (tipo === 'pose') {
+            const dadoPose = Math.floor(Math.random() * 6) + 1;
+            if (atacante.resistencia > defensor.fuerza) {
+                yo.pose = { tipo: 'parry', valor: dadoPose + atacante.resistencia };
+                io.to(partidaId).emit('logBatalla', `${atacante.nombre} prepara PARRY (total: ${dadoPose}+R) — si iguala el ataque rival, lo marea`);
             } else {
-                partida.jugador2.energia = Math.min(100, partida.jugador2.energia + energiaGanada);
+                yo.pose = { tipo: 'esquivar', valor: dadoPose };
+                io.to(partidaId).emit('logBatalla', `${atacante.nombre} prepara ESQUIVE (dado: ${dadoPose})`);
             }
+        }
 
-            io.to(partidaId).emit('logBatalla', 
-    `${atacante.nombre} ataca — Dado: ${dado} + F:${atacante.fuerza} - R:${defensor.resistencia} = ${danoFinal}${multi > 0 ? ` (¡Crítico x${1+multi}!)` : ''} → ${dano} daño`
-);
+        // ── VERIFICAR FIN DE PARTIDA ──
+        if (rival.hp <= 0) {
+            io.to(partidaId).emit('logBatalla', `💀 ${defensor.nombre} ha caído. ¡${atacante.nombre} gana!`);
+            io.to(partidaId).emit('actualizarEstado', {
+                j1: partida.jugador1.hp, j2: partida.jugador2.hp,
+                j1energia: partida.jugador1.energia, j2energia: partida.jugador2.energia,
+                socketJ1: partida.jugador1.socketId,
+                turnoActual: partida.turnoActual,
+                accionesRestantes: 0
+            });
+            io.to(partidaId).emit('finPartida', { ganador: socket.id });
+            delete partidas[partidaId];
+            return;
+        }
 
-            // Verificar fin de partida
-            const hpRival = socket.id === partida.jugador1.socketId
-                ? partida.jugador2.hp
-                : partida.jugador1.hp;
+        // ── CAMBIO DE TURNO ──
+        const accionesRestantes = 2 - partida.accionesUsadas.length;
 
-            if (hpRival <= 0) {
-                io.to(partidaId).emit('logBatalla', `💀 ${defensor.nombre} ha caído. ¡${atacante.nombre} gana!`);
-                io.to(partidaId).emit('actualizarEstado', {
-                    j1: partida.jugador1.hp,
-                    j2: partida.jugador2.hp,
-                    j1energia: partida.jugador1.energia,
-                    j2energia: partida.jugador2.energia,
-                    socketJ1: partida.jugador1.socketId,
-                    turnoActual: partida.turnoActual
-                });
-                io.to(partidaId).emit('finPartida', { ganador: socket.id });
-                delete partidas[partidaId];
+        if (accionesRestantes > 0) {
+            io.to(partidaId).emit('actualizarEstado', {
+                j1: partida.jugador1.hp, j2: partida.jugador2.hp,
+                j1energia: partida.jugador1.energia, j2energia: partida.jugador2.energia,
+                socketJ1: partida.jugador1.socketId,
+                turnoActual: partida.turnoActual,
+                accionesRestantes
+            });
+        } else {
+            partida.accionesUsadas = [];
+            // Si hay mareo, el jugador mareado pierde su turno
+            if (partida.turnoMareado) {
+                const mareado = partida.turnoMareado;
+                partida.turnoMareado = null;
+                const otroSocket = mareado === partida.jugador1.socketId
+                    ? partida.jugador2.socketId : partida.jugador1.socketId;
+                partida.turnoActual = otroSocket;
+                io.to(partidaId).emit('logBatalla', `⏭ ${partida.turnoActual === partida.jugador1.socketId ? partida.jugador1.personaje.nombre : partida.jugador2.personaje.nombre} pierde el turno por mareo.`);
             } else {
-                // Cambiar turno
-                partida.turnoActual = socket.id === partida.jugador1.socketId
-                    ? partida.jugador2.socketId
-                    : partida.jugador1.socketId;
-
-                io.to(partidaId).emit('actualizarEstado', {
-                    j1: partida.jugador1.hp,
-                    j2: partida.jugador2.hp,
-                    j1energia: partida.jugador1.energia,
-                    j2energia: partida.jugador2.energia,
-                    socketJ1: partida.jugador1.socketId,
-                    turnoActual: partida.turnoActual
-                });
+                partida.turnoActual = soyJ1 ? partida.jugador2.socketId : partida.jugador1.socketId;
             }
+            partida.jugador1.pose = null;
+            partida.jugador2.pose = null;
+
+            io.to(partidaId).emit('actualizarEstado', {
+                j1: partida.jugador1.hp, j2: partida.jugador2.hp,
+                j1energia: partida.jugador1.energia, j2energia: partida.jugador2.energia,
+                socketJ1: partida.jugador1.socketId,
+                turnoActual: partida.turnoActual,
+                accionesRestantes: 2
+            });
         }
     });
 
@@ -211,12 +267,21 @@ io.on('connection', (socket) => {
         const jugador2 = colaEspera.shift();
         const partidaId = `${jugador1.socketId}-${jugador2.socketId}`;
 
+        // Orden de turno: mayor velocidad empieza
+        const ordenTurnos = GameEngine.calcularTurnoInicial([
+            { socketId: jugador1.socketId, velocidad: jugador1.personaje.velocidad },
+            { socketId: jugador2.socketId, velocidad: jugador2.personaje.velocidad }
+        ]);
+        const turnoInicial = ordenTurnos[0].socketId;
+
         partidas[partidaId] = {
             id: partidaId,
-            jugador1: { ...jugador1, hp: 100, energia: 50 },
-            jugador2: { ...jugador2, hp: 100, energia: 50 },
-            turnoActual: jugador1.socketId,
-            turno: 1
+            jugador1: { ...jugador1, hp: 100, energia: 50, pose: null },
+            jugador2: { ...jugador2, hp: 100, energia: 50, pose: null },
+            turnoActual: turnoInicial,
+            turno: 1,
+            accionesUsadas: [],
+            turnoMareado: null
         };
 
         console.log(`⚔️ Partida iniciada: ${jugador1.personaje.nombre} vs ${jugador2.personaje.nombre}`);
@@ -225,6 +290,8 @@ io.on('connection', (socket) => {
         const socketJ2 = io.sockets.sockets.get(jugador2.socketId);
         if (socketJ1) socketJ1.join(partidaId);
         if (socketJ2) socketJ2.join(partidaId);
+
+        const esJ1Primero = turnoInicial === jugador1.socketId;
 
         io.to(jugador1.socketId).emit('rivalEncontrado', {
             partidaId,
@@ -239,8 +306,9 @@ io.on('connection', (socket) => {
                 magia: jugador2.personaje.magia,
                 suerte: jugador2.personaje.suerte
             },
-            turnoActual: jugador1.socketId,
-            esmiTurno: true
+            turnoActual: turnoInicial,
+            esmiTurno: esJ1Primero,
+            accionesRestantes: esJ1Primero ? 2 : 0
         });
 
         io.to(jugador2.socketId).emit('rivalEncontrado', {
@@ -256,8 +324,9 @@ io.on('connection', (socket) => {
                 magia: jugador1.personaje.magia,
                 suerte: jugador1.personaje.suerte
             },
-            turnoActual: jugador1.socketId,
-            esmiTurno: false
+            turnoActual: turnoInicial,
+            esmiTurno: !esJ1Primero,
+            accionesRestantes: !esJ1Primero ? 2 : 0
         });
     }
 });
