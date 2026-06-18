@@ -35,6 +35,7 @@ const cuentaSchema = new mongoose.Schema({
     nivel: { type: Number, default: 1 },
     experiencia: { type: Number, default: 0 },
     foto: { type: String, default: '' },
+    dev: { type: Boolean, default: false },
     personajes: [personajeSchema]
 }, { timestamps: true });
 
@@ -43,6 +44,27 @@ const Cuenta = mongoose.model('Cuenta', cuentaSchema);
 app.use(express.static('public'));
 app.get('/socket.io/socket.io.js', (req, res) => {
     res.sendFile(require.resolve('socket.io/client-dist/socket.io.js'));
+});
+
+// ── RUTA TEMPORAL DE MIGRACIÓN (eliminar después de usar) ──
+app.get('/dev-activar', async (req, res) => {
+    const key = req.query.key;
+    const user = req.query.user;
+    if (key !== 'L00pDev2024Secret!') { return res.status(403).send('❌ Clave incorrecta'); }
+    try {
+        const cuenta = await Cuenta.findOne({ nombre: user });
+        if (!cuenta) return res.status(404).send('❌ Usuario no encontrado');
+        cuenta.dev = true;
+        for (const pj of cuenta.personajes) {
+            if (pj.nivel > 1 && (!pj.puntosStats || pj.puntosStats === 0)) {
+                pj.puntosStats = (pj.nivel - 1) * 3;
+            }
+        }
+        await cuenta.save();
+        res.send(`✅ Usuario "${user}" activado como dev. Personajes actualizados.`);
+    } catch (err) {
+        res.status(500).send('❌ Error: ' + err.message);
+    }
 });
 
 // ── ESTADO DEL SERVIDOR ──
@@ -226,7 +248,7 @@ io.on('connection', (socket) => {
             socket.emit('cuentaCreada', {
                 id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
                 nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, personajes: cuenta.personajes
+                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
             });
         } catch (err) {
             console.error('❌ Error al crear cuenta:', err.message);
@@ -246,7 +268,7 @@ io.on('connection', (socket) => {
             socket.emit('loginExitoso', {
                 id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
                 nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, personajes: cuenta.personajes
+                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
             });
         } catch (err) {
             console.error('❌ Error en login:', err.message);
@@ -307,7 +329,7 @@ io.on('connection', (socket) => {
             socket.emit('personajeEliminado', {
                 id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
                 nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, personajes: cuenta.personajes
+                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
             });
         } catch (err) {
             console.error('❌ Error eliminando personaje:', err.message);
@@ -343,11 +365,60 @@ io.on('connection', (socket) => {
             socket.emit('statsAsignados', {
                 id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
                 nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, personajes: cuenta.personajes
+                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
             });
         } catch (err) {
             console.error('❌ Error asignando stats:', err.message);
             socket.emit('errorPersonaje', 'Error al asignar stats.');
+        }
+    });
+
+    // ── COMANDO DEV ──
+    socket.on('devComando', async ({ cuenta_id, accion, params }) => {
+        try {
+            const cuenta = await Cuenta.findById(cuenta_id);
+            if (!cuenta || !cuenta.dev) { socket.emit('errorPersonaje', 'Acceso denegado.'); return; }
+
+            if (accion === 'setXP') {
+                const pj = cuenta.personajes.id(params.personaje_id);
+                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
+                pj.experiencia = params.valor;
+                while (pj.experiencia >= pj.nivel) {
+                    pj.experiencia -= pj.nivel;
+                    pj.nivel++;
+                    pj.puntosStats = (pj.puntosStats || 0) + 3;
+                }
+            } else if (accion === 'setPuntosStats') {
+                const pj = cuenta.personajes.id(params.personaje_id);
+                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
+                pj.puntosStats = params.valor;
+            } else if (accion === 'setStats') {
+                const pj = cuenta.personajes.id(params.personaje_id);
+                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
+                if (params.fuerza !== undefined) pj.fuerza = params.fuerza;
+                if (params.resistencia !== undefined) pj.resistencia = params.resistencia;
+                if (params.velocidad !== undefined) pj.velocidad = params.velocidad;
+                if (params.magia !== undefined) pj.magia = params.magia;
+                if (params.suerte !== undefined) pj.suerte = params.suerte;
+            } else if (accion === 'setNivel') {
+                const pj = cuenta.personajes.id(params.personaje_id);
+                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
+                pj.nivel = params.valor;
+            } else if (accion === 'addDinero') {
+                cuenta.dinero = (cuenta.dinero || 0) + params.valor;
+            } else {
+                socket.emit('errorPersonaje', 'Comando desconocido.'); return;
+            }
+
+            await cuenta.save();
+            socket.emit('devResultado', {
+                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
+                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
+                foto: cuenta.foto, dev: true, personajes: cuenta.personajes
+            });
+        } catch (err) {
+            console.error('❌ Error en comando dev:', err.message);
+            socket.emit('errorPersonaje', 'Error al ejecutar comando.');
         }
     });
 
