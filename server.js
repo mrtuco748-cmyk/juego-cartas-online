@@ -21,6 +21,8 @@ const personajeSchema = new mongoose.Schema({
     fuerza: Number, resistencia: Number, velocidad: Number, magia: Number, suerte: Number,
     hp: { type: Number, default: 100 },
     energia: { type: Number, default: 100 },
+    nivel: { type: Number, default: 1 },
+    experiencia: { type: Number, default: 0 },
     tas: { type: Array, default: [] },
     tps: { type: Array, default: [] }
 });
@@ -46,11 +48,31 @@ app.get('/socket.io/socket.io.js', (req, res) => {
 let colaEspera = [];
 let partidas = {};
 
+async function otorgarXP(cuentaId, personajeId, xp) {
+    try {
+        if (!cuentaId || !personajeId) return null;
+        const cuenta = await Cuenta.findById(cuentaId);
+        if (!cuenta) return null;
+        const pj = cuenta.personajes.id(personajeId);
+        if (!pj) return null;
+        pj.experiencia = (pj.experiencia || 0) + xp;
+        while (pj.experiencia >= pj.nivel) {
+            pj.experiencia -= pj.nivel;
+            pj.nivel++;
+        }
+        await cuenta.save();
+        return cuenta;
+    } catch (err) {
+        console.error('Error al otorgar XP:', err.message);
+        return null;
+    }
+}
+
 io.on('connection', (socket) => {
     console.log('🔌 Cliente conectado:', socket.id);
 
     // ── LÓGICA DE COMBATE ──
-    socket.on('ejecutarAccion', ({ partidaId, tipo, atacante, defensor }) => {
+    socket.on('ejecutarAccion', async ({ partidaId, tipo, atacante, defensor }) => {
         const partida = partidas[partidaId];
         if (!partida || partida.turnoActual !== socket.id) return;
 
@@ -127,6 +149,20 @@ io.on('connection', (socket) => {
                 turnoActual: partida.turnoActual,
                 accionesRestantes: 0
             });
+
+            const ganadorSocket = socket.id;
+            const perdedorSocket = ganadorSocket === partida.jugador1.socketId ? partida.jugador2.socketId : partida.jugador1.socketId;
+            const ganadorData = ganadorSocket === partida.jugador1.socketId ? partida.jugador1 : partida.jugador2;
+            const perdedorData = ganadorSocket === partida.jugador1.socketId ? partida.jugador2 : partida.jugador1;
+
+            const [cuentaWinner, cuentaLoser] = await Promise.all([
+                otorgarXP(ganadorData.cuenta_id, ganadorData.personaje._id, 1),
+                otorgarXP(perdedorData.cuenta_id, perdedorData.personaje._id, 0.5)
+            ]);
+
+            if (cuentaWinner) io.to(ganadorSocket).emit('cuentaActualizada', cuentaWinner.toObject());
+            if (cuentaLoser) io.to(perdedorSocket).emit('cuentaActualizada', cuentaLoser.toObject());
+
             io.to(partidaId).emit('finPartida', { ganador: socket.id });
             delete partidas[partidaId];
             return;
@@ -259,6 +295,24 @@ io.on('connection', (socket) => {
         }
     });
 
+    // ── ELIMINAR PERSONAJE ──
+    socket.on('eliminarPersonaje', async ({ cuenta_id, personaje_id }) => {
+        try {
+            const cuenta = await Cuenta.findById(cuenta_id);
+            if (!cuenta) { socket.emit('errorPersonaje', 'Cuenta no encontrada.'); return; }
+            cuenta.personajes.pull(personaje_id);
+            await cuenta.save();
+            socket.emit('personajeEliminado', {
+                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
+                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
+                foto: cuenta.foto, personajes: cuenta.personajes
+            });
+        } catch (err) {
+            console.error('❌ Error eliminando personaje:', err.message);
+            socket.emit('errorPersonaje', 'Error al eliminar el personaje.');
+        }
+    });
+
     // ── BUSCAR PARTIDA ──
     socket.on('buscarPartida', ({ cuenta_id, personaje }) => {
     console.log('🔍 Buscando partida para:', personaje.nombre);
@@ -350,13 +404,20 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        // Notificar al rival si había partida activa
         for (const [id, partida] of Object.entries(partidas)) {
             if (partida.jugador1.socketId === socket.id || partida.jugador2.socketId === socket.id) {
                 const rivalId = partida.jugador1.socketId === socket.id
                     ? partida.jugador2.socketId
                     : partida.jugador1.socketId;
+                const rivalData = partida.jugador1.socketId === socket.id
+                    ? partida.jugador2
+                    : partida.jugador1;
                 io.to(rivalId).emit('finPartida', { ganador: rivalId, motivo: 'El rival se desconectó.' });
+
+                otorgarXP(rivalData.cuenta_id, rivalData.personaje._id, 1).then(cuenta => {
+                    if (cuenta) io.to(rivalId).emit('cuentaActualizada', cuenta.toObject());
+                });
+
                 delete partidas[id];
             }
         }
