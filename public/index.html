@@ -579,7 +579,15 @@
             <hr class="divider">
             <div style="text-align:center;margin-top:6px;">
                 <button onclick="devDinero(1000)" style="font-family:'Cinzel',serif;font-size:10px;padding:4px 16px;background:#1a0e08;border:1px solid #4a3010;color:#c8a040;cursor:pointer;">+1000 💰</button>
+                <button onclick="devDinero(-1000)" style="font-family:'Cinzel',serif;font-size:10px;padding:4px 16px;background:#1a0e08;border:1px solid #603010;color:#c85030;cursor:pointer;">-1000 💰</button>
             </div>
+            <hr class="divider">
+            <div style="color:#c85030;font-size:10px;letter-spacing:2px;text-align:center;margin:8px 0;">⚡ SUPER ADMIN</div>
+            <div style="display:flex;gap:4px;">
+                <input type="text" id="devBuscarInput" placeholder="Nombre de usuario" style="flex:1;background:rgba(0,0,0,0.5);border:1px solid #4a3010;border-radius:3px;color:#d4b060;font-family:'Cinzel',serif;font-size:10px;padding:6px 8px;outline:none;">
+                <button onclick="devBuscarUsuario()" style="font-family:'Cinzel',serif;font-size:10px;padding:4px 10px;background:#1a0e08;border:1px solid #4a3010;color:#d4a060;cursor:pointer;">BUSCAR</button>
+            </div>
+            <div id="devResultadoBusqueda" style="margin-top:6px;"></div>
             <div class="msg-error" id="errorDev"></div>
         `;
         document.getElementById('popupDev').classList.add('visible');
@@ -587,10 +595,62 @@
 
     function cerrarDevPanel() { document.getElementById('popupDev').classList.remove('visible'); }
 
-    function devXP(id, n) { emitirDev('setXP', { personaje_id: id, valor: n }); }
-    function devStats(id, n) { emitirDev('setPuntosStats', { personaje_id: id, valor: n }); }
+    function devXP(id, n) { emitirDev('addXP', { personaje_id: id, valor: n }); }
+    function devStats(id, n) { emitirDev('addPuntosStats', { personaje_id: id, valor: n }); }
     function devNivel(id, n) { emitirDev('setNivel', { personaje_id: id, valor: n }); }
     function devDinero(n) { emitirDev('addDinero', { valor: n }); }
+
+    let devUsuarioTarget = null;
+
+    function devBuscarUsuario() {
+        const username = document.getElementById('devBuscarInput').value.trim();
+        if (!username) return;
+        emitirDev('buscarUsuario', { username });
+    }
+
+    function devMostrarUsuario() {
+        const t = devUsuarioTarget;
+        if (!t) return;
+        const c = document.getElementById('devContenido');
+        c.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="color:#d4a060;font-size:12px;letter-spacing:2px;">👤 ${t.nombre}</span>
+                <span style="color:#c8a040;font-size:10px;">💰 ${t.dinero}</span>
+            </div>
+            <div style="margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap;">
+                <button onclick="devModDinero(1000)" style="font-family:'Cinzel',serif;font-size:9px;padding:2px 6px;background:#1a0e08;border:1px solid #4a3010;color:#c8a040;cursor:pointer;">+1000💰</button>
+                <button onclick="devModDinero(-1000)" style="font-family:'Cinzel',serif;font-size:9px;padding:2px 6px;background:#1a0e08;border:1px solid #4a3010;color:#c85030;cursor:pointer;">-1000💰</button>
+            </div>
+            <hr class="divider" style="margin:6px 0;">
+            <div style="color:#9a7040;font-size:9px;letter-spacing:2px;margin-bottom:6px;">PERSONAJES</div>
+            ${(t.personajes || []).map(pj => `
+                <div style="background:rgba(0,0,0,0.4);border:1px solid #3a2008;border-radius:4px;padding:8px 10px;margin-bottom:6px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span style="color:#d4a060;font-size:10px;letter-spacing:2px;">${pj.nombre} (Lv.${pj.nivel || 1})</span>
+                        <span style="color:#6a4018;font-size:9px;">XP ${pj.experiencia || 0} · pts ${pj.puntosStats || 0}</span>
+                    </div>
+                    <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;">
+                        <button onclick="devModXP('${pj._id}',1)" style="font-family:'Cinzel',serif;font-size:9px;padding:1px 5px;background:#1a0e08;border:1px solid #4a3010;color:#9a7040;cursor:pointer;">+1 XP</button>
+                        <button onclick="devModXP('${pj._id}',-1)" style="font-family:'Cinzel',serif;font-size:9px;padding:1px 5px;background:#1a0e08;border:1px solid #4a3010;color:#c85030;cursor:pointer;">-1 XP</button>
+                        <button onclick="devModPts('${pj._id}',3)" style="font-family:'Cinzel',serif;font-size:9px;padding:1px 5px;background:#1a0e08;border:1px solid #4a3010;color:#9a7040;cursor:pointer;">+3 pts</button>
+                        <button onclick="devModPts('${pj._id}',-3)" style="font-family:'Cinzel',serif;font-size:9px;padding:1px 5px;background:#1a0e08;border:1px solid #4a3010;color:#c85030;cursor:pointer;">-3 pts</button>
+                        <button onclick="devEliminarPJ('${pj._id}','${pj.nombre}')" style="font-family:'Cinzel',serif;font-size:9px;padding:1px 5px;background:#1a0e08;border:1px solid #603010;color:#ff4422;cursor:pointer;">🗑</button>
+                    </div>
+                </div>
+            `).join('')}
+            <hr class="divider" style="margin:6px 0;">
+            <button class="main-btn secundario" style="font-size:10px;padding:7px 0;" onclick="abrirDevPanel()">← VOLVER</button>
+            <div class="msg-error" id="errorDev"></div>
+        `;
+    }
+
+    function devModDinero(n) { emitirDev('addDinero', { targetId: devUsuarioTarget.id, valor: n }); }
+    function devModXP(id, n) { emitirDev('addXP', { targetId: devUsuarioTarget.id, personaje_id: id, valor: n }); }
+    function devModPts(id, n) { emitirDev('addPuntosStats', { targetId: devUsuarioTarget.id, personaje_id: id, valor: n }); }
+    function devEliminarPJ(id, nombre) {
+        if (!confirm('¿Eliminar a ' + nombre + ' de la cuenta ' + devUsuarioTarget.nombre + '?')) return;
+        emitirDev('eliminarPJ', { targetId: devUsuarioTarget.id, personaje_id: id });
+    }
 
     function devSetStatsForm(id) {
         const pj = cuentaActual.personajes.find(p => p._id === id);
@@ -624,11 +684,33 @@
     }
 
     socket.on('devResultado', (cuenta) => {
-        cuentaActual = cuenta;
-        actualizarUI(cuenta);
-        actualizarNotificaciones();
-        abrirDevPanel();
-        if (document.getElementById('listaPJs')) renderizarPersonajes();
+        if (devUsuarioTarget && devUsuarioTarget.id === cuenta.id) {
+            devUsuarioTarget = cuenta;
+            devMostrarUsuario();
+        } else {
+            cuentaActual = cuenta;
+            actualizarUI(cuenta);
+            actualizarNotificaciones();
+            if (document.getElementById('listaPJs')) renderizarPersonajes();
+            abrirDevPanel();
+        }
+    });
+
+    socket.on('devUsuarioEncontrado', (cuenta) => {
+        devUsuarioTarget = cuenta;
+        const div = document.getElementById('devResultadoBusqueda');
+        if (div) {
+            div.innerHTML = `
+                <div style="background:rgba(0,0,0,0.4);border:1px solid #4a3010;border-radius:4px;padding:8px;margin-top:4px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span style="color:#d4a060;font-size:11px;letter-spacing:2px;">👤 ${cuenta.nombre}</span>
+                        <span style="color:#c8a040;font-size:10px;">💰 ${cuenta.dinero}</span>
+                    </div>
+                    <div style="color:#6a4018;font-size:9px;margin:4px 0;">${(cuenta.personajes || []).length} personajes</div>
+                    <button onclick="devMostrarUsuario()" style="font-family:'Cinzel',serif;font-size:10px;padding:4px 12px;background:#1a0e08;border:1px solid #4a3010;color:#d4a060;cursor:pointer;width:100%;margin-top:4px;">ADMINISTRAR</button>
+                </div>
+            `;
+        }
     });
 
     // ── UI ──
