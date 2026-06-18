@@ -94,9 +94,6 @@ io.on('connection', (socket) => {
 
             rival.hp -= dano;
 
-            const energiaGanada = GameEngine.calcularRegeneracionEnergia(atacante.magia, defensor.magia);
-            yo.energia = Math.min(100, yo.energia + energiaGanada);
-
             logMsg += multi > 0 ? ` (¡Crítico x${1+multi}!) → ${dano} daño` : ` → ${dano} daño`;
             io.to(partidaId).emit('logBatalla', logMsg);
         }
@@ -159,6 +156,17 @@ io.on('connection', (socket) => {
             } else {
                 partida.turnoActual = soyJ1 ? partida.jugador2.socketId : partida.jugador1.socketId;
             }
+            // Regenerar energía al jugador que inicia su turno
+            const jugadorTurno = partida.turnoActual === partida.jugador1.socketId
+                ? partida.jugador1 : partida.jugador2;
+            const rivalTurno = partida.turnoActual === partida.jugador1.socketId
+                ? partida.jugador2 : partida.jugador1;
+            const energiaRegen = GameEngine.calcularRegeneracionEnergia(
+                jugadorTurno.personaje.magia, rivalTurno.personaje.magia
+            );
+            jugadorTurno.energia = Math.min(100, jugadorTurno.energia + energiaRegen);
+            io.to(partidaId).emit('logBatalla', `${jugadorTurno.personaje.nombre} recupera ${energiaRegen} de energía.`);
+            // Limpiar poses
             partida.jugador1.pose = null;
             partida.jugador2.pose = null;
 
@@ -276,8 +284,8 @@ io.on('connection', (socket) => {
 
         partidas[partidaId] = {
             id: partidaId,
-            jugador1: { ...jugador1, hp: 100, energia: 50, pose: null },
-            jugador2: { ...jugador2, hp: 100, energia: 50, pose: null },
+            jugador1: { ...jugador1, hp: 40, energia: 0, pose: null },
+            jugador2: { ...jugador2, hp: 40, energia: 0, pose: null },
             turnoActual: turnoInicial,
             turno: 1,
             accionesUsadas: [],
@@ -291,15 +299,23 @@ io.on('connection', (socket) => {
         if (socketJ1) socketJ1.join(partidaId);
         if (socketJ2) socketJ2.join(partidaId);
 
+        // Energía inicial al primer jugador
+        const primerJugador = turnoInicial === jugador1.socketId ? partidas[partidaId].jugador1 : partidas[partidaId].jugador2;
+        const rivalJugador = turnoInicial === jugador1.socketId ? partidas[partidaId].jugador2 : partidas[partidaId].jugador1;
+        const energiaInicial = GameEngine.calcularRegeneracionEnergia(
+            primerJugador.personaje.magia, rivalJugador.personaje.magia
+        );
+        primerJugador.energia = Math.min(100, primerJugador.energia + energiaInicial);
+
         const esJ1Primero = turnoInicial === jugador1.socketId;
 
         io.to(jugador1.socketId).emit('rivalEncontrado', {
             partidaId,
-            yo: { ...jugador1.personaje, hp: 100, energia: 50 },
+            yo: { ...jugador1.personaje, hp: 40, energia: 0 },
             rival: {
                 nombre: jugador2.personaje.nombre,
                 clase: jugador2.personaje.clase,
-                hp: 100, energia: 50,
+                hp: 40, energia: 0,
                 fuerza: jugador2.personaje.fuerza,
                 resistencia: jugador2.personaje.resistencia,
                 velocidad: jugador2.personaje.velocidad,
@@ -313,11 +329,11 @@ io.on('connection', (socket) => {
 
         io.to(jugador2.socketId).emit('rivalEncontrado', {
             partidaId,
-            yo: { ...jugador2.personaje, hp: 100, energia: 50 },
+            yo: { ...jugador2.personaje, hp: 40, energia: 0 },
             rival: {
                 nombre: jugador1.personaje.nombre,
                 clase: jugador1.personaje.clase,
-                hp: 100, energia: 50,
+                hp: 40, energia: 0,
                 fuerza: jugador1.personaje.fuerza,
                 resistencia: jugador1.personaje.resistencia,
                 velocidad: jugador1.personaje.velocidad,
