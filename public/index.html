@@ -158,26 +158,31 @@
         /* ── ACCIÓN ROW ── */
         .combate-accion-row { display:flex; align-items:center; justify-content:space-between; padding:6px 12px; border-top:1px solid #2a1808; }
         .accion-botones { display:flex; gap:8px; }
+        .btn-inventario { width:32px;height:32px;background:rgba(0,0,0,0.4);border:1px solid #4a3010;border-radius:50%;color:#d4a060;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:filter 0.15s; }
+        .btn-inventario:hover { filter:brightness(1.3); }
+        .inventario-panel { max-height:160px; overflow-y:auto; }
+        .inventario-panel::-webkit-scrollbar { width:3px; }
+        .inventario-panel::-webkit-scrollbar-track { background:#0a0604; }
+        .inventario-panel::-webkit-scrollbar-thumb { background:#4a3010; border-radius:2px; }
+        .acciones-extra { max-height:140px; overflow-y:auto; }
+        .acciones-extra::-webkit-scrollbar { width:3px; }
+        .acciones-extra::-webkit-scrollbar-track { background:#0a0604; }
+        .acciones-extra::-webkit-scrollbar-thumb { background:#4a3010; border-radius:2px; }
         .btn-accion { width:40px; height:60px; border-radius:50%; background:linear-gradient(180deg,#c84028 0%,#8a2010 100%); border:2px solid #a03018; color:#fffbe8; font-family:'Cinzel',serif; font-size:8px; font-weight:700; letter-spacing:2px; cursor:pointer; text-shadow:0 1px 3px rgba(0,0,0,0.8); transition:filter 0.15s; display:flex; align-items:center; justify-content:center; line-height:1.1; padding:0; }
         .btn-accion:hover { filter:brightness(1.3); }
         .btn-accion:active { filter:brightness(0.8); }
         .turno-indicador { font-size:9px; letter-spacing:2px; text-align:center; font-weight:700; }
 
         /* ── CARTAS ── */
-        .combate-cartas { display:flex; gap:4px; padding:6px; border-top:1px solid #2a1808; align-items:stretch; }
-        .cartas-propia { flex:1; display:flex; gap:4px; overflow-x:auto; padding:2px 0; }
+        .combate-cartas { display:flex; gap:4px; padding:6px; border-top:1px solid #2a1808; align-items:stretch; flex-direction:column; }
+        .cartas-propia { display:flex; gap:6px; overflow-x:auto; padding:4px 2px; min-height:100px; align-items:center; }
+        ui-card, ui-passive-card { flex-shrink: 0; }
         .cartas-propia::-webkit-scrollbar { height:2px; }
         .cartas-propia::-webkit-scrollbar-track { background:#0a0604; }
         .cartas-propia::-webkit-scrollbar-thumb { background:#4a3010; border-radius:2px; }
-        .carta-hechizo { min-width:80px; max-width:80px; background:linear-gradient(180deg,#1a1208 0%,#0e0a04 100%); border:1px solid #3a2008; border-radius:4px; padding:6px 5px; display:flex; flex-direction:column; align-items:center; gap:2px; }
-        .ch-icono { font-size:18px; }
-        .ch-nombre { color:#c8a050; font-size:7px; letter-spacing:1px; text-align:center; font-weight:700; line-height:1.1; }
-        .ch-coste { color:#60b0d0; font-size:7px; letter-spacing:1px; }
-        .ch-desc { color:#6a4a20; font-size:6px; text-align:center; line-height:1.2; }
-        .carta-pasiva { flex:0 0 90px; background:linear-gradient(180deg,#1a0c08 0%,#0e0604 100%); border:1px solid #4a2008; border-radius:4px; padding:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; }
-        .cp-tag { color:#b85030; font-size:6px; letter-spacing:2px; font-weight:700; }
-        .cp-nombre { color:#d4a060; font-size:8px; text-align:center; letter-spacing:1px; font-weight:700; line-height:1.1; }
-        .cp-desc { color:#6a4a20; font-size:6px; text-align:center; line-height:1.2; }
+        .cartas-pasivas { display:flex; gap:4px; justify-content:center; padding:2px 0; border-top:1px solid #1a0e08; }
+        .carta-seleccion-info { border-top:1px solid #2a1808; }
+        .status-badge { font-size:8px; letter-spacing:1px; color:#d0a0d0; background:rgba(0,0,0,0.4); border:1px solid #3a2040; border-radius:3px; padding:1px 6px; margin:2px 0; text-align:center; }
 
         /* ── RADIAL (oculto, se muestra al tocar ACCIÓN) ── */
         .radial-container { position:relative; width:150px; height:150px; margin:10px auto; }
@@ -425,9 +430,52 @@
 </div>
 
     
-<script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
-<script>
-    const socket = io('https://juego-cartas-online-production.up.railway.app', {
+    <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
+    <script src="ui-card.js"></script>
+    <script>
+        const SKILL_DATA_LOOKUP = {
+            "golpe_directo": { "nombre": "Golpe Directo", "coste": 25, "efecto": "damage_percent", "valor": 0.25 },
+            "paralisis": { "nombre": "Parálisis", "coste": 35, "efecto": "stun", "duracion": 2 },
+            "cubo_perfecto": { "nombre": "Cubo Perfecto", "coste": 20, "efecto": "cancel_attack" },
+            "jackpot": { "nombre": "Jackpot", "coste": 70, "efecto": "rng_kill", "rng": 6 },
+            "curacion_divina": { "nombre": "Curación Divina", "coste": 30, "efecto": "heal_percent", "valor": 0.40 },
+            "escudo_arcano": { "nombre": "Escudo Arcano", "coste": 25, "efecto": "shield", "valor": 0.30 },
+            "furia_berserker": { "nombre": "Furia Berserker", "coste": 40, "efecto": "buff", "stat": "fuerza", "valor": 5, "duracion": 3 },
+            "maldicion": { "nombre": "Maldición", "coste": 30, "efecto": "debuff", "stat": "resistencia", "valor": 3, "duracion": 3 },
+            "drenar_vida": { "nombre": "Drenar Vida", "coste": 35, "efecto": "lifesteal", "valor": 0.20 },
+            "explosion_mana": { "nombre": "Explosión de Maná", "coste": 50, "efecto": "damage_true", "valor": 35 },
+            "golpe_veloz": { "nombre": "Golpe Veloz", "coste": 15, "efecto": "double_attack" },
+            "reflejo_magico": { "nombre": "Reflejo Mágico", "coste": 40, "efecto": "reflect", "valor": 0.50, "duracion": 2 },
+            "tormenta": { "nombre": "Tormenta", "coste": 45, "efecto": "aoe_damage", "valor": 0.20 },
+            "sello_silencio": { "nombre": "Sello de Silencio", "coste": 30, "efecto": "silence", "duracion": 2 },
+            "sacrificio": { "nombre": "Sacrificio", "coste": 10, "efecto": "sacrifice", "valor": 0.30 },
+            "invocacion": { "nombre": "Invocación Menor", "coste": 55, "efecto": "summon", "valor": 0.25 },
+            "rafaga": { "nombre": "Ráfaga", "coste": 20, "efecto": "damage_percent", "valor": 0.15 },
+            "cataclismo": { "nombre": "Cataclismo", "coste": 80, "efecto": "damage_true", "valor": 60 },
+            "bendicion": { "nombre": "Bendición", "coste": 35, "efecto": "buff_all", "valor": 2, "duracion": 2 },
+            "escarcha": { "nombre": "Escarcha", "coste": 25, "efecto": "debuff", "stat": "velocidad", "valor": 4, "duracion": 2 }
+        };
+
+        const SKILL_DATA_LOOKUP_PASIVAS = {
+            "regeneracion": { nombre: "Regeneración", efecto: "regen_hp", desc: "Regenera 3% de HP por turno" },
+            "mana_infinito": { nombre: "Maná Infinito", efecto: "regen_energy", desc: "+5 energía por turno" },
+            "veneno": { nombre: "Veneno", efecto: "dot", desc: "5% de daño por turno al golpear" },
+            "contraataque": { nombre: "Contraataque", efecto: "counter", desc: "50% de daño devuelto" },
+            "escudo_espinas": { nombre: "Escudo de Espinas", efecto: "thorns", desc: "10% de daño reflejado" },
+            "rapidez": { nombre: "Rapidez", efecto: "extra_action", desc: "20% de acción extra por turno" },
+            "ultimo_aliento": { nombre: "Último Aliento", efecto: "revive", desc: "Revive con 30% HP" },
+            "absorcion": { nombre: "Absorción de Hechizos", efecto: "spell_vamp", desc: "15% de daño como HP" },
+            "maestro_critico": { nombre: "Maestro Crítico", efecto: "crit_up", desc: "+25% crítico" },
+            "fortaleza": { nombre: "Fortaleza", efecto: "damage_reduction", desc: "10% de reducción de daño" },
+            "vampirismo": { nombre: "Vampirismo", efecto: "life_steal", desc: "8% de daño como HP" },
+            "escudo_natural": { nombre: "Escudo Natural", efecto: "auto_shield", desc: "Escudo automático" },
+            "furia_interna": { nombre: "Furia Interna", efecto: "enrage", desc: "+3% furia por HP perdido" },
+            "bendito": { nombre: "Bendito", efecto: "cleanse", desc: "Purifica efectos negativos" },
+            "totem": { nombre: "Tótem", efecto: "survival", desc: "Sobrevive con 1 HP" }
+        };
+        const SKILLS_DATA_PASIVAS_EXTRA = SKILL_DATA_LOOKUP_PASIVAS;
+
+        const socket = io('https://juego-cartas-online-production.up.railway.app', {
         transports: ['polling', 'websocket']
     });
 
