@@ -141,10 +141,11 @@
     top: 50%; left: 50%; transform: translate(-50%, -50%);
 }
 .radial-container.active .accion-btn { opacity: 1; pointer-events: all; }
-.radial-container.active #btnAtacar { transform: translate(-50%, -50%) translateY(-80px); }
-.radial-container.active #btnDef    { transform: translate(-50%, -50%) translateX(-80px); }
-.radial-container.active #btnCarta  { transform: translate(-50%, -50%) translateX(80px); }
-.radial-container.active #btnHab    { transform: translate(-50%, -50%) translateY(80px); }
+.radial-container.active #btnAtacar   { transform: translate(-50%, -50%) rotate(0deg) translateY(-80px) rotate(0deg); }
+.radial-container.active #btnDescansar { transform: translate(-50%, -50%) rotate(72deg) translateY(-80px) rotate(-72deg); }
+.radial-container.active #btnPose     { transform: translate(-50%, -50%) rotate(144deg) translateY(-80px) rotate(-144deg); }
+.radial-container.active #btnCarta    { transform: translate(-50%, -50%) rotate(216deg) translateY(-80px) rotate(-216deg); }
+.radial-container.active #btnHab      { transform: translate(-50%, -50%) rotate(288deg) translateY(-80px) rotate(-288deg); }
 
         
     </style>
@@ -580,12 +581,8 @@
         document.getElementById('esperaMsg').textContent = 'Esperando oponente...';
     });
 
-    socket.on('rivalEncontrado', (datos) => {
-        document.getElementById('esperaMsg').textContent = '¡Rival encontrado! Iniciando batalla...';
-        setTimeout(() => {
-            // Acá irá la pantalla de combate
-            console.log('Partida iniciada:', datos);
-        }, 1500);
+    socket.on('errorAccion', (msg) => {
+        console.error('❌ Acción rechazada:', msg);
     });
 
     // ── FORMULARIO PERSONAJE ──
