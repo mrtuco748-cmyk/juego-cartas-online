@@ -127,87 +127,135 @@
         .vacio-msg { color: #4a3010; font-size: 10px; letter-spacing: 2px; text-align: center; padding: 20px 0; }
 
 
-        #pantallaCombate { justify-content: center; padding:0; }
-        .combate-container { width: min(96vw, 480px); background:#0a0604; border:2px solid #3a2008; border-radius:6px; overflow:hidden; }
-
-        /* ── SUPERIOR: siluetas + log ── */
-        .combate-superior { display:flex; gap:4px; padding:6px; align-items:flex-start; }
-        .combate-lateral { flex:0 0 108px; display:flex; flex-direction:column; align-items:center; gap:4px; }
-        .combate-log { flex:1; height:220px; overflow-y:auto; overflow-x:hidden; padding:8px 10px; font-size:10px; color:#9a7040; letter-spacing:1px; line-height:1.7; background:linear-gradient(135deg, #1a1008 0%, #241810 40%, #1c120a 100%); border:1px solid #4a3010; border-radius:6px; box-shadow:inset 0 0 20px rgba(0,0,0,0.6), 0 0 8px rgba(74,48,16,0.3); position:relative; }
-        .combate-log::-webkit-scrollbar { width:3px; }
-        .combate-log::-webkit-scrollbar-track { background:#0a0604; }
-        .combate-log::-webkit-scrollbar-thumb { background:#4a3010; border-radius:2px; }
-        .combate-log::before { content:''; position:absolute; inset:0; border:1px solid rgba(74,48,16,0.3); border-radius:6px; pointer-events:none; }
-
-        /* ── SILUETAS ── */
-        .silueta { width:70px; height:80px; background:radial-gradient(ellipse at center, #1a0e08 0%, #0a0604 100%); border:1px solid #2a1808; border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-        .silueta-figura { width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
-        .silueta-figura img { width:100%; height:100%; object-fit:cover; filter:brightness(0.4) contrast(1.4); }
-        .sil-icono { font-size:28px; color:#2a1808; }
-
-        /* ── PANEL STATS ── */
-        .panel-stats { width:100%; background:rgba(0,0,0,0.4); border:1px solid #2a1808; border-radius:4px; padding:5px 6px; }
-        .stat-nombre { color:#9a7040; font-size:7px; letter-spacing:1px; text-align:center; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .stat-clase { color:#5a3010; font-size:6px; letter-spacing:1px; text-align:center; margin-bottom:3px; }
-        .stat-hp-bar { height:6px; background:#1a0e08; border:1px solid #2a1808; border-radius:3px; overflow:hidden; margin-bottom:2px; }
-        .stat-hp-fill { height:100%; background:linear-gradient(90deg,#c83020,#ff5040); border-radius:2px; transition:width 0.4s; }
-        .stat-hp-texto { color:#6a4018; font-size:7px; letter-spacing:1px; text-align:center; margin-bottom:3px; }
-        .stat-grid-chico { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1px 2px; }
-        .stat-grid-chico span { color:#5a3a18; font-size:6px; letter-spacing:0; text-align:center; background:rgba(0,0,0,0.2); border-radius:1px; padding:1px 0; }
-
-        /* ── ACCIÓN ROW ── */
-        .combate-accion-row { display:flex; align-items:center; justify-content:space-between; padding:6px 12px; border-top:1px solid #2a1808; }
-        .accion-botones { display:flex; gap:8px; }
-        .btn-inventario { width:32px;height:32px;background:rgba(0,0,0,0.4);border:1px solid #4a3010;border-radius:50%;color:#d4a060;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:filter 0.15s; }
-        .btn-inventario:hover { filter:brightness(1.3); }
-        .inventario-panel { max-height:160px; overflow-y:auto; }
-        .inventario-panel::-webkit-scrollbar { width:3px; }
-        .inventario-panel::-webkit-scrollbar-track { background:#0a0604; }
-        .inventario-panel::-webkit-scrollbar-thumb { background:#4a3010; border-radius:2px; }
-        .acciones-extra { max-height:140px; overflow-y:auto; }
-        .acciones-extra::-webkit-scrollbar { width:3px; }
-        .acciones-extra::-webkit-scrollbar-track { background:#0a0604; }
-        .acciones-extra::-webkit-scrollbar-thumb { background:#4a3010; border-radius:2px; }
-        .btn-accion { width:40px; height:60px; border-radius:50%; background:linear-gradient(180deg,#c84028 0%,#8a2010 100%); border:2px solid #a03018; color:#fffbe8; font-family:'Cinzel',serif; font-size:8px; font-weight:700; letter-spacing:2px; cursor:pointer; text-shadow:0 1px 3px rgba(0,0,0,0.8); transition:filter 0.15s; display:flex; align-items:center; justify-content:center; line-height:1.1; padding:0; }
-        .btn-accion:hover { filter:brightness(1.3); }
-        .btn-accion:active { filter:brightness(0.8); }
-        .turno-indicador { font-size:9px; letter-spacing:2px; text-align:center; font-weight:700; }
-
-        /* ── CARTAS ── */
-        .combate-cartas { display:flex; gap:4px; padding:6px; border-top:1px solid #2a1808; align-items:stretch; flex-direction:column; }
-        .cartas-propia { display:flex; gap:6px; overflow-x:auto; padding:4px 2px; min-height:100px; align-items:center; }
-        ui-card, ui-passive-card { flex-shrink: 0; }
-        .cartas-propia::-webkit-scrollbar { height:2px; }
-        .cartas-propia::-webkit-scrollbar-track { background:#0a0604; }
-        .cartas-propia::-webkit-scrollbar-thumb { background:#4a3010; border-radius:2px; }
-        .cartas-pasivas { display:flex; gap:4px; justify-content:center; padding:2px 0; border-top:1px solid #1a0e08; }
-        .carta-seleccion-info { border-top:1px solid #2a1808; }
-        .status-badge { font-size:8px; letter-spacing:1px; color:#d0a0d0; background:rgba(0,0,0,0.4); border:1px solid #3a2040; border-radius:3px; padding:1px 6px; margin:2px 0; text-align:center; }
-
-        /* ── RADIAL (oculto, se muestra al tocar ACCIÓN) ── */
-        .radial-container { position:relative; width:150px; height:150px; margin:10px auto; }
-        .central-btn { 
-            width:80px; height:80px; border-radius:50%; 
-            background:linear-gradient(180deg,#c85030 0%,#7a2010 100%);
-            color:#fffbe8; font-family:'Cinzel',serif; font-size:10px; font-weight:700; letter-spacing:1px;
-            border:2px solid #8a3020; cursor:pointer; position:absolute;
-            top:50%; left:50%; transform:translate(-50%,-50%); z-index:10; 
+        #pantallaCombate {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            width: 100vw;
+            height: 100vh;
+            padding: 10px;
+            background: #0d0a07;
         }
-        .accion-btn {
-            position:absolute; width:50px; height:50px; border-radius:50%;
-            background:radial-gradient(circle,#2a1e0c,#181008);
-            color:white; border:2px solid #4a3010; cursor:pointer;
-            font-size:18px; display:flex; align-items:center; justify-content:center;
-            opacity:0; pointer-events:none;
-            transition:opacity 0.25s ease,transform 0.25s ease;
-            top:50%; left:50%; transform:translate(-50%,-50%);
+        .combate-container {
+            width: 100%;
+            max-width: 900px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
         }
-        .radial-container.active .accion-btn { opacity:1; pointer-events:all; }
-        .radial-container.active #btnAtacar   { transform:translate(-50%,-50%) rotate(0deg) translateY(-80px) rotate(0deg); }
-        .radial-container.active #btnDescansar { transform:translate(-50%,-50%) rotate(72deg) translateY(-80px) rotate(-72deg); }
-        .radial-container.active #btnPose     { transform:translate(-50%,-50%) rotate(144deg) translateY(-80px) rotate(-144deg); }
-        .radial-container.active #btnCarta    { transform:translate(-50%,-50%) rotate(216deg) translateY(-80px) rotate(-216deg); }
-        .radial-container.active #btnHab      { transform:translate(-50%,-50%) rotate(288deg) translateY(-80px) rotate(-288deg); }
+        .header-circle {
+            width: 50px; height: 50px;
+            background: #000; border: 4px solid #4a3010;
+            border-radius: 50%;
+            margin: 6px auto;
+            flex-shrink: 0;
+        }
+        .combate-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-grow: 1;
+            min-height: 0;
+            gap: 10px;
+        }
+        .silueta-jugador, .silueta-enemigo {
+            width: 120px; height: 220px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #4a3010;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden; flex-shrink: 0;
+        }
+        .silueta-jugador img, .silueta-enemigo img {
+            width: 100%; height: 100%; object-fit: cover;
+            filter: brightness(0.4) contrast(1.4);
+        }
+        .sil-icono { font-size: 48px; color: #2a1808; }
+
+        .combate-log-pergamino {
+            width: 300px; height: 220px;
+            background: #e3c593;
+            border: 6px solid #8b5a2b;
+            padding: 12px;
+            text-align: center;
+            color: #2c1a0d;
+            overflow-y: auto;
+            font-size: 10px; line-height: 1.6;
+            flex-shrink: 0;
+            position: relative;
+        }
+        .combate-log-pergamino::-webkit-scrollbar { width: 3px; }
+        .combate-log-pergamino::-webkit-scrollbar-track { background: #c8a870; }
+        .combate-log-pergamino::-webkit-scrollbar-thumb { background: #8b5a2b; border-radius: 2px; }
+        .log-title { font-weight: 700; font-size: 12px; letter-spacing: 4px; margin-bottom: 6px; color: #2c1a0d; border-bottom: 1px solid #8b5a2b; padding-bottom: 4px; }
+
+        .combate-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+            padding: 8px 0;
+        }
+        .stats-panel-jugador, .stats-panel-enemigo {
+            width: 160px;
+            background: #1a0e08;
+            border: 2px solid #3a2008;
+            padding: 8px;
+            flex-shrink: 0;
+        }
+        .hp-bar { background: #a00; color: white; padding: 3px 6px; text-align: center; font-size: 10px; margin-bottom: 4px; border-radius: 2px; }
+        .mp-bar { background: #0055aa; color: white; padding: 3px 6px; text-align: center; font-size: 10px; margin-bottom: 4px; border-radius: 2px; }
+        .stats-iconos { color: #d4a060; font-size: 8px; text-align: center; letter-spacing: 1px; margin-top: 4px; }
+        .panel-negro-extra { min-height: 32px; background: black; margin-top: 4px; padding: 2px; }
+
+        .cartas-area {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            flex-grow: 1;
+        }
+        .carta-slot {
+            width: 70px; height: 96px;
+            background: #2a1808;
+            border: 2px solid #4a3010;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: border-color 0.15s, transform 0.15s;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 8px; color: #6a4018; text-align: center; padding: 4px;
+            overflow: hidden;
+        }
+        .carta-slot:hover { border-color: #a06030; transform: translateY(-4px); }
+        .carta-slot.selected { border-color: #e8a040; box-shadow: 0 0 10px rgba(232,160,64,0.3); }
+        .carta-slot.disabled { opacity: 0.4; cursor: not-allowed; }
+        .carta-slot.disabled:hover { transform: none; }
+
+        .btn-inventario { width: 30px; height: 30px; background: rgba(0,0,0,0.4); border: 1px solid #4a3010; border-radius: 50%; color: #d4a060; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; position: absolute; top: 8px; right: 8px; z-index: 5; transition: filter 0.15s; }
+        .btn-inventario:hover { filter: brightness(1.3); }
+        .inventario-panel { max-height: 140px; overflow-y: auto; position: absolute; top: 42px; right: 8px; width: 200px; background: #0a0604; border: 1px solid #4a3010; border-radius: 4px; padding: 6px; z-index: 20; }
+        .inventario-panel::-webkit-scrollbar { width: 3px; }
+        .inventario-panel::-webkit-scrollbar-track { background: #0a0604; }
+        .inventario-panel::-webkit-scrollbar-thumb { background: #4a3010; border-radius: 2px; }
+        .acciones-extra { max-height: 140px; overflow-y: auto; position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); width: 280px; background: #0a0604; border: 1px solid #4a3010; border-radius: 4px; padding: 6px; z-index: 20; }
+        .acciones-extra::-webkit-scrollbar { width: 3px; }
+        .acciones-extra::-webkit-scrollbar-track { background: #0a0604; }
+        .acciones-extra::-webkit-scrollbar-thumb { background: #4a3010; border-radius: 2px; }
+        .btn-accion { padding: 6px 14px; background: linear-gradient(180deg,#c84028 0%,#8a2010 100%); border: 1px solid #a03018; color: #fffbe8; font-family: 'Cinzel',serif; font-size: 9px; font-weight: 700; letter-spacing: 2px; cursor: pointer; border-radius: 4px; transition: filter 0.15s; }
+        .btn-accion:hover { filter: brightness(1.3); }
+        .turno-indicador { font-size: 10px; letter-spacing: 2px; text-align: center; font-weight: 700; position: absolute; top: 14px; left: 50%; transform: translateX(-50%); }
+        .status-badge { font-size: 8px; letter-spacing: 1px; color: #d0a0d0; background: rgba(0,0,0,0.4); border: 1px solid #3a2040; border-radius: 3px; padding: 1px 6px; margin: 2px 0; text-align: center; position: absolute; }
+        .carta-seleccion-info { text-align: center; padding: 4px; color: #d4a060; font-size: 10px; letter-spacing: 1px; }
+
+        @media (max-width: 640px) {
+            .silueta-jugador, .silueta-enemigo { width: 80px; height: 160px; }
+            .combate-log-pergamino { width: 200px; height: 160px; font-size: 9px; }
+            .stats-panel-jugador, .stats-panel-enemigo { width: 120px; }
+            .carta-slot { width: 56px; height: 80px; font-size: 7px; }
+            .combate-container { max-width: 100%; }
+        }
 
         /* ── CARTA DE PERSONAJE ── */
         .carta-container { width: 280px; margin: 0 auto; }
