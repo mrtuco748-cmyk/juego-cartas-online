@@ -376,13 +376,42 @@ io.on('connection', (socket) => {
     // ── COMANDO DEV ──
     socket.on('devComando', async ({ cuenta_id, accion, params }) => {
         try {
-            const cuenta = await Cuenta.findById(cuenta_id);
-            if (!cuenta || !cuenta.dev) { socket.emit('errorPersonaje', 'Acceso denegado.'); return; }
+            const devCuenta = await Cuenta.findById(cuenta_id);
+            if (!devCuenta || !devCuenta.dev) { socket.emit('errorPersonaje', 'Acceso denegado.'); return; }
 
-            if (accion === 'setXP') {
+            // Buscar otro usuario
+            if (accion === 'buscarUsuario') {
+                const target = await Cuenta.findOne({ nombre: params.username });
+                if (!target) { socket.emit('errorPersonaje', 'Usuario no encontrado.'); return; }
+                socket.emit('devUsuarioEncontrado', {
+                    id: target._id, nombre: target.nombre, dinero: target.dinero,
+                    nivel: target.nivel, experiencia: target.experiencia,
+                    foto: target.foto, personajes: target.personajes
+                });
+                return;
+            }
+
+            // Cuenta destino: por defecto la propia, o la que se pasa como targetId
+            const targetId = params.targetId || cuenta_id;
+            const cuenta = await Cuenta.findById(targetId);
+            if (!cuenta) { socket.emit('errorPersonaje', 'Cuenta destino no encontrada.'); return; }
+
+            if (accion === 'addDinero') {
+                cuenta.dinero = Math.max(0, (cuenta.dinero || 0) + params.valor);
+            } else if (accion === 'addXP') {
                 const pj = cuenta.personajes.id(params.personaje_id);
                 if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-                pj.experiencia = params.valor;
+                pj.experiencia = Math.max(0, (pj.experiencia || 0) + params.valor);
+            } else if (accion === 'addPuntosStats') {
+                const pj = cuenta.personajes.id(params.personaje_id);
+                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
+                pj.puntosStats = Math.max(0, (pj.puntosStats || 0) + params.valor);
+            } else if (accion === 'eliminarPJ') {
+                cuenta.personajes.pull(params.personaje_id);
+            } else if (accion === 'setXP') {
+                const pj = cuenta.personajes.id(params.personaje_id);
+                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
+                pj.experiencia = Math.max(0, params.valor);
                 while (pj.experiencia >= pj.nivel) {
                     pj.experiencia -= pj.nivel;
                     pj.nivel++;
@@ -391,21 +420,19 @@ io.on('connection', (socket) => {
             } else if (accion === 'setPuntosStats') {
                 const pj = cuenta.personajes.id(params.personaje_id);
                 if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-                pj.puntosStats = params.valor;
-            } else if (accion === 'setStats') {
-                const pj = cuenta.personajes.id(params.personaje_id);
-                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-                if (params.fuerza !== undefined) pj.fuerza = params.fuerza;
-                if (params.resistencia !== undefined) pj.resistencia = params.resistencia;
-                if (params.velocidad !== undefined) pj.velocidad = params.velocidad;
-                if (params.magia !== undefined) pj.magia = params.magia;
-                if (params.suerte !== undefined) pj.suerte = params.suerte;
+                pj.puntosStats = Math.max(0, params.valor);
             } else if (accion === 'setNivel') {
                 const pj = cuenta.personajes.id(params.personaje_id);
                 if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-                pj.nivel = params.valor;
-            } else if (accion === 'addDinero') {
-                cuenta.dinero = (cuenta.dinero || 0) + params.valor;
+                pj.nivel = Math.max(1, params.valor);
+            } else if (accion === 'setStats') {
+                const pj = cuenta.personajes.id(params.personaje_id);
+                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
+                if (params.fuerza !== undefined) pj.fuerza = Math.max(2, params.fuerza);
+                if (params.resistencia !== undefined) pj.resistencia = Math.max(2, params.resistencia);
+                if (params.velocidad !== undefined) pj.velocidad = Math.max(2, params.velocidad);
+                if (params.magia !== undefined) pj.magia = Math.max(2, params.magia);
+                if (params.suerte !== undefined) pj.suerte = Math.max(2, params.suerte);
             } else {
                 socket.emit('errorPersonaje', 'Comando desconocido.'); return;
             }
@@ -414,7 +441,7 @@ io.on('connection', (socket) => {
             socket.emit('devResultado', {
                 id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
                 nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: true, personajes: cuenta.personajes
+                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
             });
         } catch (err) {
             console.error('❌ Error en comando dev:', err.message);
