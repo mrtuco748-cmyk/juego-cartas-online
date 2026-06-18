@@ -69,7 +69,7 @@ io.on('connection', (socket) => {
         if (tipo === 'atacar') {
             const dado = Math.floor(Math.random() * 6) + 1;
             let danoFinal = Math.max(0, dado + atacante.fuerza - defensor.resistencia);
-            let logMsg = `${atacante.nombre} ataca — Dado: ${dado}`;
+            let logMsg = `${atacante.nombre} ataca — Dado: ${dado} + F:${atacante.fuerza} - R:${defensor.resistencia} = ${danoFinal}`;
 
             // Revisar si el rival tiene pose activa
             if (rival.pose) {
