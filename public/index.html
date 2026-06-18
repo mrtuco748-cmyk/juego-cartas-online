@@ -127,31 +127,105 @@
         .vacio-msg { color: #4a3010; font-size: 10px; letter-spacing: 2px; text-align: center; padding: 20px 0; }
 
 
-        #pantallaCombate { justify-content: center; }
-        .combate-container { width: min(96vw, 480px); }
-        .radial-container { position: relative; width: 150px; height: 150px; margin: 20px auto; }
-.central-btn { 
-    width: 80px; height: 80px; border-radius: 50%; 
-    background: linear-gradient(180deg, #c85030 0%, #7a2010 100%);
-    color: #fffbe8; font-family: 'Cinzel', serif; font-size: 10px; font-weight: 700; letter-spacing: 1px;
-    border: 2px solid #8a3020; cursor: pointer; position: absolute;
-    top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; 
-}
-.accion-btn {
-    position: absolute; width: 50px; height: 50px; border-radius: 50%;
-    background: radial-gradient(circle, #2a1e0c, #181008);
-    color: white; border: 2px solid #4a3010; cursor: pointer;
-    font-size: 18px; display: flex; align-items: center; justify-content: center;
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.25s ease, transform 0.25s ease;
-    top: 50%; left: 50%; transform: translate(-50%, -50%);
-}
-.radial-container.active .accion-btn { opacity: 1; pointer-events: all; }
-.radial-container.active #btnAtacar   { transform: translate(-50%, -50%) rotate(0deg) translateY(-80px) rotate(0deg); }
-.radial-container.active #btnDescansar { transform: translate(-50%, -50%) rotate(72deg) translateY(-80px) rotate(-72deg); }
-.radial-container.active #btnPose     { transform: translate(-50%, -50%) rotate(144deg) translateY(-80px) rotate(-144deg); }
-.radial-container.active #btnCarta    { transform: translate(-50%, -50%) rotate(216deg) translateY(-80px) rotate(-216deg); }
-        .radial-container.active #btnHab      { transform: translate(-50%, -50%) rotate(288deg) translateY(-80px) rotate(-288deg); }
+        #pantallaCombate { justify-content: center; padding:0; }
+        .combate-container { width: min(96vw, 480px); background:#0a0604; border:2px solid #3a2008; border-radius:6px; overflow:hidden; }
+
+        /* ── SUPERIOR: siluetas + log ── */
+        .combate-superior { display:flex; gap:4px; padding:6px; align-items:flex-start; }
+        .combate-lateral { flex:0 0 108px; display:flex; flex-direction:column; align-items:center; gap:4px; }
+        .combate-log { flex:1; height:220px; overflow-y:auto; overflow-x:hidden; padding:8px 10px; font-size:10px; color:#9a7040; letter-spacing:1px; line-height:1.7; background:linear-gradient(135deg, #1a1008 0%, #241810 40%, #1c120a 100%); border:1px solid #4a3010; border-radius:6px; box-shadow:inset 0 0 20px rgba(0,0,0,0.6), 0 0 8px rgba(74,48,16,0.3); position:relative; }
+        .combate-log::-webkit-scrollbar { width:3px; }
+        .combate-log::-webkit-scrollbar-track { background:#0a0604; }
+        .combate-log::-webkit-scrollbar-thumb { background:#4a3010; border-radius:2px; }
+        .combate-log::before { content:''; position:absolute; inset:0; border:1px solid rgba(74,48,16,0.3); border-radius:6px; pointer-events:none; }
+
+        /* ── SILUETAS ── */
+        .silueta { width:70px; height:80px; background:radial-gradient(ellipse at center, #1a0e08 0%, #0a0604 100%); border:1px solid #2a1808; border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+        .silueta-figura { width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+        .silueta-figura img { width:100%; height:100%; object-fit:cover; filter:brightness(0.4) contrast(1.4); }
+        .sil-icono { font-size:28px; color:#2a1808; }
+
+        /* ── PANEL STATS ── */
+        .panel-stats { width:100%; background:rgba(0,0,0,0.4); border:1px solid #2a1808; border-radius:4px; padding:5px 6px; }
+        .stat-nombre { color:#9a7040; font-size:7px; letter-spacing:1px; text-align:center; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .stat-clase { color:#5a3010; font-size:6px; letter-spacing:1px; text-align:center; margin-bottom:3px; }
+        .stat-hp-bar { height:6px; background:#1a0e08; border:1px solid #2a1808; border-radius:3px; overflow:hidden; margin-bottom:2px; }
+        .stat-hp-fill { height:100%; background:linear-gradient(90deg,#c83020,#ff5040); border-radius:2px; transition:width 0.4s; }
+        .stat-hp-texto { color:#6a4018; font-size:7px; letter-spacing:1px; text-align:center; margin-bottom:3px; }
+        .stat-grid-chico { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1px 2px; }
+        .stat-grid-chico span { color:#5a3a18; font-size:6px; letter-spacing:0; text-align:center; background:rgba(0,0,0,0.2); border-radius:1px; padding:1px 0; }
+
+        /* ── ACCIÓN ROW ── */
+        .combate-accion-row { display:flex; align-items:center; justify-content:space-between; padding:6px 12px; border-top:1px solid #2a1808; }
+        .accion-botones { display:flex; gap:8px; }
+        .btn-accion { width:40px; height:60px; border-radius:50%; background:linear-gradient(180deg,#c84028 0%,#8a2010 100%); border:2px solid #a03018; color:#fffbe8; font-family:'Cinzel',serif; font-size:8px; font-weight:700; letter-spacing:2px; cursor:pointer; text-shadow:0 1px 3px rgba(0,0,0,0.8); transition:filter 0.15s; display:flex; align-items:center; justify-content:center; line-height:1.1; padding:0; }
+        .btn-accion:hover { filter:brightness(1.3); }
+        .btn-accion:active { filter:brightness(0.8); }
+        .turno-indicador { font-size:9px; letter-spacing:2px; text-align:center; font-weight:700; }
+
+        /* ── CARTAS ── */
+        .combate-cartas { display:flex; gap:4px; padding:6px; border-top:1px solid #2a1808; align-items:stretch; }
+        .cartas-propia { flex:1; display:flex; gap:4px; overflow-x:auto; padding:2px 0; }
+        .cartas-propia::-webkit-scrollbar { height:2px; }
+        .cartas-propia::-webkit-scrollbar-track { background:#0a0604; }
+        .cartas-propia::-webkit-scrollbar-thumb { background:#4a3010; border-radius:2px; }
+        .carta-hechizo { min-width:80px; max-width:80px; background:linear-gradient(180deg,#1a1208 0%,#0e0a04 100%); border:1px solid #3a2008; border-radius:4px; padding:6px 5px; display:flex; flex-direction:column; align-items:center; gap:2px; }
+        .ch-icono { font-size:18px; }
+        .ch-nombre { color:#c8a050; font-size:7px; letter-spacing:1px; text-align:center; font-weight:700; line-height:1.1; }
+        .ch-coste { color:#60b0d0; font-size:7px; letter-spacing:1px; }
+        .ch-desc { color:#6a4a20; font-size:6px; text-align:center; line-height:1.2; }
+        .carta-pasiva { flex:0 0 90px; background:linear-gradient(180deg,#1a0c08 0%,#0e0604 100%); border:1px solid #4a2008; border-radius:4px; padding:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; }
+        .cp-tag { color:#b85030; font-size:6px; letter-spacing:2px; font-weight:700; }
+        .cp-nombre { color:#d4a060; font-size:8px; text-align:center; letter-spacing:1px; font-weight:700; line-height:1.1; }
+        .cp-desc { color:#6a4a20; font-size:6px; text-align:center; line-height:1.2; }
+
+        /* ── RADIAL (oculto, se muestra al tocar ACCIÓN) ── */
+        .radial-container { position:relative; width:150px; height:150px; margin:10px auto; }
+        .central-btn { 
+            width:80px; height:80px; border-radius:50%; 
+            background:linear-gradient(180deg,#c85030 0%,#7a2010 100%);
+            color:#fffbe8; font-family:'Cinzel',serif; font-size:10px; font-weight:700; letter-spacing:1px;
+            border:2px solid #8a3020; cursor:pointer; position:absolute;
+            top:50%; left:50%; transform:translate(-50%,-50%); z-index:10; 
+        }
+        .accion-btn {
+            position:absolute; width:50px; height:50px; border-radius:50%;
+            background:radial-gradient(circle,#2a1e0c,#181008);
+            color:white; border:2px solid #4a3010; cursor:pointer;
+            font-size:18px; display:flex; align-items:center; justify-content:center;
+            opacity:0; pointer-events:none;
+            transition:opacity 0.25s ease,transform 0.25s ease;
+            top:50%; left:50%; transform:translate(-50%,-50%);
+        }
+        .radial-container.active .accion-btn { opacity:1; pointer-events:all; }
+        .radial-container.active #btnAtacar   { transform:translate(-50%,-50%) rotate(0deg) translateY(-80px) rotate(0deg); }
+        .radial-container.active #btnDescansar { transform:translate(-50%,-50%) rotate(72deg) translateY(-80px) rotate(-72deg); }
+        .radial-container.active #btnPose     { transform:translate(-50%,-50%) rotate(144deg) translateY(-80px) rotate(-144deg); }
+        .radial-container.active #btnCarta    { transform:translate(-50%,-50%) rotate(216deg) translateY(-80px) rotate(-216deg); }
+        .radial-container.active #btnHab      { transform:translate(-50%,-50%) rotate(288deg) translateY(-80px) rotate(-288deg); }
+
+        /* ── CARTA DE PERSONAJE ── */
+        .carta-container { width: 280px; margin: 0 auto; }
+        .carta-img { width: 100%; height: 200px; border: 2px solid #4a3010; border-radius: 6px; background: #1a0e08; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 12px; }
+        .carta-img img { width: 100%; height: 100%; object-fit: cover; }
+        .carta-img .sin-foto { color: #3a2008; font-size: 48px; }
+        .carta-nombre { color: #d4a060; font-size: 15px; text-align: center; letter-spacing: 3px; font-weight: 700; }
+        .carta-clase { color: #6a4018; font-size: 10px; text-align: center; letter-spacing: 2px; margin-bottom: 12px; }
+        .carta-bar { height: 6px; border-radius: 3px; margin-bottom: 8px; position: relative; }
+        .carta-bar-bg { background: #1a0e08; border: 1px solid #3a2008; border-radius: 3px; height: 6px; overflow: hidden; }
+        .carta-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+        .carta-bar-label { display: flex; justify-content: space-between; color: #9a7040; font-size: 8px; letter-spacing: 1px; margin-bottom: 2px; }
+        .carta-hp .carta-bar-fill { background: linear-gradient(90deg, #c85030, #e87850); }
+        .carta-energia .carta-bar-fill { background: linear-gradient(90deg, #3080c8, #60b0e8); }
+        .carta-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 10px 0; }
+        .carta-stat-item { display: flex; justify-content: space-between; padding: 4px 8px; background: rgba(0,0,0,0.3); border: 1px solid #2a1808; border-radius: 3px; }
+        .carta-stat-label { color: #6a4018; font-size: 8px; letter-spacing: 1px; text-transform: uppercase; }
+        .carta-stat-val { color: #d4a060; font-size: 10px; font-weight: 700; }
+        .carta-xp-bar { margin-top: 8px; }
+        .carta-xp-bar .carta-bar-fill { background: linear-gradient(90deg, #8a6020, #d4a040); }
+        .carta-btn-mejorar { display: block; width: 100%; padding: 8px 0; margin-top: 10px; font-family:'Cinzel',serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #fffbe8; background: linear-gradient(180deg,#c85030 0%,#7a2010 100%); border: none; border-radius: 4px; cursor: pointer; transition: filter 0.15s; }
+        .carta-btn-mejorar:hover { filter: brightness(1.25); }
+        .carta-btn-cerrar { display: block; width: 100%; padding: 7px 0; margin-top: 6px; font-family:'Cinzel',serif; font-size: 9px; letter-spacing: 2px; color: #6a4018; background: transparent; border: 1px solid #3a2008; border-radius: 4px; cursor: pointer; }
 
         @media (min-width: 768px) {
             .splash-title { font-size: 8em; letter-spacing: 30px; }
@@ -273,6 +347,8 @@
                         </select>
                     </div>
                     <hr class="divider">
+                    <div class="campo"><label>URL de foto del personaje</label><input type="text" id="fotoUrl" placeholder="https://i.imgur.com/... (opcional)"></div>
+                    <hr class="divider">
                     <div class="msg-error" id="errorPersonaje"></div>
                     <button type="submit" class="main-btn" style="font-size:13px; padding:11px 0; margin-top:4px">CREAR PERSONAJE</button>
                     <button type="button" class="main-btn secundario" onclick="irAPersonajes()">← VOLVER</button>
@@ -332,6 +408,11 @@
 
 <div id="popupStats" class="popup-overlay"></div>
 
+<div id="popupCarta" class="popup-overlay">
+    <div class="popup-bg" onclick="cerrarCartaPersonaje()"></div>
+    <div class="popup-box" id="cartaContenido"></div>
+</div>
+
 <div id="popupDev" class="popup-overlay">
     <div class="popup-bg" onclick="cerrarDevPanel()"></div>
     <div class="popup-box">
@@ -340,16 +421,7 @@
     </div>
 </div>
 
-<div id="pantallaCombate" class="pantalla">
-    <div id="logBatalla"></div>
-
-    <div id="menuRadial" class="radial-container">
-        <button id="btnAtacar" class="accion-btn">⚔️</button>
-        <button id="btnDef" class="accion-btn">🛡️</button>
-        <button id="btnCarta" class="accion-btn">🃏</button>
-        <button id="btnHab" class="accion-btn">✨</button>
-        <button id="btnCentral" class="central-btn">ACCIÓN</button>
-    </div>
+<div id="pantallaCombate" class="pantalla"></div>
 </div>
 
     
@@ -738,10 +810,11 @@
         }
         lista.innerHTML = cuentaActual.personajes.map((pj, i) => {
             const pts = pj.puntosStats || 0;
+            const avatar = pj.foto ? `<img src="${pj.foto}" alt="">` : '⚔';
             return `
-            <div class="pj-card ${pts > 0 ? 'tiene-puntos' : ''}" onclick="${pts > 0 ? `abrirAsignarStats('${pj._id}',${i})` : ''}" style="${pts > 0 ? 'cursor:pointer;' : ''}">
+            <div class="pj-card ${pts > 0 ? 'tiene-puntos' : ''}" onclick="mostrarCartaPersonaje(${i})">
                 ${pts > 0 ? '<span class="dot-card"></span>' : ''}
-                <div class="pj-avatar">⚔</div>
+                <div class="pj-avatar">${avatar}</div>
                 <div class="pj-info">
                     <div class="pj-nombre">${pj.nombre} ${pts > 0 ? '<span style="color:#ff4422;font-size:9px;">(+${pts} pts)</span>' : ''}</div>
                     <div class="pj-clase">${pj.clase} · Lv.${pj.nivel || 1}</div>
@@ -754,7 +827,10 @@
                         <span class="pj-stat">XP ${pj.experiencia || 0}/${pj.nivel || 1}</span>
                     </div>
                 </div>
-                <button onclick="event.stopPropagation();eliminarPersonaje('${pj._id}')" style="background:none; border:none; color:#6a3010; cursor:pointer; font-size:16px; padding:4px;" title="Eliminar personaje">🗑</button>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                    ${pts > 0 ? `<button onclick="event.stopPropagation();abrirAsignarStats('${pj._id}',${i})" style="background:rgba(200,80,48,0.2);border:1px solid #8a3020;border-radius:3px;color:#d4a060;cursor:pointer;font-size:9px;font-family:'Cinzel',serif;padding:2px 6px;letter-spacing:1px;" title="Mejorar stats">⬆</button>` : ''}
+                    <button onclick="event.stopPropagation();eliminarPersonaje('${pj._id}')" style="background:none;border:none;color:#6a3010;cursor:pointer;font-size:14px;padding:2px;" title="Eliminar personaje">🗑</button>
+                </div>
             </div>`;
         }).join('');
         actualizarNotificaciones();
@@ -762,9 +838,11 @@
 
     function renderizarSeleccionPJ() {
         const lista = document.getElementById('listaPJsJugar');
-        lista.innerHTML = cuentaActual.personajes.map((pj, i) => `
+        lista.innerHTML = cuentaActual.personajes.map((pj, i) => {
+            const avatar = pj.foto ? `<img src="${pj.foto}" alt="">` : '⚔';
+            return `
             <div class="pj-card" id="pjjugar-${i}" onclick="seleccionarPJ(${i})">
-                <div class="pj-avatar">⚔</div>
+                <div class="pj-avatar">${avatar}</div>
                 <div class="pj-info">
                     <div class="pj-nombre">${pj.nombre}</div>
                     <div class="pj-clase">${pj.clase} · Lv.${pj.nivel || 1}</div>
@@ -776,8 +854,8 @@
                         <span class="pj-stat">SUE ${pj.suerte}</span>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
     }
 
     function seleccionarPJ(i) {
@@ -804,6 +882,52 @@
     function eliminarPersonaje(personajeId) {
         if (!confirm('¿Eliminar este personaje? Esta acción no se puede deshacer.')) return;
         socket.emit('eliminarPersonaje', { cuenta_id: cuentaActual.id, personaje_id: personajeId });
+    }
+
+    function mostrarCartaPersonaje(index) {
+        const pj = cuentaActual.personajes[index];
+        if (!pj) return;
+        const maxHP = 100;
+        const maxEnergia = 100;
+        const hpPct = Math.round((pj.hp || maxHP) / maxHP * 100);
+        const enPct = Math.round((pj.energia || maxEnergia) / maxEnergia * 100);
+        const xpPct = pj.nivel ? Math.round((pj.experiencia || 0) / pj.nivel * 100) : 0;
+        const pts = pj.puntosStats || 0;
+        const avatar = pj.foto ? `<img src="${pj.foto}" alt="${pj.nombre}">` : '<span class="sin-foto">⚔</span>';
+
+        document.getElementById('cartaContenido').innerHTML = `
+            <div class="carta-container">
+                <div class="carta-img">${avatar}</div>
+                <div class="carta-nombre">${pj.nombre}</div>
+                <div class="carta-clase">${pj.clase} · Lv.${pj.nivel || 1}</div>
+                <div class="carta-hp">
+                    <div class="carta-bar-label"><span>HP</span><span>${pj.hp || maxHP}/${maxHP}</span></div>
+                    <div class="carta-bar-bg"><div class="carta-bar-fill" style="width:${hpPct}%"></div></div>
+                </div>
+                <div class="carta-energia">
+                    <div class="carta-bar-label"><span>ENERGÍA</span><span>${pj.energia || maxEnergia}/${maxEnergia}</span></div>
+                    <div class="carta-bar-bg"><div class="carta-bar-fill" style="width:${enPct}%"></div></div>
+                </div>
+                <div class="carta-stats-grid">
+                    <div class="carta-stat-item"><span class="carta-stat-label">FUE</span><span class="carta-stat-val">${pj.fuerza}</span></div>
+                    <div class="carta-stat-item"><span class="carta-stat-label">RES</span><span class="carta-stat-val">${pj.resistencia}</span></div>
+                    <div class="carta-stat-item"><span class="carta-stat-label">VEL</span><span class="carta-stat-val">${pj.velocidad}</span></div>
+                    <div class="carta-stat-item"><span class="carta-stat-label">MAG</span><span class="carta-stat-val">${pj.magia}</span></div>
+                    <div class="carta-stat-item"><span class="carta-stat-label">SUE</span><span class="carta-stat-val">${pj.suerte}</span></div>
+                    <div class="carta-stat-item"><span class="carta-stat-label">NIV</span><span class="carta-stat-val">${pj.nivel || 1}</span></div>
+                </div>
+                <div class="carta-xp-bar">
+                    <div class="carta-bar-label"><span>XP</span><span>${pj.experiencia || 0}/${pj.nivel || 1}</span></div>
+                    <div class="carta-bar-bg"><div class="carta-bar-fill" style="width:${xpPct}%"></div></div>
+                </div>
+                ${pts > 0 ? `<button class="carta-btn-mejorar" onclick="cerrarCartaPersonaje();abrirAsignarStats('${pj._id}',${index})">⬆ MEJORAR STATS (${pts})</button>` : ''}
+                <button class="carta-btn-cerrar" onclick="cerrarCartaPersonaje()">CERRAR</button>
+            </div>`;
+        document.getElementById('popupCarta').classList.add('visible');
+    }
+
+    function cerrarCartaPersonaje() {
+        document.getElementById('popupCarta').classList.remove('visible');
     }
 
     // ── CONTADOR DE STATS ──
@@ -894,7 +1018,8 @@
             velocidad: parseInt(document.getElementById('velocidad').value),
             magia: parseInt(document.getElementById('magia').value),
             suerte: parseInt(document.getElementById('suerte').value),
-            clase: document.getElementById('clase').value
+            clase: document.getElementById('clase').value,
+            foto: document.getElementById('fotoUrl').value.trim()
         });
     };
 
@@ -948,12 +1073,7 @@
         document.getElementById(id).addEventListener('input', actualizarTotal);
     });
 
-    document.getElementById('btnCentral').addEventListener('click', () => {
-    document.getElementById('menuRadial').classList.toggle('active');
-});
 
-
-    
 </script>
     <script src="clienteCombate.js"></script>
 </body>
