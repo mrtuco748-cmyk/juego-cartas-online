@@ -59,85 +59,110 @@ function renderizarCombate() {
   const pasiva = obtenerPasiva(miPJ.clase);
   const rivalHPct = Math.max(0, Math.round((rivalPJ.hp || 0) / (rivalPJ.maxHp || 40) * 100));
   const miHPct = Math.max(0, Math.round((miPJ.hp || 0) / (miPJ.maxHp || 40) * 100));
-  const rivalEnergiaPct = Math.max(0, Math.round((rivalPJ.energia || 0) / 100 * 100));
-  const miEnergiaPct = Math.max(0, Math.round((miPJ.energia || 0) / 100 * 100));
+  const rivalEnPct = Math.max(0, Math.round((rivalPJ.energia || 0) / 100 * 100));
+  const miEnPct = Math.max(0, Math.round((miPJ.energia || 0) / 100 * 100));
 
   const statusBadge = (pj) => {
     if (!pj.status) return '';
     const parts = [];
-    if (pj.status.frozen && pj.status.frozen > 0) parts.push(`🧊 ${pj.status.frozen}t`);
-    if (pj.status.silenced && pj.status.silenced > 0) parts.push(`🔇 ${pj.status.silenced}t`);
-    if (pj.status.shield && pj.status.shield > 0) parts.push(`🛡️ ${pj.status.shield}`);
-    if (pj.status.inmune) parts.push(`✨ INMUNE`);
-    return parts.length ? `<div style="font-size:7px;color:#d0a0d0;text-align:center;">${parts.join(' ')}</div>` : '';
+    if (pj.status.frozen && pj.status.frozen > 0) parts.push(`🧊${pj.status.frozen}t`);
+    if (pj.status.silenced && pj.status.silenced > 0) parts.push(`🔇${pj.status.silenced}t`);
+    if (pj.status.shield && pj.status.shield > 0) parts.push(`🛡️${pj.status.shield}`);
+    if (pj.status.inmune) parts.push(`✨INMUNE`);
+    return parts.length ? `<div style="font-size:11px;color:#c090d0;text-align:center;margin-bottom:4px;">${parts.join(' ')}</div>` : '';
   };
 
   document.getElementById('pantallaCombate').innerHTML = `
-    <div class="combate-container">
-      <div class="header-circle"></div>
-      <button class="btn-inventario" onclick="toggleInventario()" title="Inventario">🎒</button>
-      <div class="turno-indicador" id="indicadorTurno">
-        ${esMiTurno ? `⚔ TU TURNO (${accionesRestantes}/2)` : '⏳ RIVAL'}
+    <div class="topbar">
+      <div class="turn-container">
+        <div class="turn-circle"></div>
+        <div class="turn-text" id="indicadorTurno">${esMiTurno ? '⚔ TU TURNO' : '⏳ RIVAL'}</div>
+      </div>
+      <button class="inventory-btn" onclick="toggleInventario()">🎒 INVENTARIO</button>
+    </div>
+
+    <div class="battlefield">
+      <div class="character player">${miPJ.foto ? `<img src="${miPJ.foto}">` : '🛡'}</div>
+      <div class="character enemy">${rivalPJ.foto ? `<img src="${rivalPJ.foto}">` : '☠'}</div>
+      <div class="scroll" id="logBatalla"></div>
+    </div>
+
+    <div class="bottom-panel">
+      <div class="stats">
+        <div class="name">${rivalPJ.nombre}</div>
+        <div class="class">${rivalPJ.clase} · Lv.${rivalPJ.nivel || 1}</div>
+        ${statusBadge(rivalPJ)}
+        <div style="font-size:12px;">❤️ <span id="rivalHP">${rivalPJ.hp || 0}</span>/${rivalPJ.maxHp || 40}</div>
+        <div class="bar"><div class="hp-fill" style="width:${rivalHPct}%"></div></div>
+        <div style="font-size:12px;">🔷 ${rivalPJ.energia || 0}/100</div>
+        <div class="bar"><div class="energy-fill" style="width:${rivalEnPct}%"></div></div>
+        <div class="attributes">
+          <div>⚔ ${rivalPJ.fuerza}</div><div>🛡 ${rivalPJ.resistencia}</div>
+          <div>💨 ${rivalPJ.velocidad}</div><div>✨ ${rivalPJ.magia}</div>
+          <div>🍀 ${rivalPJ.suerte}</div>
+        </div>
       </div>
 
-      <div class="combate-main">
-        <div class="silueta-enemigo">
-          ${rivalPJ.foto ? `<img src="${rivalPJ.foto}" alt="">` : '<span class="sil-icono">☠</span>'}
-        </div>
-        <div class="combate-log-pergamino" id="logBatalla">
-          <div class="log-title">BITÁCORA</div>
-        </div>
-        <div class="silueta-jugador">
-          ${miPJ.foto ? `<img src="${miPJ.foto}" alt="">` : '<span class="sil-icono">⚔</span>'}
-        </div>
-      </div>
-
-      <div class="combate-bottom">
-        <div class="stats-panel-enemigo">
-          <div style="color:#9a7040;font-size:9px;text-align:center;font-weight:700;letter-spacing:1px;">${rivalPJ.nombre}</div>
-          <div style="color:#5a3010;font-size:7px;text-align:center;letter-spacing:1px;margin-bottom:4px;">${rivalPJ.clase} · Lv.${rivalPJ.nivel || 1}</div>
-          ${statusBadge(rivalPJ)}
-          <div class="hp-bar">❤️ <span id="rivalHP">${rivalPJ.hp || 0}</span>/${rivalPJ.maxHp || 40}</div>
-          <div class="mp-bar">🔷 ${rivalPJ.energia || 0}/100</div>
-          <div class="stats-iconos">⚔${rivalPJ.fuerza} 🛡${rivalPJ.resistencia} 💨${rivalPJ.velocidad} 🔮${rivalPJ.magia} 🍀${rivalPJ.suerte}</div>
-        </div>
-
-        <div class="cartas-area" id="cartasSkill">
-          ${misSkills.map((skill, i) => `
-            <div class="carta-slot ${skill.coste > (miPJ.energia || 0) ? 'disabled' : ''} ${cartaSeleccionada === i ? 'selected' : ''}"
-                 onclick="seleccionarCarta(${i})" id="skillCard-${i}">
-              <span>${skill.nombre}<br><span style="font-size:7px;color:#a07040;">${skill.coste}🔷</span></span>
-            </div>
-          `).join('')}
-        </div>
-
-        <div class="stats-panel-jugador">
-          <div style="color:#9a7040;font-size:9px;text-align:center;font-weight:700;letter-spacing:1px;">${miPJ.nombre}</div>
-          <div style="color:#5a3010;font-size:7px;text-align:center;letter-spacing:1px;margin-bottom:4px;">${miPJ.clase} · Lv.${miPJ.nivel || 1}</div>
-          ${statusBadge(miPJ)}
-          <div class="hp-bar">❤️ <span id="pjHP">${miPJ.hp || 0}</span>/${miPJ.maxHp || 40}</div>
-          <div class="mp-bar">🔷 <span id="pjEnergia">${miPJ.energia || 0}</span>/100</div>
-          <div class="panel-negro-extra" id="panelAccionesBtn" style="display:flex;align-items:center;justify-content:center;gap:4px;">
-            <button class="btn-accion" onclick="enviarAccion('atacar')" style="padding:3px 10px;font-size:8px;">⚔ ATACAR</button>
-            <button class="btn-accion" onclick="enviarAccion('descansar')" style="padding:3px 10px;font-size:8px;">💤</button>
-            <button class="btn-accion" onclick="enviarAccion('pose')" style="padding:3px 10px;font-size:8px;">🛡 POSE</button>
-            <button class="btn-accion" onclick="mostrarAccionesExtra()" style="padding:3px 10px;font-size:8px;">🔧 EXTRA</button>
+      <div class="cards-area" id="cartasSkill">
+        ${misSkills.map((skill, i) => `
+          <div class="card-slot ${skill.coste > (miPJ.energia || 0) ? 'disabled' : ''} ${cartaSeleccionada === i ? 'selected' : ''}"
+               onclick="seleccionarCarta(${i})" id="skillCard-${i}">
+            <div class="card-title">${skill.nombre}</div>
+            <div class="card-cost">${skill.coste}⚡</div>
           </div>
+        `).join('')}
+      </div>
+
+      <div class="stats">
+        <div class="name">${miPJ.nombre}</div>
+        <div class="class">${miPJ.clase} · Lv.${miPJ.nivel || 1}</div>
+        ${statusBadge(miPJ)}
+        <div style="font-size:12px;">❤️ <span id="pjHP">${miPJ.hp || 0}</span>/${miPJ.maxHp || 40}</div>
+        <div class="bar"><div class="hp-fill" style="width:${miHPct}%"></div></div>
+        <div style="font-size:12px;">🔷 <span id="pjEnergia">${miPJ.energia || 0}</span>/100</div>
+        <div class="bar"><div class="energy-fill" style="width:${miEnPct}%"></div></div>
+        <div class="attributes">
+          <div>⚔ ${miPJ.fuerza}</div><div>🛡 ${miPJ.resistencia}</div>
+          <div>💨 ${miPJ.velocidad}</div><div>✨ ${miPJ.magia}</div>
+          <div>🍀 ${miPJ.suerte}</div>
+        </div>
+        <div class="actions">
+          <button class="attack-btn" onclick="abrirRadial()">⚔ ACCIÓN</button>
         </div>
       </div>
+    </div>
 
-      <div class="carta-seleccion-info" id="cartaSeleccionInfo" style="display:none;">
-        Carta: <span id="cartaSeleccionadaNombre">—</span>
-        <button onclick="usarCartaSeleccionada()" style="margin-left:8px;font-family:'Cinzel',serif;font-size:9px;padding:3px 10px;background:linear-gradient(180deg,#c85030,#7a2010);color:#fff;border:none;border-radius:4px;cursor:pointer;">USAR</button>
-        <button onclick="cancelarSeleccionCarta()" style="margin-left:4px;font-family:'Cinzel',serif;font-size:8px;padding:2px 6px;background:transparent;border:1px solid #4a3010;color:#6a4018;border-radius:3px;cursor:pointer;">X</button>
+    <div class="carta-seleccion-info" id="cartaSeleccionInfo" style="display:none;">
+      📜 <span id="cartaSeleccionadaNombre">—</span>
+      <button onclick="usarCartaSeleccionada()" style="margin-left:10px;padding:6px 16px;border:none;border-radius:6px;background:crimson;color:white;font-weight:bold;cursor:pointer;">USAR</button>
+      <button onclick="cancelarSeleccionCarta()" style="margin-left:6px;padding:6px 12px;border:none;border-radius:6px;background:#555;color:white;cursor:pointer;">X</button>
+    </div>
+
+    <div id="panelInventario" class="inventario-panel" style="display:none;"></div>
+    <div id="panelAccionesExtra" class="acciones-extra" style="display:none;"></div>
+
+    <!-- RADIAL OVERLAY -->
+    <div class="radial-overlay" id="radialOverlay">
+      <div class="radial-container">
+        <button class="central-btn" onclick="cerrarRadial()">CERRAR</button>
+        <button class="radial-btn" id="btnAtacar" onclick="enviarAccion('atacar');cerrarRadial()"><span class="icon">⚔</span>ATACAR</button>
+        <button class="radial-btn" id="btnDescansar" onclick="enviarAccion('descansar');cerrarRadial()"><span class="icon">💤</span>DESCANSAR</button>
+        <button class="radial-btn" id="btnPose" onclick="enviarAccion('pose');cerrarRadial()"><span class="icon">🛡</span>POSE</button>
+        <button class="radial-btn" id="btnCarta" onclick="usarCartaSeleccionada();cerrarRadial()"><span class="icon">🃏</span>CARTA</button>
+        <button class="radial-btn" id="btnExtra" onclick="cerrarRadial();mostrarAccionesExtra()"><span class="icon">🔧</span>EXTRA</button>
       </div>
-
-      <div id="panelInventario" class="inventario-panel" style="display:none;"></div>
-      <div id="panelAccionesExtra" class="acciones-extra" style="display:none;"></div>
     </div>
   `;
 
   actualizarIndicadorTurno();
+}
+
+function abrirRadial() {
+  if (!esMiTurno || accionesRestantes <= 0) return;
+  document.getElementById('radialOverlay').classList.add('active');
+}
+function cerrarRadial() {
+  document.getElementById('radialOverlay').classList.remove('active');
 }
 
 function mostrarAccionesExtra() {
@@ -155,16 +180,13 @@ function mostrarAccionesExtra() {
   ];
   panel.style.display = 'block';
   panel.innerHTML = `
-    <div style="color:#9a7040;font-size:9px;letter-spacing:2px;text-align:center;margin-bottom:6px;">✦ ACCIONES AVANZADAS ✦</div>
-    <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
+    <div style="text-align:center;font-weight:bold;margin-bottom:8px;color:#ffd86b;">✦ ACCIONES AVANZADAS ✦</div>
+    <div class="actions-extra-grid">
       ${acciones.map(a => `
-        <button onclick="ejecutarAccionExtra('${a.id}')" style="font-family:'Cinzel',serif;font-size:9px;padding:5px 10px;background:rgba(0,0,0,0.4);border:1px solid #4a3010;color:#d4a060;border-radius:4px;cursor:pointer;text-align:center;">
-          <div>${a.label}</div>
-          <div style="font-size:7px;color:#6a4018;">${a.desc}</div>
-        </button>
+        <button onclick="ejecutarAccionExtra('${a.id}')">${a.label}</button>
       `).join('')}
     </div>
-    <button onclick="document.getElementById('panelAccionesExtra').style.display='none'" style="display:block;margin:6px auto 0;font-family:'Cinzel',serif;font-size:8px;padding:3px 12px;background:transparent;border:1px solid #3a2008;color:#6a4018;border-radius:3px;cursor:pointer;">CERRAR</button>
+    <button onclick="document.getElementById('panelAccionesExtra').style.display='none'" style="display:block;margin:8px auto 0;padding:6px 20px;border:none;border-radius:6px;background:#555;color:white;font-weight:bold;cursor:pointer;">CERRAR</button>
   `;
 }
 
@@ -378,8 +400,7 @@ function enviarAccion(tipo, cartaId, accionData) {
 function actualizarIndicadorTurno() {
   const el = document.getElementById('indicadorTurno');
   if (!el) return;
-  el.innerHTML = esMiTurno ? `⚔ TU TURNO (${accionesRestantes}/2)` : '⏳ RIVAL';
-  el.style.color = esMiTurno ? '#60d060' : '#c85030';
+  el.textContent = esMiTurno ? `⚔ TU TURNO (${accionesRestantes}/2)` : '⏳ RIVAL';
 }
 
 function estiloLog(data) {
