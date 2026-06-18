@@ -129,7 +129,7 @@ function actualizarCentral() {
 
 function estiloLog(data) {
     const estilos = {
-        ataque: 'color:#d4a060;font-size:11px;',
+        ataque: 'color:#e89838;font-size:11px;font-weight:600;',
         curacion: 'color:#40c060;font-size:11px;',
         pose: 'color:#60a0d0;font-size:11px;',
         muerte: 'color:#ff4422;font-size:14px;font-weight:700;letter-spacing:1px;',
