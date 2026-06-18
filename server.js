@@ -25,7 +25,8 @@ const personajeSchema = new mongoose.Schema({
     experiencia: { type: Number, default: 0 },
     puntosStats: { type: Number, default: 0 },
     tas: { type: Array, default: [] },
-    tps: { type: Array, default: [] }
+    tps: { type: Array, default: [] },
+    foto: { type: String, default: '' }
 });
 
 const cuentaSchema = new mongoose.Schema({
@@ -307,7 +308,8 @@ io.on('connection', (socket) => {
             cuenta.personajes.push({
                 nombre: datos.nombre, clase: datos.clase,
                 fuerza: datos.fuerza, resistencia: datos.resistencia,
-                velocidad: datos.velocidad, magia: datos.magia, suerte: datos.suerte
+                velocidad: datos.velocidad, magia: datos.magia, suerte: datos.suerte,
+                foto: datos.foto || ''
             });
             await cuenta.save();
             const nuevoPJ = cuenta.personajes[cuenta.personajes.length - 1];
