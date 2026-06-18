@@ -457,15 +457,17 @@
                 <div class="pj-avatar">⚔</div>
                 <div class="pj-info">
                     <div class="pj-nombre">${pj.nombre}</div>
-                    <div class="pj-clase">${pj.clase}</div>
+                    <div class="pj-clase">${pj.clase} · Lv.${pj.nivel || 1}</div>
                     <div class="pj-stats">
                         <span class="pj-stat">FUE ${pj.fuerza}</span>
                         <span class="pj-stat">RES ${pj.resistencia}</span>
                         <span class="pj-stat">VEL ${pj.velocidad}</span>
                         <span class="pj-stat">MAG ${pj.magia}</span>
                         <span class="pj-stat">SUE ${pj.suerte}</span>
+                        <span class="pj-stat">XP ${pj.experiencia || 0}/${pj.nivel || 1}</span>
                     </div>
                 </div>
+                <button onclick="eliminarPersonaje('${pj._id}')" style="background:none; border:none; color:#6a3010; cursor:pointer; font-size:16px; padding:4px;" title="Eliminar personaje">🗑</button>
             </div>
         `).join('');
     }
@@ -477,7 +479,7 @@
                 <div class="pj-avatar">⚔</div>
                 <div class="pj-info">
                     <div class="pj-nombre">${pj.nombre}</div>
-                    <div class="pj-clase">${pj.clase}</div>
+                    <div class="pj-clase">${pj.clase} · Lv.${pj.nivel || 1}</div>
                     <div class="pj-stats">
                         <span class="pj-stat">FUE ${pj.fuerza}</span>
                         <span class="pj-stat">RES ${pj.resistencia}</span>
@@ -509,6 +511,11 @@
     function cancelarEspera() {
         socket.emit('cancelarBusqueda');
         irAMenuDesdeSeccion();
+    }
+
+    function eliminarPersonaje(personajeId) {
+        if (!confirm('¿Eliminar este personaje? Esta acción no se puede deshacer.')) return;
+        socket.emit('eliminarPersonaje', { cuenta_id: cuentaActual.id, personaje_id: personajeId });
     }
 
     // ── CONTADOR DE STATS ──
@@ -610,6 +617,18 @@
     });
 
     socket.on('errorPersonaje', (msg) => { document.getElementById('errorPersonaje').textContent = msg; });
+
+    socket.on('personajeEliminado', (cuenta) => {
+        cuentaActual = cuenta;
+        actualizarUI(cuenta);
+        renderizarPersonajes();
+    });
+
+    socket.on('cuentaActualizada', (cuenta) => {
+        cuentaActual = cuenta;
+        actualizarUI(cuenta);
+        if (document.getElementById('listaPJs')) renderizarPersonajes();
+    });
 
     socket.on('confirmacion', (msg) => {
         document.getElementById('pantallaEspera').innerHTML = `<h3>${msg}</h3>`;
