@@ -141,14 +141,14 @@ io.on('connection', (socket) => {
             rival.hp -= dano;
 
             logMsg += multi > 0 ? ` (¡Crítico x${1+multi}!) → ${dano} daño` : ` → ${dano} daño`;
-            io.to(partidaId).emit('logBatalla', logMsg);
+            io.to(partidaId).emit('logBatalla', { msg: logMsg, tipo: 'ataque' });
         }
 
         // ── DESCANSAR ──
         if (tipo === 'descansar') {
             yo.hp = Math.min(100, yo.hp + 5);
             yo.energia = Math.min(100, yo.energia + 5);
-            io.to(partidaId).emit('logBatalla', `${atacante.nombre} descansa → +5 HP, +5 energía`);
+            io.to(partidaId).emit('logBatalla', { msg: `${atacante.nombre} descansa → +5 HP, +5 energía`, tipo: 'curacion' });
         }
 
         // ── POSE (esquivar / parry) ──
@@ -156,16 +156,16 @@ io.on('connection', (socket) => {
             const dadoPose = Math.floor(Math.random() * 6) + 1;
             if (atacante.resistencia > defensor.fuerza) {
                 yo.pose = { tipo: 'parry', valor: dadoPose + atacante.resistencia };
-                io.to(partidaId).emit('logBatalla', `${atacante.nombre} prepara PARRY (total: ${dadoPose}+R) — si iguala el ataque rival, lo marea`);
+                io.to(partidaId).emit('logBatalla', { msg: `${atacante.nombre} prepara PARRY (total: ${dadoPose}+R) — si iguala el ataque rival, lo marea`, tipo: 'pose' });
             } else {
                 yo.pose = { tipo: 'esquivar', valor: dadoPose };
-                io.to(partidaId).emit('logBatalla', `${atacante.nombre} prepara ESQUIVE (dado: ${dadoPose})`);
+                io.to(partidaId).emit('logBatalla', { msg: `${atacante.nombre} prepara ESQUIVE (dado: ${dadoPose})`, tipo: 'pose' });
             }
         }
 
         // ── VERIFICAR FIN DE PARTIDA ──
         if (rival.hp <= 0) {
-            io.to(partidaId).emit('logBatalla', `💀 ${defensor.nombre} ha caído. ¡${atacante.nombre} gana!`);
+            io.to(partidaId).emit('logBatalla', { msg: `💀 ${defensor.nombre} ha caído. ¡${atacante.nombre} gana!`, tipo: 'muerte' });
             io.to(partidaId).emit('actualizarEstado', {
                 j1: partida.jugador1.hp, j2: partida.jugador2.hp,
                 j1energia: partida.jugador1.energia, j2energia: partida.jugador2.energia,
@@ -212,7 +212,7 @@ io.on('connection', (socket) => {
                 const otroSocket = mareado === partida.jugador1.socketId
                     ? partida.jugador2.socketId : partida.jugador1.socketId;
                 partida.turnoActual = otroSocket;
-                io.to(partidaId).emit('logBatalla', `⏭ ${partida.turnoActual === partida.jugador1.socketId ? partida.jugador1.personaje.nombre : partida.jugador2.personaje.nombre} pierde el turno por mareo.`);
+                io.to(partidaId).emit('logBatalla', { msg: `⏭ ${partida.turnoActual === partida.jugador1.socketId ? partida.jugador1.personaje.nombre : partida.jugador2.personaje.nombre} pierde el turno por mareo.`, tipo: 'marea' });
             } else {
                 partida.turnoActual = soyJ1 ? partida.jugador2.socketId : partida.jugador1.socketId;
             }
@@ -225,7 +225,7 @@ io.on('connection', (socket) => {
                 jugadorTurno.personaje.magia, rivalTurno.personaje.magia
             );
             jugadorTurno.energia = Math.min(100, jugadorTurno.energia + energiaRegen);
-            io.to(partidaId).emit('logBatalla', `${jugadorTurno.personaje.nombre} recupera ${energiaRegen} de energía.`);
+            io.to(partidaId).emit('logBatalla', { msg: `${jugadorTurno.personaje.nombre} recupera ${energiaRegen} de energía.`, tipo: 'energia' });
             io.to(partidaId).emit('actualizarEstado', {
                 j1: partida.jugador1.hp, j2: partida.jugador2.hp,
                 j1energia: partida.jugador1.energia, j2energia: partida.jugador2.energia,
