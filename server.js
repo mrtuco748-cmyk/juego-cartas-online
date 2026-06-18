@@ -166,10 +166,6 @@ io.on('connection', (socket) => {
             );
             jugadorTurno.energia = Math.min(100, jugadorTurno.energia + energiaRegen);
             io.to(partidaId).emit('logBatalla', `${jugadorTurno.personaje.nombre} recupera ${energiaRegen} de energía.`);
-            // Limpiar poses
-            partida.jugador1.pose = null;
-            partida.jugador2.pose = null;
-
             io.to(partidaId).emit('actualizarEstado', {
                 j1: partida.jugador1.hp, j2: partida.jugador2.hp,
                 j1energia: partida.jugador1.energia, j2energia: partida.jugador2.energia,
