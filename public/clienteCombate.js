@@ -1,30 +1,26 @@
 // clienteCombate.js
-// ⚠️ NO crear nuevo socket — usa el del index.html
-// Este archivo debe cargarse DESPUÉS del <script> de index.html
-
 let partidaActualId = null;
 let miPJ = null;
 let rivalPJ = null;
 let esMiTurno = false;
+let accionesRestantes = 0;
 
-// ── CUANDO SE ENCUENTRA RIVAL ──
 socket.on('rivalEncontrado', (data) => {
     partidaActualId = data.partidaId;
     miPJ = data.yo;
     rivalPJ = data.rival;
     esMiTurno = data.esmiTurno;
+    accionesRestantes = data.accionesRestantes || 0;
 
     mostrarPantallaCombate();
     renderizarCombate();
 });
 
-// ── MOSTRAR PANTALLA DE COMBATE ──
 function mostrarPantallaCombate() {
     document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
     document.getElementById('pantallaCombate').classList.add('activa');
 }
 
-// ── RENDERIZAR UI DEL COMBATE ──
 function renderizarCombate() {
     document.getElementById('pantallaCombate').innerHTML = `
         <div style="
@@ -35,7 +31,6 @@ function renderizarCombate() {
             overflow: hidden;
             position: relative;
         ">
-            <!-- RIVAL -->
             <div style="padding: 12px 16px; border-bottom: 1px solid #2a1808;">
                 <div style="color:#6a4018; font-size:9px; letter-spacing:2px;">RIVAL</div>
                 <div style="color:#d4a060; font-size:12px; letter-spacing:2px; margin: 2px 0;">
@@ -49,23 +44,20 @@ function renderizarCombate() {
                 </div>
             </div>
 
-            <!-- LOG DE BATALLA -->
             <div id="logBatalla" style="
                 height: 140px; overflow-y: auto; padding: 10px 14px;
                 font-size: 10px; color: #9a7040; letter-spacing: 1px;
                 border-bottom: 1px solid #2a1808; line-height: 1.8;
             "></div>
 
-            <!-- TURNO -->
             <div id="indicadorTurno" style="
                 text-align:center; padding: 6px;
                 font-size: 9px; letter-spacing: 3px;
                 color: ${esMiTurno ? '#60d060' : '#c85030'};
             ">
-                ${esMiTurno ? '⚔ TU TURNO' : '⏳ TURNO DEL RIVAL'}
+                ${esMiTurno ? `⚔ TU TURNO (acciones: ${accionesRestantes})` : '⏳ TURNO DEL RIVAL'}
             </div>
 
-            <!-- MI PJ -->
             <div style="padding: 12px 16px; border-top: 1px solid #2a1808;">
                 <div style="color:#6a4018; font-size:9px; letter-spacing:2px;">TÚ</div>
                 <div style="color:#d4a060; font-size:12px; letter-spacing:2px; margin: 2px 0;">
@@ -80,53 +72,62 @@ function renderizarCombate() {
                 </div>
             </div>
 
-            <!-- MENÚ RADIAL -->
             <div style="display:flex; justify-content:center; padding: 16px 0 20px;">
                 <div id="menuRadial" class="radial-container">
                     <button id="btnAtacar" class="accion-btn">⚔️</button>
-                    <button id="btnDef"    class="accion-btn">🛡️</button>
-                    <button id="btnCarta"  class="accion-btn">🃏</button>
-                    <button id="btnHab"    class="accion-btn">✨</button>
-                    <button id="btnCentral" class="central-btn">ACCIÓN</button>
+                    <button id="btnDescansar" class="accion-btn">💤</button>
+                    <button id="btnPose" class="accion-btn">🛡️</button>
+                    <button id="btnCarta" class="accion-btn">🃏</button>
+                    <button id="btnHab" class="accion-btn">✨</button>
+                    <button id="btnCentral" class="central-btn">${esMiTurno ? `ACCIÓN\n(${accionesRestantes}/2)` : 'ESPERA'}</button>
                 </div>
             </div>
         </div>
     `;
 
-    // Eventos botones
     document.getElementById('btnCentral').addEventListener('click', () => {
         if (!esMiTurno) return;
         document.getElementById('menuRadial').classList.toggle('active');
     });
     document.getElementById('btnAtacar').addEventListener('click', () => enviarAccion('atacar'));
-    document.getElementById('btnDef').addEventListener('click',    () => enviarAccion('defender'));
-    document.getElementById('btnCarta').addEventListener('click',  () => enviarAccion('carta'));
-    document.getElementById('btnHab').addEventListener('click',    () => enviarAccion('habilidad'));
+    document.getElementById('btnDescansar').addEventListener('click', () => enviarAccion('descansar'));
+    document.getElementById('btnPose').addEventListener('click', () => enviarAccion('pose'));
+    document.getElementById('btnCarta').addEventListener('click', () => enviarAccion('carta'));
+    document.getElementById('btnHab').addEventListener('click', () => enviarAccion('habilidad'));
 }
 
-// ── ENVIAR ACCIÓN ──
 function enviarAccion(tipo) {
-    if (!partidaActualId || !esMiTurno) return;
+    if (!partidaActualId || !esMiTurno || accionesRestantes <= 0) return;
+    document.getElementById('menuRadial').classList.remove('active');
     socket.emit('ejecutarAccion', {
         partidaId: partidaActualId,
         tipo,
         atacante: miPJ,
         defensor: rivalPJ
     });
-    document.getElementById('menuRadial').classList.remove('active');
-    esMiTurno = false;
-    actualizarIndicadorTurno();
 }
 
-// ── ACTUALIZAR INDICADOR DE TURNO ──
 function actualizarIndicadorTurno() {
     const el = document.getElementById('indicadorTurno');
     if (!el) return;
-    el.textContent = esMiTurno ? '⚔ TU TURNO' : '⏳ TURNO DEL RIVAL';
-    el.style.color  = esMiTurno ? '#60d060'    : '#c85030';
+    el.textContent = esMiTurno
+        ? `⚔ TU TURNO (acciones: ${accionesRestantes})`
+        : '⏳ TURNO DEL RIVAL';
+    el.style.color = esMiTurno ? '#60d060' : '#c85030';
 }
 
-// ── LOG DE BATALLA ──
+function actualizarCentral() {
+    const btnCentral = document.getElementById('btnCentral');
+    if (!btnCentral) return;
+    if (esMiTurno) {
+        btnCentral.textContent = `ACCIÓN\n(${accionesRestantes}/2)`;
+        btnCentral.style.opacity = '1';
+    } else {
+        btnCentral.textContent = 'ESPERA';
+        btnCentral.style.opacity = '0.4';
+    }
+}
+
 socket.on('logBatalla', (mensaje) => {
     const log = document.getElementById('logBatalla');
     if (!log) return;
@@ -134,26 +135,26 @@ socket.on('logBatalla', (mensaje) => {
     log.scrollTop = log.scrollHeight;
 });
 
-// ── ACTUALIZAR HP ──
 socket.on('actualizarEstado', (datos) => {
-    // Identificar cuál HP es mío y cuál del rival
-    const miHP    = datos.socketJ1 === socket.id ? datos.j1 : datos.j2;
+    const miHP = datos.socketJ1 === socket.id ? datos.j1 : datos.j2;
     const rivalHP = datos.socketJ1 === socket.id ? datos.j2 : datos.j1;
+    const miEnergia = datos.socketJ1 === socket.id ? datos.j1energia : datos.j2energia;
 
-    miPJ.hp    = miHP;
+    miPJ.hp = miHP;
     rivalPJ.hp = rivalHP;
-
-    document.getElementById('pjHP').textContent    = miHP;
-    document.getElementById('rivalHP').textContent = rivalHP;
-    document.getElementById('barraHPMio').style.width    = Math.max(0, miHP)    + '%';
-    document.getElementById('barraHPRival').style.width  = Math.max(0, rivalHP) + '%';
-
-    // Cambio de turno
+    accionesRestantes = datos.accionesRestantes || 0;
     esMiTurno = datos.turnoActual === socket.id;
+
+    document.getElementById('pjHP').textContent = miHP;
+    document.getElementById('rivalHP').textContent = rivalHP;
+    document.getElementById('pjEnergia').textContent = miEnergia;
+    document.getElementById('barraHPMio').style.width = Math.max(0, miHP) + '%';
+    document.getElementById('barraHPRival').style.width = Math.max(0, rivalHP) + '%';
+
     actualizarIndicadorTurno();
+    actualizarCentral();
 });
 
-// ── FIN DE PARTIDA ──
 socket.on('finPartida', (datos) => {
     const gane = datos.ganador === socket.id;
     const log = document.getElementById('logBatalla');
@@ -164,9 +165,8 @@ socket.on('finPartida', (datos) => {
             </div>`;
         log.scrollTop = log.scrollHeight;
     }
-    // Deshabilitar botones
     esMiTurno = false;
+    accionesRestantes = 0;
     actualizarIndicadorTurno();
-    const central = document.getElementById('btnCentral');
-    if (central) central.style.opacity = '0.4';
+    actualizarCentral();
 });
