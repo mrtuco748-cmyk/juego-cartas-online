@@ -1,948 +1,578 @@
-const { GameProcessor, SKILLS_DATA, CLASS_DATA, MAZOS, aplicarModsClase, getMaxHP } = require('./gameEngine');
-const gp = new GameProcessor();
+const SKILLS_DATA = {
+  activas: {
+    golpe_directo: { nombre: "Golpe Directo", coste: 25, efecto: "damage_percent", valor: 0.25 },
+    paralisis: { nombre: "Parálisis", coste: 35, efecto: "stun", duracion: 2 },
+    cubo_perfecto: { nombre: "Cubo Perfecto", coste: 20, efecto: "cancel_attack" },
+    jackpot: { nombre: "Jackpot", coste: 70, efecto: "rng_kill", rng: 6 },
+    curacion_divina: { nombre: "Curación Divina", coste: 30, efecto: "heal_percent", valor: 0.40 },
+    escudo_arcano: { nombre: "Escudo Arcano", coste: 25, efecto: "shield", valor: 0.30 },
+    furia_berserker: { nombre: "Furia Berserker", coste: 40, efecto: "buff", stat: "fuerza", valor: 5, duracion: 3 },
+    maldicion: { nombre: "Maldición", coste: 30, efecto: "debuff", stat: "resistencia", valor: 3, duracion: 3 },
+    drenar_vida: { nombre: "Drenar Vida", coste: 35, efecto: "lifesteal", valor: 0.20 },
+    explosion_mana: { nombre: "Explosión de Maná", coste: 50, efecto: "damage_true", valor: 35 },
+    golpe_veloz: { nombre: "Golpe Veloz", coste: 15, efecto: "double_attack" },
+    reflejo_magico: { nombre: "Reflejo Mágico", coste: 40, efecto: "reflect", valor: 0.50, duracion: 2 },
+    tormenta: { nombre: "Tormenta", coste: 45, efecto: "aoe_damage", valor: 0.20 },
+    sello_silencio: { nombre: "Sello de Silencio", coste: 30, efecto: "silence", duracion: 2 },
+    sacrificio: { nombre: "Sacrificio", coste: 10, efecto: "sacrifice", valor: 0.30 },
+    invocacion: { nombre: "Invocación Menor", coste: 55, efecto: "summon", valor: 0.25 },
+    rafaga: { nombre: "Ráfaga", coste: 20, efecto: "damage_percent", valor: 0.15 },
+    cataclismo: { nombre: "Cataclismo", coste: 80, efecto: "damage_true", valor: 60 },
+    bendicion: { nombre: "Bendición", coste: 35, efecto: "buff_all", valor: 2, duracion: 2 },
+    escarcha: { nombre: "Escarcha", coste: 25, efecto: "debuff", stat: "velocidad", valor: 4, duracion: 2 }
+  },
+  pasivas: {
+    veneno: { nombre: "Veneno", efecto: "dot", valor: 0.05, trigger: "on_hit" },
+    totem: { nombre: "Tótem", efecto: "survival", hp_min: 1, trigger: "on_death_blow" },
+    regeneracion: { nombre: "Regeneración", efecto: "regen_hp", valor: 0.03, trigger: "on_turn_start" },
+    mana_infinito: { nombre: "Maná Infinito", efecto: "regen_energy", valor: 5, trigger: "on_turn_start" },
+    contraataque: { nombre: "Contraataque", efecto: "counter", valor: 0.50, trigger: "on_take_damage" },
+    escudo_espinas: { nombre: "Escudo de Espinas", efecto: "thorns", valor: 0.10, trigger: "on_take_damage" },
+    rapidez: { nombre: "Rapidez", efecto: "extra_action", probabilidad: 0.20, trigger: "on_turn_start" },
+    ultimo_aliento: { nombre: "Último Aliento", efecto: "revive", valor: 0.30, trigger: "on_death" },
+    absorcion: { nombre: "Absorción de Hechizos", efecto: "spell_vamp", valor: 0.15, trigger: "on_cast" },
+    maestro_critico: { nombre: "Maestro Crítico", efecto: "crit_up", valor: 0.25, trigger: "on_attack" },
+    fortaleza: { nombre: "Fortaleza", efecto: "damage_reduction", valor: 0.10, trigger: "on_take_damage" },
+    vampirismo: { nombre: "Vampirismo", efecto: "life_steal", valor: 0.08, trigger: "on_hit" },
+    escudo_natural: { nombre: "Escudo Natural", efecto: "auto_shield", valor: 0.15, trigger: "on_turn_start" },
+    furia_interna: { nombre: "Furia Interna", efecto: "enrage", valor: 0.03, trigger: "on_hp_loss" },
+    bendito: { nombre: "Bendito", efecto: "cleanse", trigger: "on_turn_start" }
+  }
+};
 
-const express = require('express');
-const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http, {
-    path: '/socket.io/',
-    cors: { origin: '*', methods: ['GET', 'POST'] }
-});
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const CLASS_DATA = {
+  Chaman: { tipo: "PS", mods: { magia: 3, resistencia: 2, fuerza: 2, velocidad: 4, suerte: 0 }, hpBonus: 15, hpRegen: 5, desc: "Curandero espiritual" },
+  Sacerdote: { tipo: "PS", mods: { magia: 5, resistencia: 3, fuerza: 1, velocidad: 0, suerte: 0 }, hpBonus: 25, hpRegen: 3, desc: "Sanador divino" },
+  Druida: { tipo: "PS", mods: { magia: 4, resistencia: 2, fuerza: 3, velocidad: 1, suerte: 0 }, hpBonus: 20, hpRegen: 4, desc: "Guardián natural" },
+  Guerrero: { tipo: "Fuerza", mods: { magia: -3, resistencia: 3, fuerza: 4, velocidad: 3, suerte: 0 }, hpBonus: 0, critEfecto: { multi: 1.0, duracion: 2 }, desc: "Luchador versátil" },
+  Paladin: { tipo: "Fuerza", mods: { magia: -3, resistencia: 5, fuerza: 4, velocidad: 1, suerte: 0 }, hpBonus: 0, critEfecto: { multi: 0.5, duracion: 4 }, desc: "Caballero sagrado" },
+  Berserker: { tipo: "Fuerza", mods: { magia: -6, resistencia: 5, fuerza: 5, velocidad: -5, suerte: 0 }, hpBonus: 0, critEfecto: { multi: 0.25, duracion: 8 }, desc: "Guerrero furioso" },
+  Acorazado: { tipo: "Resistencia", mods: { magia: 0, resistencia: 10, fuerza: -1, velocidad: -5, suerte: 0 }, hpBonus: 10, desc: "Muro andante" },
+  Ogro: { tipo: "Resistencia", mods: { magia: -7, resistencia: 6, fuerza: 3, velocidad: 1, suerte: 0 }, hpBonus: 10, desc: "Bruto imparable" },
+  Golem: { tipo: "Resistencia", mods: { magia: -4, resistencia: 7, fuerza: 2, velocidad: -3, suerte: 0 }, hpBonus: 15, desc: "Ser de piedra" },
+  Picaro: { tipo: "Velocidad", mods: { magia: -2, resistencia: 3, fuerza: -2, velocidad: 6, suerte: 5 }, hpBonus: 0, accionesExtra1: true, desc: "Ladrón astuto" },
+  Ninja: { tipo: "Velocidad", mods: { magia: -5, resistencia: -1, fuerza: -4, velocidad: 8, suerte: 2 }, hpBonus: 0, accionesExtra1: true, desc: "Asesino silencioso" },
+  Cazador: { tipo: "Velocidad", mods: { magia: 0, resistencia: 2, fuerza: -3, velocidad: 7, suerte: 0 }, hpBonus: 0, accionesExtra1: true, desc: "Rastreador experto" },
+  Mago: { tipo: "Magia", mods: { magia: 5, resistencia: 0, fuerza: 0, velocidad: 4, suerte: 0 }, hpBonus: 0, energiaPrimerTurno: 15, desc: "Lanzador de conjuros" },
+  MagoMaestro: { tipo: "Magia", mods: { magia: 10, resistencia: -3, fuerza: -3, velocidad: -3, suerte: 0 }, hpBonus: 0, energiaPrimerTurno: 25, desc: "Archimago" },
+  MagoGuerrero: { tipo: "Magia", mods: { magia: 5, resistencia: 3, fuerza: 3, velocidad: -3, suerte: 0 }, hpBonus: 0, energiaPrimerTurno: 10, desc: "Mago de batalla" },
+  SemiDios: { tipo: "Especial", mods: { magia: 2, resistencia: 2, fuerza: 5, velocidad: 2, suerte: 2 }, hpBonus: 0, inmune1ronda: true, desc: "Ser divino" },
+  Demonio: { tipo: "Especial", mods: { magia: 3, resistencia: 3, fuerza: 3, velocidad: 3, suerte: 3 }, hpBonus: 0, hpPenalidad: 0.20, danoAHP: true, desc: "Ente infernal" },
+  Titan: { tipo: "Especial", mods: { magia: 3, resistencia: 3, fuerza: 4, velocidad: 0, suerte: 0 }, hpBonus: 10, desc: "Coloso ancestral" }
+};
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://mrtSpill:p3Lr9hWAkM9iTtq5@ac-tlf2b3l-shard-00-00.mwaqd74.mongodb.net:27017,ac-tlf2b3l-shard-00-01.mwaqd74.mongodb.net:27017,ac-tlf2b3l-shard-00-02.mwaqd74.mongodb.net:27017/loop?ssl=true&replicaSet=atlas-10e4ba-shard-0&authSource=admin&retryWrites=true&w=majority';
-
-mongoose.connect(MONGO_URI)
-    .then(() => console.log('✅ Conectado a MongoDB Atlas'))
-    .catch(err => console.error('❌ Error MongoDB:', err.message));
-
-const personajeSchema = new mongoose.Schema({
-    nombre: String, clase: String,
-    fuerza: Number, resistencia: Number, velocidad: Number, magia: Number, suerte: Number,
-    hp: { type: Number, default: 100 },
-    energia: { type: Number, default: 100 },
-    nivel: { type: Number, default: 1 },
-    experiencia: { type: Number, default: 0 },
-    puntosStats: { type: Number, default: 0 },
-    tas: { type: Array, default: [] },
-    tps: { type: Array, default: [] },
-    foto: { type: String, default: '' }
-});
-
-const cuentaSchema = new mongoose.Schema({
-    nombre: { type: String, unique: true, required: true },
-    password: { type: String, required: true },
-    dinero: { type: Number, default: 0 },
-    nivel: { type: Number, default: 1 },
-    experiencia: { type: Number, default: 0 },
-    foto: { type: String, default: '' },
-    dev: { type: Boolean, default: false },
-    personajes: [personajeSchema]
-}, { timestamps: true });
-
-const Cuenta = mongoose.model('Cuenta', cuentaSchema);
-
-app.use(express.static('public'));
-app.get('/socket.io/socket.io.js', (req, res) => {
-    res.sendFile(require.resolve('socket.io/client-dist/socket.io.js'));
-});
-
-app.get('/dev-activar', async (req, res) => {
-    const key = req.query.key;
-    const user = req.query.user;
-    if (key !== 'L00pDev2024Secret!') { return res.status(403).send('❌ Clave incorrecta'); }
-    try {
-        const cuenta = await Cuenta.findOne({ nombre: user });
-        if (!cuenta) return res.status(404).send('❌ Usuario no encontrado');
-        cuenta.dev = true;
-        for (const pj of cuenta.personajes) {
-            if (pj.nivel > 1 && (!pj.puntosStats || pj.puntosStats === 0)) {
-                pj.puntosStats = (pj.nivel - 1) * 3;
-            }
-        }
-        await cuenta.save();
-        res.send(`✅ Usuario "${user}" activado como dev. Personajes actualizados.`);
-    } catch (err) {
-        res.status(500).send('❌ Error: ' + err.message);
-    }
-});
-
-let colaEspera = [];
-let partidas = {};
-
-function getSkillsParaClase(clase) {
-    const skillsPorClase = {
-        Chaman: ["golpe_directo", "curacion_divina", "escudo_arcano", "drenar_vida"],
-        Sacerdote: ["curacion_divina", "bendicion", "sello_silencio", "escudo_arcano"],
-        Druida: ["rafaga", "drenar_vida", "regeneracion", "escarcha"],
-        Guerrero: ["golpe_directo", "golpe_veloz", "furia_berserker", "explosion_mana"],
-        Paladin: ["golpe_directo", "escudo_arcano", "curacion_divina", "bendicion"],
-        Berserker: ["golpe_directo", "furia_berserker", "golpe_veloz", "sacrificio"],
-        Acorazado: ["escudo_arcano", "cubo_perfecto", "golpe_directo", "reflejo_magico"],
-        Ogro: ["golpe_directo", "golpe_veloz", "tormenta", "sacrificio"],
-        Golem: ["escudo_arcano", "cubo_perfecto", "golpe_directo", "explosion_mana"],
-        Picaro: ["golpe_veloz", "golpe_directo", "drenar_vida", "cubo_perfecto"],
-        Ninja: ["golpe_veloz", "golpe_directo", "drenar_vida", "sello_silencio"],
-        Cazador: ["golpe_directo", "golpe_veloz", "rafaga", "escarcha"],
-        Mago: ["explosion_mana", "tormenta", "escarcha", "drenar_vida"],
-        MagoMaestro: ["explosion_mana", "tormenta", "cataclismo", "sello_silencio"],
-        MagoGuerrero: ["golpe_directo", "explosion_mana", "escudo_arcano", "golpe_veloz"],
-        SemiDios: ["cataclismo", "curacion_divina", "bendicion", "invocacion"],
-        Demonio: ["sacrificio", "maldicion", "drenar_vida", "tormenta"],
-        Titan: ["cataclismo", "golpe_directo", "escudo_arcano", "cubo_perfecto"]
-    };
-    return (skillsPorClase[clase] || ["golpe_directo", "golpe_veloz", "curacion_divina", "escudo_arcano"]).map(id => ({ ...SKILLS_DATA.activas[id], id })).filter(Boolean);
+function aplicarModsClase(clase, statsBase) {
+  const info = CLASS_DATA[clase];
+  if (!info) return statsBase;
+  const finales = {};
+  for (const s of ["fuerza", "resistencia", "velocidad", "magia", "suerte"]) {
+    finales[s] = Math.max(1, (statsBase[s] || 5) + (info.mods[s] || 0));
+  }
+  return finales;
 }
 
-function getPasivasClase(clase) {
-    const pasivas = {};
-    const ids = gp.getPasivasPorDefecto(clase);
-    ids.forEach(id => {
-        if (SKILLS_DATA.pasivas[id]) pasivas[id] = SKILLS_DATA.pasivas[id];
-    });
-    return pasivas;
+function getMaxHP(clase) {
+  const info = CLASS_DATA[clase];
+  return 40 + (info ? info.hpBonus || 0 : 0);
 }
 
-function getMazosCliente(jugadorPartida) {
-    return {
-        inventario: jugadorPartida.inventario || [],
-        equipment: jugadorPartida.equipment || { arma: null, armadura: null, accesorio: null }
-    };
-}
+const MAZOS = {
+  investigacion: [
+    { nombre: "Madera", tipo: "material", desc: "Material básico para crear" },
+    { nombre: "Hierro", tipo: "material", desc: "Metal resistente" },
+    { nombre: "Piedra", tipo: "material", desc: "Roca sólida" },
+    { nombre: "Cuero", tipo: "material", desc: "Piel curtida" },
+    { nombre: "Tela", tipo: "material", desc: "Fibra textil" },
+    { nombre: "Gemas", tipo: "material", desc: "Gemas brillantes" },
+    { nombre: "Cuerda", tipo: "material", desc: "Fibra trenzada" },
+    { nombre: "Hueso", tipo: "material", desc: "Restos óseos" },
+    { nombre: "Poción Menor", tipo: "consumible", desc: "Cura 10 HP", efecto: "cura", valor: 10 },
+    { nombre: "Poción de Energía", tipo: "consumible", desc: "Recupera 10 energía", efecto: "energia", valor: 10 },
+    { nombre: "Vendas", tipo: "consumible", desc: "Cura 5 HP", efecto: "cura", valor: 5 },
+    { nombre: "Cofre de Armas", tipo: "cofre", desc: "Saca una carta del mazo de armas" },
+    { nombre: "Cofre de Accesorios", tipo: "cofre", desc: "Saca una carta del mazo de accesorios" }
+  ],
+  armas: [
+    { nombre: "Espada Corta", tipo: "arma", peso: 2, filo: 3, desc: "Daño +2 peso +3 filo" },
+    { nombre: "Hacha", tipo: "arma", peso: 4, filo: 2, desc: "Daño +4 peso +2 filo" },
+    { nombre: "Daga", tipo: "arma", peso: 1, filo: 4, desc: "Daño +1 peso +4 filo" },
+    { nombre: "Lanza", tipo: "arma", peso: 3, filo: 3, desc: "Daño +3 peso +3 filo" },
+    { nombre: "Martillo", tipo: "arma", peso: 5, filo: 1, desc: "Daño +5 peso +1 filo" },
+    { nombre: "Bastón", tipo: "arma", peso: 2, filo: 1, desc: "Daño +2 peso +1 filo, +2 magia" }
+  ],
+  accesorios: [
+    { nombre: "Anillo de Protección", tipo: "accesorio", desc: "+2 resistencia", stat: "resistencia", valor: 2 },
+    { nombre: "Amuleto de Poder", tipo: "accesorio", desc: "+2 fuerza", stat: "fuerza", valor: 2 },
+    { nombre: "Capa de Sombras", tipo: "accesorio", desc: "+2 velocidad", stat: "velocidad", valor: 2 },
+    { nombre: "Grimorio", tipo: "accesorio", desc: "+2 magia", stat: "magia", valor: 2 },
+    { nombre: "Trébol", tipo: "accesorio", desc: "+2 suerte", stat: "suerte", valor: 2 },
+    { nombre: "Armadura Ligera", tipo: "armadura", desc: "+3 resistencia", stat: "resistencia", valor: 3 }
+  ],
+  armaduras: [
+    { nombre: "Armadura de Cuero", tipo: "armadura", desc: "+3 resistencia", stat: "resistencia", valor: 3 },
+    { nombre: "Armadura de Placas", tipo: "armadura", desc: "+5 resistencia, -1 velocidad", stat: "resistencia", valor: 5, penalidad: { velocidad: -1 } },
+    { nombre: "Túnica Mágica", tipo: "armadura", desc: "+2 resistencia, +2 magia", stat: "resistencia", valor: 2 }
+  ],
+  recetas: [
+    { nombre: "Espada Corta", requiere: ["Madera", "Hierro"], resultado: { nombre: "Espada Corta", tipo: "arma", peso: 2, filo: 3 } },
+    { nombre: "Hacha", requiere: ["Madera", "Hierro", "Piedra"], resultado: { nombre: "Hacha", tipo: "arma", peso: 4, filo: 2 } },
+    { nombre: "Daga", requiere: ["Hierro", "Hueso"], resultado: { nombre: "Daga", tipo: "arma", peso: 1, filo: 4 } },
+    { nombre: "Lanza", requiere: ["Madera", "Hierro", "Cuerda"], resultado: { nombre: "Lanza", tipo: "arma", peso: 3, filo: 3 } },
+    { nombre: "Martillo", requiere: ["Madera", "Piedra", "Hierro"], resultado: { nombre: "Martillo", tipo: "arma", peso: 5, filo: 1 } },
+    { nombre: "Bastón", requiere: ["Madera", "Gemas"], resultado: { nombre: "Bastón", tipo: "arma", peso: 2, filo: 1 } },
+    { nombre: "Vendas", requiere: ["Tela"], resultado: { nombre: "Vendas", tipo: "consumible", efecto: "cura", valor: 5 } },
+    { nombre: "Poción Menor", requiere: ["Gemas", "Hierro"], resultado: { nombre: "Poción Menor", tipo: "consumible", efecto: "cura", valor: 10 } },
+    { nombre: "Poción de Energía", requiere: ["Gemas", "Cuero"], resultado: { nombre: "Poción de Energía", tipo: "consumible", efecto: "energia", valor: 10 } },
+    { nombre: "Armadura de Cuero", requiere: ["Cuero", "Cuerda"], resultado: { nombre: "Armadura de Cuero", tipo: "armadura", stat: "resistencia", valor: 3 } },
+    { nombre: "Armadura de Placas", requiere: ["Hierro", "Hierro", "Cuero"], resultado: { nombre: "Armadura de Placas", tipo: "armadura", stat: "resistencia", valor: 5 } },
+    { nombre: "Anillo de Protección", requiere: ["Gemas", "Hierro"], resultado: { nombre: "Anillo de Protección", tipo: "accesorio", stat: "resistencia", valor: 2 } },
+    { nombre: "Amuleto de Poder", requiere: ["Gemas", "Cuero"], resultado: { nombre: "Amuleto de Poder", tipo: "accesorio", stat: "fuerza", valor: 2 } }
+  ]
+};
 
-async function otorgarXP(cuentaId, personajeId, xp) {
-    try {
-        if (!cuentaId || !personajeId) return null;
-        const cuenta = await Cuenta.findById(cuentaId);
-        if (!cuenta) return null;
-        const pj = cuenta.personajes.id(personajeId);
-        if (!pj) return null;
-        pj.experiencia = (pj.experiencia || 0) + xp;
-        while (pj.experiencia >= pj.nivel) {
-            pj.experiencia -= pj.nivel;
-            pj.nivel++;
-            pj.puntosStats = (pj.puntosStats || 0) + 3;
+class GameProcessor {
+  constructor() {
+    this.effects = {
+      damage_percent: (target, card, ctx) => {
+        const dmg = Math.floor(target.maxHp * card.valor);
+        target.hp -= dmg;
+        return { damage: dmg, log: `${target.nombre} recibe ${dmg} de daño (${card.nombre})` };
+      },
+      damage_true: (target, card) => {
+        target.hp -= card.valor;
+        return { damage: card.valor, log: `${target.nombre} recibe ${card.valor} de daño verdadero` };
+      },
+      heal_percent: (target, card, ctx) => {
+        const healed = Math.floor(target.maxHp * card.valor);
+        target.hp = Math.min(target.maxHp + (target.hpOverflow || 0), target.hp + healed);
+        return { healing: healed, log: `${target.nombre} se cura ${healed} HP` };
+      },
+      stun: (target, card) => {
+        target.status = target.status || {};
+        target.status.frozen = (target.status.frozen || 0) + card.duracion;
+        return { log: `${target.nombre} queda paralizado por ${card.duracion} turnos` };
+      },
+      cancel_attack: (target, card, ctx) => {
+        ctx.cancelAttack = true;
+        return { log: `El ataque entrante ha sido cancelado` };
+      },
+      rng_kill: (target, card) => {
+        const roll = Math.floor(Math.random() * 6) + 1;
+        if (roll === card.rng) {
+          target.hp = 0;
+          return { damage: 9999, log: `¡${target.nombre} ha sido aniquilado por Jackpot!` };
         }
-        await cuenta.save();
-        return cuenta;
-    } catch (err) {
-        console.error('Error XP:', err.message);
-        return null;
-    }
-}
-
-function shuffleArray(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-}
-
-function partidaEmitirEstado(partidaId, partida) {
-    const j1s = getSkillsParaClase(partida.jugador1.personaje.clase);
-    const j2s = getSkillsParaClase(partida.jugador2.personaje.clase);
-
-    const j1m = getMazosCliente(partida.jugador1);
-    const j2m = getMazosCliente(partida.jugador2);
-
-    io.to(partidaId).emit('actualizarEstado', {
-        j1: partida.jugador1.hp, j2: partida.jugador2.hp,
-        j1energia: partida.jugador1.energia, j2energia: partida.jugador2.energia,
-        socketJ1: partida.jugador1.socketId,
-        turnoActual: partida.turnoActual,
-        accionesRestantes: partida.accionesMax - partida.accionesUsadas.length,
-        j1status: partida.jugador1.status || {},
-        j2status: partida.jugador2.status || {},
-        j1skills: j1s, j2skills: j2s,
-        pasivasJ1: Object.keys(partida.jugador1.pasivas),
-        pasivasJ2: Object.keys(partida.jugador2.pasivas),
-        extraActionJ1: partida.jugador1.extraAction || false,
-        extraActionJ2: partida.jugador2.extraAction || false,
-        objetosRecibidosJ1: partida.jugador1.objetosRecibidos || [],
-        objetosRecibidosJ2: partida.jugador2.objetosRecibidos || [],
-        ...(j1m.inventario ? {
-            inventarioJ1: j1m.inventario,
-            inventarioJ2: j2m.inventario,
-            equipmentJ1: j1m.equipment,
-            equipmentJ2: j2m.equipment
-        } : {})
-    });
-}
-
-io.on('connection', (socket) => {
-    console.log('🔌 Cliente conectado:', socket.id);
-
-    socket.on('ejecutarAccion', async ({ partidaId, tipo, atacante, defensor, cartaId, accionData }) => {
-        const partida = partidas[partidaId];
-        if (!partida) return;
-
-        const soyJ1 = socket.id === partida.jugador1.socketId;
-        const yo = soyJ1 ? partida.jugador1 : partida.jugador2;
-        const rival = soyJ1 ? partida.jugador2 : partida.jugador1;
-
-        // TA puede interrumpir incluso fuera de turno
-        if (tipo === 'carta' && cartaId) {
-            return procesarCarta(partidaId, partida, socket.id, yo, rival, cartaId);
-        }
-
-        if (partida.turnoActual !== socket.id) {
-            socket.emit('errorAccion', 'No es tu turno.');
-            return;
-        }
-
-        if (yo.status && yo.status.frozen > 0) {
-            socket.emit('errorAccion', 'Estás paralizado.');
-            return;
-        }
-
-        if (yo.status && yo.status.silenced > 0 && tipo !== 'atacar' && tipo !== 'descansar') {
-            socket.emit('errorAccion', 'Estás silenciado.');
-            return;
-        }
-
-        const accionesMax = partida.accionesMax || 2;
-        if (partida.accionesUsadas.length >= accionesMax) {
-            socket.emit('errorAccion', 'No te quedan acciones.');
-            return;
-        }
-
-        partida.accionesUsadas.push(tipo);
-
-        const statsYo = gp.calcularStatsConBuffs(yo);
-        const statsRival = gp.calcularStatsConBuffs(rival);
-
-        switch (tipo) {
-            case 'atacar': {
-                const dado = Math.floor(Math.random() * 6) + 1;
-                let danoBase = Math.max(0, dado + statsYo.fuerza - statsRival.resistencia);
-                let critMulti = gp.calcularCritico(statsYo.velocidad, statsRival.velocidad) + (yo.critBonus || 0);
-                if (yo.critClase) critMulti = Math.max(critMulti, yo.critClase.multi);
-                let danoFinal = Math.floor(danoBase * (1 + critMulti));
-                if (yo.enrageBonus) danoFinal += yo.enrageBonus;
-
-                let log = `${statsYo.nombre} ataca — ${dado}+F:${statsYo.fuerza}-R:${statsRival.resistencia}=${danoBase}`;
-
-                if (rival.pose) {
-                    if (rival.pose.tipo === 'esquivar' && rival.pose.valor > dado) {
-                        io.to(partidaId).emit('logBatalla', { msg: `¡${rival.nombre} ESQUIVA!`, tipo: 'pose' });
-                        rival.pose = null;
-                        return partidaFinalizarAccion(partidaId, partida);
-                    }
-                    if (rival.pose.tipo === 'parry' && rival.pose.valor === (dado + statsYo.fuerza)) {
-                        io.to(partidaId).emit('logBatalla', { msg: `¡${rival.nombre} hace PARRY! ${statsYo.nombre} pierde turno`, tipo: 'pose' });
-                        partida.turnoMareado = socket.id;
-                        rival.pose = null;
-                        return partidaFinalizarAccion(partidaId, partida);
-                    }
-                    rival.pose = null;
-                }
-
-                if (rival.status && rival.status.shield > 0) {
-                    const absorb = Math.min(rival.status.shield, danoFinal);
-                    rival.status.shield -= absorb;
-                    danoFinal -= absorb;
-                    log += ` [escudo -${absorb}]`;
-                }
-
-                rival.hp -= danoFinal;
-
-                if (yo.danoAHP) {
-                    const conv = Math.min(danoFinal, yo.maxHp - yo.hp);
-                    yo.hp += conv;
-                    log += ` (convierte ${conv} daño a HP)`;
-                }
-
-                const pLog1 = gp.processPassives(yo.pasivas, yo, rival, 'on_hit', { damage: danoFinal, target: rival });
-                const pLog2 = gp.processPassives(rival.pasivas, rival, yo, 'on_take_damage', { damage: danoFinal, target: yo });
-                const pLog3 = gp.processPassives(yo.pasivas, yo, rival, 'on_attack', {});
-                [...pLog1, ...pLog2, ...pLog3].forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
-
-                log += critMulti > 0 ? ` (Crítico x${1+critMulti}) → ${danoFinal}` : ` → ${danoFinal}`;
-                io.to(partidaId).emit('logBatalla', { msg: log, tipo: 'ataque' });
-                break;
-            }
-            case 'descansar': {
-                yo.hp = Math.min(yo.maxHp + (yo.hpOverflow || 0), yo.hp + 5);
-                yo.energia = Math.min(100, yo.energia + 5);
-                io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} descansa → +5 HP, +5 energía`, tipo: 'curacion' });
-                break;
-            }
-            case 'pose': {
-                const dadoPose = Math.floor(Math.random() * 6) + 1;
-                if (statsYo.resistencia > statsRival.fuerza) {
-                    yo.pose = { tipo: 'parry', valor: dadoPose + statsYo.resistencia };
-                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} prepara PARRY (${dadoPose}+R)`, tipo: 'pose' });
-                } else {
-                    yo.pose = { tipo: 'esquivar', valor: dadoPose };
-                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} prepara ESQUIVE (${dadoPose})`, tipo: 'pose' });
-                }
-                break;
-            }
-            case 'investigar': {
-                const mazo = shuffleArray([...MAZOS.investigacion]);
-                const carta = mazo[0];
-                if (!carta) { socket.emit('errorAccion', 'No hay cartas en el mazo'); break; }
-                if (carta.tipo === 'cofre') {
-                    const mazoObj = MAZOS[carta.nombre.includes('Armas') ? 'armas' : 'accesorios'] || MAZOS.armas;
-                    const cofre = shuffleArray([...mazoObj])[0];
-                    if (cofre && gp.puedeAgregarInventario(yo.inventario, cofre)) {
-                        yo.inventario.push({ ...cofre, _id: Date.now().toString() + Math.random() });
-                        io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} encuentra un cofre con: ${cofre.nombre}`, tipo: 'carta' });
-                    } else {
-                        io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} encuentra un cofe pero está vacío`, tipo: 'carta' });
-                    }
-                } else if (carta.tipo === 'material' || carta.tipo === 'consumible') {
-                    if (gp.puedeAgregarInventario(yo.inventario, carta)) {
-                        yo.inventario.push({ ...carta, _id: Date.now().toString() + Math.random() });
-                        io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} encuentra: ${carta.nombre}`, tipo: 'carta' });
-                    } else {
-                        io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} encuentra ${carta.nombre} pero no tiene espacio`, tipo: 'carta' });
-                    }
-                }
-                break;
-            }
-            case 'crear': {
-                const recetaNom = accionData && accionData.receta;
-                if (!recetaNom) { socket.emit('errorAccion', 'Especificá qué crear'); break; }
-                const receta = MAZOS.recetas.find(r => r.nombre === recetaNom);
-                if (!receta) { socket.emit('errorAccion', 'Receta no encontrada'); break; }
-                const result = gp.crearObjeto(yo.inventario, yo.inventario, receta);
-                if (result.success) {
-                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} crea: ${receta.resultado.nombre}`, tipo: 'carta' });
-                } else {
-                    socket.emit('errorAccion', result.reason);
-                }
-                break;
-            }
-            case 'negociar': {
-                const oferta = accionData && accionData.oferta;
-                const pides = accionData && accionData.pides;
-                if (!oferta || !pides) { socket.emit('errorAccion', 'Especificá oferta y petición'); break; }
-                const idxOferta = yo.inventario.findIndex(o => o._id === oferta);
-                const idxPides = rival.inventario.findIndex(o => o._id === pides);
-                if (idxOferta === -1 || idxPides === -1) { socket.emit('errorAccion', 'Objeto no encontrado'); break; }
-                const objO = yo.inventario.splice(idxOferta, 1)[0];
-                const objP = rival.inventario.splice(idxPides, 1)[0];
-                yo.inventario.push(objP);
-                rival.inventario.push(objO);
-                io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} negocia: ${objO.nombre} por ${objP.nombre}`, tipo: 'carta' });
-                break;
-            }
-            case 'robar': {
-                if (!rival.inventario || rival.inventario.length === 0) { socket.emit('errorAccion', 'El rival no tiene objetos'); break; }
-                if (!gp.puedeAgregarInventario(yo.inventario, {})) { socket.emit('errorAccion', 'Inventario lleno'); break; }
-                const rivalStats = gp.calcularStatsConBuffs(rival);
-                const dadoRobo = Math.floor(Math.random() * 6) + 1 + statsYo.velocidad;
-                const dificultad = rivalStats.velocidad + 3;
-                if (dadoRobo > dificultad) {
-                    const idx = Math.floor(Math.random() * rival.inventario.length);
-                    const obj = rival.inventario.splice(idx, 1)[0];
-                    yo.inventario.push(obj);
-                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} roba: ${obj.nombre}`, tipo: 'carta' });
-                } else {
-                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} falló al robar`, tipo: 'carta' });
-                }
-                break;
-            }
-            case 'lanzar': {
-                const objIdx = accionData && accionData.objIdx;
-                if (objIdx === undefined || !yo.inventario[objIdx]) { socket.emit('errorAccion', 'Objeto inválido'); break; }
-                const obj = yo.inventario[objIdx];
-                const dadoL = Math.floor(Math.random() * 6) + 1;
-                const danoL = Math.max(0, dadoL + (obj.peso || 0) + (obj.filo || 0));
-                if (rival.status && rival.status.shield > 0) {
-                    const absorb = Math.min(rival.status.shield, danoL);
-                    rival.status.shield -= absorb;
-                    rival.hp -= (danoL - absorb);
-                } else {
-                    rival.hp -= danoL;
-                }
-                const tirado = yo.inventario.splice(objIdx, 1)[0];
-                rival.objetosRecibidos = rival.objetosRecibidos || [];
-                rival.objetosRecibidos.push(tirado);
-                io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} lanza ${obj.nombre}: ${danoL} daño`, tipo: 'ataque' });
-                break;
-            }
-            case 'recibir': {
-                if (!yo.objetosRecibidos || yo.objetosRecibidos.length === 0) { socket.emit('errorAccion', 'No hay objetos para recibir'); break; }
-                const dadoRec = Math.floor(Math.random() * 6) + 1;
-                const ultimoObj = yo.objetosRecibidos[yo.objetosRecibidos.length - 1];
-                const dificultadRec = accionData ? (accionData.dificultad || 6) : 6;
-                if (dadoRec > dificultadRec) {
-                    if (gp.puedeAgregarInventario(yo.inventario, ultimoObj)) {
-                        yo.inventario.push(yo.objetosRecibidos.pop());
-                        io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} atrapa ${ultimoObj.nombre}`, tipo: 'carta' });
-                    } else {
-                        io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} atrapa pero no tiene espacio`, tipo: 'carta' });
-                    }
-                } else {
-                    yo.objetosRecibidos.pop();
-                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} no logra atrapar el objeto`, tipo: 'carta' });
-                }
-                break;
-            }
-            case 'desviar': {
-                if (!yo.objetosRecibidos || yo.objetosRecibidos.length === 0) { socket.emit('errorAccion', 'No hay objetos para desviar'); break; }
-                const dadoDesv = Math.floor(Math.random() * 6) + 1;
-                const dificultadDesv = accionData ? (accionData.dificultad || 6) : 6;
-                if (dadoDesv > dificultadDesv) {
-                    const objDesv = yo.objetosRecibidos.pop();
-                    const target = accionData && accionData.redirigirA === 'rival' ? rival : null;
-                    if (target) {
-                        const dDesv = Math.max(0, (objDesv.peso || 0) + (objDesv.filo || 0));
-                        target.hp -= dDesv;
-                        io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} desvía ${objDesv.nombre} causando ${dDesv} daño`, tipo: 'ataque' });
-                    } else {
-                        io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} desvía ${objDesv.nombre} al suelo`, tipo: 'carta' });
-                    }
-                } else {
-                    yo.objetosRecibidos.pop();
-                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} falla al desviar`, tipo: 'carta' });
-                }
-                break;
-            }
-            case 'reforzar': {
-                if (!yo.equipment || !yo.equipment.arma) { socket.emit('errorAccion', 'No tenés arma equipada'); break; }
-                const arma = yo.equipment.arma;
-                arma.peso = (arma.peso || 0) + 1;
-                arma.filo = (arma.filo || 0) + 1;
-                yo.energia = Math.max(0, yo.energia - 5);
-                io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} refuerza ${arma.nombre} (+1 peso, +1 filo)`, tipo: 'carta' });
-                break;
-            }
-            case 'equipar': {
-                const eqIdx = accionData && accionData.objIdx;
-                if (eqIdx === undefined || !yo.inventario[eqIdx]) { socket.emit('errorAccion', 'Objeto inválido'); break; }
-                const eqObj = yo.inventario[eqIdx];
-                const slot = eqObj.tipo === 'arma' ? 'arma' : eqObj.tipo === 'armadura' ? 'armadura' : eqObj.tipo === 'accesorio' ? 'accesorio' : null;
-                if (!slot) { socket.emit('errorAccion', 'Este objeto no se puede equipar'); break; }
-                if (yo.equipment[slot]) {
-                    yo.inventario.push({ ...yo.equipment[slot], _id: Date.now().toString() + Math.random() });
-                }
-                yo.equipment[slot] = eqObj;
-                yo.inventario.splice(eqIdx, 1);
-                io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} equipa ${eqObj.nombre}`, tipo: 'carta' });
-                break;
-            }
-            case 'desequipar': {
-                const slot = accionData && accionData.slot;
-                if (!slot || !yo.equipment[slot]) { socket.emit('errorAccion', 'Nada que desequipar'); break; }
-                if (gp.puedeAgregarInventario(yo.inventario, {})) {
-                    yo.inventario.push({ ...yo.equipment[slot], _id: Date.now().toString() + Math.random() });
-                    yo.equipment[slot] = null;
-                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} se quita ${slot}`, tipo: 'carta' });
-                } else {
-                    socket.emit('errorAccion', 'Inventario lleno');
-                }
-                break;
-            }
-            case 'usar_objeto': {
-                const usarIdx = accionData && accionData.objIdx;
-                if (usarIdx === undefined || !yo.inventario[usarIdx]) { socket.emit('errorAccion', 'Objeto inválido'); break; }
-                const usarObj = yo.inventario[usarIdx];
-                if (usarObj.efecto === 'cura') {
-                    yo.hp = Math.min(yo.maxHp + (yo.hpOverflow || 0), yo.hp + usarObj.valor);
-                    yo.inventario.splice(usarIdx, 1);
-                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} usa ${usarObj.nombre}: +${usarObj.valor} HP`, tipo: 'curacion' });
-                } else if (usarObj.efecto === 'energia') {
-                    yo.energia = Math.min(100, yo.energia + usarObj.valor);
-                    yo.inventario.splice(usarIdx, 1);
-                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} usa ${usarObj.nombre}: +${usarObj.valor} energía`, tipo: 'energia' });
-                } else {
-                    socket.emit('errorAccion', 'Este objeto no se puede usar directamente');
-                }
-                break;
-            }
-        }
-
-        partidaFinalizarAccion(partidaId, partida);
-    });
-
-    function procesarCarta(partidaId, partida, socketId, yo, rival, cartaId) {
-        const carta = SKILLS_DATA.activas[cartaId];
-        if (!carta) { io.to(socketId).emit('errorAccion', 'Carta no encontrada'); return; }
-
-        if (yo.status && yo.status.silenced > 0) {
-            io.to(socketId).emit('errorAccion', 'Estás silenciado'); return;
-        }
-
-        const ctx = { source: yo, rival };
-        const result = gp.executeCard(carta, yo, rival, ctx);
-
-        if (!result.success) {
-            io.to(socketId).emit('errorAccion', result.reason);
-            return;
-        }
-
-        if (result.log) io.to(partidaId).emit('logBatalla', { msg: result.log, tipo: 'carta' });
-
-        const castCtx = { damage: result.damage || 0 };
-        const spellLogs = gp.processPassives(yo.pasivas, yo, rival, 'on_cast', castCtx);
-        spellLogs.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
-
-        if (result.doubleAttack && rival.hp > 0) {
-            const statsYo2 = gp.calcularStatsConBuffs(yo);
-            const statsRiv2 = gp.calcularStatsConBuffs(rival);
-            const dado2 = Math.floor(Math.random() * 6) + 1;
-            let danoExtra = Math.max(0, dado2 + statsYo2.fuerza - statsRiv2.resistencia);
-            const critExtra = gp.calcularCritico(statsYo2.velocidad, statsRiv2.velocidad);
-            danoExtra = Math.floor(danoExtra * (1 + critExtra));
-            if (rival.status && rival.status.shield > 0) {
-                const absorb = Math.min(rival.status.shield, danoExtra);
-                rival.status.shield -= absorb;
-                danoExtra -= absorb;
-            }
-            rival.hp -= danoExtra;
-            io.to(partidaId).emit('logBatalla', { msg: `Golpe extra: +${danoExtra} daño`, tipo: 'ataque' });
-        }
-
-        if (result.cancelAttack) {
-            partida.accionCancelada = true;
-        }
-
-        partidaCheckMuerte(partidaId, partida);
-    }
-
-    function partidaCheckMuerte(partidaId, partida) {
-        const ambos = [partida.jugador1, partida.jugador2];
-        for (const j of ambos) {
-            if (j.hp <= 0) {
-                const reviveLogs = gp.processPassives(j.pasivas, j, null, 'on_death', {});
-                reviveLogs.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
-            }
-        }
-
-        const muertos = ambos.filter(j => j.hp <= 0);
-        if (muertos.length >= 1) {
-            const vivos = ambos.filter(j => j.hp > 0);
-            if (vivos.length >= 1) {
-                const ganador = vivos[0];
-                const perdedor = muertos[0];
-                io.to(partidaId).emit('logBatalla', { msg: `💀 ${perdedor.nombre} ha caído. ¡${ganador.nombre} gana!`, tipo: 'muerte' });
-                partidaEmitirEstado(partidaId, partida);
-
-                const gSocket = ganador.socketId;
-                const pSocket = perdedor.socketId;
-                otorgarXP(ganador.cuenta_id, ganador.personaje._id, 1).then(c => { if (c) io.to(gSocket).emit('cuentaActualizada', c.toObject()); });
-                otorgarXP(perdedor.cuenta_id, perdedor.personaje._id, 0.5).then(c => { if (c) io.to(pSocket).emit('cuentaActualizada', c.toObject()); });
-
-                io.to(partidaId).emit('finPartida', { ganador: gSocket });
-                delete partidas[partidaId];
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function partidaFinalizarAccion(partidaId, partida) {
-        const turnoActualSocket = partida.turnoActual;
-        const yo = turnoActualSocket === partida.jugador1.socketId ? partida.jugador1 : partida.jugador2;
-        const rival = turnoActualSocket === partida.jugador1.socketId ? partida.jugador2 : partida.jugador1;
-
-        if (partidaCheckMuerte(partidaId, partida)) return;
-
-        const accRest = partida.accionesMax - partida.accionesUsadas.length;
-
-        if (accRest > 0 && !partida.accionCancelada) {
-            partidaEmitirEstado(partidaId, partida);
-            return;
-        }
-
-        partida.accionesUsadas = [];
-        partida.accionCancelada = false;
-
-        const statusLogs = [];
-        [yo, rival].forEach(j => {
-            gp.applyStatusEffects(j).forEach(l => statusLogs.push(l));
+        return { log: `Jackpot falló (dado: ${roll})` };
+      },
+      shield: (target, card) => {
+        target.status = target.status || {};
+        target.status.shield = (target.status.shield || 0) + Math.floor(target.maxHp * card.valor);
+        return { log: `${target.nombre} obtiene escudo de ${Math.floor(target.maxHp * card.valor)}` };
+      },
+      buff: (target, card) => {
+        target.status = target.status || {};
+        target.status.buffs = target.status.buffs || {};
+        target.status.buffs[card.stat] = { valor: card.valor, restante: card.duracion };
+        const statNom = { fuerza: "FUE", resistencia: "RES", velocidad: "VEL", magia: "MAG", suerte: "SUE" }[card.stat] || card.stat;
+        return { log: `${target.nombre} gana +${card.valor} ${statNom} por ${card.duracion} turnos` };
+      },
+      debuff: (target, card) => {
+        target.status = target.status || {};
+        target.status.debuffs = target.status.debuffs || {};
+        target.status.debuffs[card.stat] = { valor: card.valor, restante: card.duracion };
+        const statNom = { fuerza: "FUE", resistencia: "RES", velocidad: "VEL", magia: "MAG", suerte: "SUE" }[card.stat] || card.stat;
+        return { log: `${target.nombre} pierde ${card.valor} ${statNom} por ${card.duracion} turnos` };
+      },
+      lifesteal: (target, card, ctx) => {
+        const dmg = Math.floor(target.maxHp * card.valor);
+        target.hp -= dmg;
+        ctx.source.hp = Math.min(ctx.source.maxHp + (ctx.source.hpOverflow || 0), ctx.source.hp + dmg);
+        return { damage: dmg, healing: dmg, log: `${ctx.source.nombre} drena ${dmg} HP de ${target.nombre}` };
+      },
+      double_attack: (target, card, ctx) => {
+        ctx.doubleAttack = true;
+        return { log: `${ctx.source.nombre} se prepara para atacar dos veces` };
+      },
+      reflect: (target, card) => {
+        target.status = target.status || {};
+        target.status.reflect = { valor: card.valor, restante: card.duracion };
+        return { log: `${target.nombre} reflejará ${card.valor * 100}% del daño por ${card.duracion} turnos` };
+      },
+      aoe_damage: (target, card, ctx) => {
+        const dmg = Math.floor(target.maxHp * card.valor);
+        target.hp -= dmg;
+        if (ctx.rival) ctx.rival.hp -= dmg;
+        return { damage: dmg, log: `Tormenta causa ${dmg} de daño a todos` };
+      },
+      silence: (target, card) => {
+        target.status = target.status || {};
+        target.status.silenced = (target.status.silenced || 0) + card.duracion;
+        return { log: `${target.nombre} ha sido silenciado por ${card.duracion} turnos` };
+      },
+      sacrifice: (target, card, ctx) => {
+        const hpCost = Math.floor(ctx.source.maxHp * card.valor);
+        ctx.source.hp -= hpCost;
+        ctx.source.energia = Math.min(100, ctx.source.energia + 40);
+        return { log: `${ctx.source.nombre} sacrifica ${hpCost} HP y recupera 40 energía` };
+      },
+      summon: (target, card, ctx) => {
+        ctx.summonHp = Math.floor(ctx.source.maxHp * card.valor);
+        return { log: `${ctx.source.nombre} invoca un aliado con ${ctx.summonHp} HP` };
+      },
+      buff_all: (target, card) => {
+        const stats = ["fuerza", "resistencia", "velocidad", "magia"];
+        target.status = target.status || {};
+        target.status.buffs = target.status.buffs || {};
+        stats.forEach(s => {
+          target.status.buffs[s] = { valor: card.valor, restante: card.duracion };
         });
-        statusLogs.forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'status' }));
+        return { log: `${target.nombre} recibe +${card.valor} a todas las stats por ${card.duracion} turnos` };
+      }
+    };
+  }
 
-        if (partida.turnoMareado) {
-            partida.turnoActual = partida.turnoMareado === partida.jugador1.socketId ? partida.jugador2.socketId : partida.jugador1.socketId;
-            partida.turnoMareado = null;
-            io.to(partidaId).emit('logBatalla', { msg: `⏭ Turno saltado por mareo`, tipo: 'marea' });
-        } else if (yo.status && yo.status.frozen > 0) {
-            partida.turnoActual = rival.socketId;
-            io.to(partidaId).emit('logBatalla', { msg: `⏭ ${yo.nombre} salta turno por parálisis`, tipo: 'status' });
-        } else {
-            partida.turnoActual = rival.socketId;
-        }
+  executeCard(card, source, target, ctx = {}) {
+    ctx.source = source;
+    ctx.rival = target;
+    ctx.cancelAttack = false;
 
-        const jugTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador1 : partida.jugador2;
-        const rivTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador2 : partida.jugador1;
-
-        const magJug = jugTurno.personaje.magia;
-        const magRiv = rivTurno.personaje.magia;
-        const enRegen = gp.calcularRegeneracionEnergia(magJug, magRiv);
-        jugTurno.energia = Math.min(100, jugTurno.energia + enRegen);
-
-        const claseRegen = gp.aplicarHPRegenClase(jugTurno);
-        if (claseRegen > 0) io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} regenera +${claseRegen} HP (clase)`, tipo: 'curacion' });
-
-        if (partida.turno === 1) {
-            gp.aplicarEfectosClase(jugTurno, true).forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'carta' }));
-            gp.aplicarEfectosClase(rivTurno, true);
-        }
-
-        jugTurno.critBonus = 0;
-
-        const tLogs1 = gp.processPassives(jugTurno.pasivas, jugTurno, rivTurno, 'on_turn_start', {});
-        const tLogs2 = gp.processPassives(rivTurno.pasivas, rivTurno, jugTurno, 'on_turn_start', {});
-        [...tLogs1, ...tLogs2].forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
-
-        partida.accionesMax = 2 + (jugTurno.extraAction ? 1 : 0);
-        jugTurno.extraAction = false;
-
-        if (partida.turno === 1 && jugTurno.critClase) {
-            io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre}: crítico ${jugTurno.critClase.multi * 100}% por ${jugTurno.critClase.duracion} turnos`, tipo: 'carta' });
-        }
-
-        io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} recupera ${enRegen} energía`, tipo: 'energia' });
-
-        partida.turno++;
-        partidaEmitirEstado(partidaId, partida);
+    if (source.energia < card.coste) {
+      return { success: false, reason: "Energía insuficiente", log: `Energía insuficiente (${source.energia}/${card.coste})` };
     }
 
-    socket.on('crearCuenta', async ({ nombre, password }) => {
-        try {
-            const existe = await Cuenta.findOne({ nombre });
-            if (existe) { socket.emit('errorCuenta', 'Ya existe esa cuenta.'); return; }
-            const hash = bcrypt.hashSync(password, 10);
-            const cuenta = await Cuenta.create({ nombre, password: hash });
-            socket.emit('cuentaCreada', {
-                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
-                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
-            });
-        } catch (err) {
-            socket.emit('errorCuenta', 'Error al crear cuenta.');
+    source.energia -= card.coste;
+    const effectFn = this.effects[card.efecto];
+    if (!effectFn) {
+      return { success: false, reason: `Efecto desconocido: ${card.efecto}` };
+    }
+
+    const result = effectFn(target, card, ctx);
+
+    return {
+      success: true,
+      cancelAttack: ctx.cancelAttack,
+      doubleAttack: ctx.doubleAttack,
+      summonHp: ctx.summonHp || 0,
+      ...result
+    };
+  }
+
+  processPassives(pasivas, owner, rival, trigger, ctx = {}) {
+    const results = [];
+    const ownerName = owner.nombre || (owner.personaje ? owner.personaje.nombre : 'Alguien');
+    const rivalName = rival && rival.nombre ? rival.nombre : (rival && rival.personaje ? rival.personaje.nombre : '');
+
+    for (const [id, pasiva] of Object.entries(pasivas)) {
+      if (pasiva.trigger !== trigger) continue;
+
+      switch (pasiva.efecto) {
+        case "dot":
+          if (trigger === "on_hit" && ctx.target) {
+            const dmg = Math.floor(ctx.target.maxHp * pasiva.valor);
+            ctx.target.hp -= dmg;
+            results.push({ log: `${ctx.target.nombre} sufre ${dmg} de daño por veneno` });
+          }
+          break;
+        case "survival":
+          if (trigger === "on_death_blow" && owner.hp <= 0) {
+            owner.hp = pasiva.hp_min;
+            results.push({ log: `${ownerName} sobrevive con ${pasiva.hp_min} HP (Tótem)` });
+          }
+          break;
+        case "regen_hp":
+          if (trigger === "on_turn_start") {
+            const healed = Math.floor(owner.maxHp * pasiva.valor);
+            owner.hp = Math.min(owner.maxHp + (owner.hpOverflow || 0), owner.hp + healed);
+            results.push({ log: `${ownerName} regenera ${healed} HP` });
+          }
+          break;
+        case "regen_energy":
+          if (trigger === "on_turn_start") {
+            owner.energia = Math.min(100, owner.energia + pasiva.valor);
+            results.push({ log: `${ownerName} recupera ${pasiva.valor} energía` });
+          }
+          break;
+        case "counter":
+          if (trigger === "on_take_damage" && ctx.damage) {
+            const counterDmg = Math.floor(ctx.damage * pasiva.valor);
+            if (rival) rival.hp -= counterDmg;
+            results.push({ log: `${ownerName} contraataca causando ${counterDmg} daño` });
+          }
+          break;
+        case "thorns":
+          if (trigger === "on_take_damage" && ctx.damage) {
+            const thornsDmg = Math.floor(ctx.damage * pasiva.valor);
+            if (rival) rival.hp -= thornsDmg;
+            results.push({ log: `Espinas causan ${thornsDmg} daño` });
+          }
+          break;
+        case "extra_action":
+          if (trigger === "on_turn_start" && Math.random() < pasiva.probabilidad) {
+            owner.extraAction = true;
+            results.push({ log: `${ownerName} obtiene acción extra (Rapidez)` });
+          }
+          break;
+        case "revive":
+          if (trigger === "on_death" && owner.hp <= 0) {
+            owner.hp = Math.floor(owner.maxHp * pasiva.valor);
+            results.push({ log: `${ownerName} revive con ${owner.hp} HP` });
+          }
+          break;
+        case "spell_vamp":
+          if (trigger === "on_cast" && ctx.damage) {
+            const vamp = Math.floor(ctx.damage * pasiva.valor);
+            owner.hp = Math.min(owner.maxHp + (owner.hpOverflow || 0), owner.hp + vamp);
+            results.push({ log: `${ownerName} absorbe ${vamp} HP del hechizo` });
+          }
+          break;
+        case "crit_up":
+          if (trigger === "on_attack") owner.critBonus = (owner.critBonus || 0) + pasiva.valor;
+          break;
+        case "damage_reduction":
+          if (trigger === "on_take_damage" && ctx.damage) {
+            const reduction = Math.floor(ctx.damage * pasiva.valor);
+            ctx.damageReduction = (ctx.damageReduction || 0) + reduction;
+          }
+          break;
+        case "life_steal":
+          if (trigger === "on_hit" && ctx.damage) {
+            const steal = Math.floor(ctx.damage * pasiva.valor);
+            owner.hp = Math.min(owner.maxHp + (owner.hpOverflow || 0), owner.hp + steal);
+            results.push({ log: `${ownerName} roba ${steal} HP` });
+          }
+          break;
+        case "auto_shield":
+          if (trigger === "on_turn_start") {
+            owner.status = owner.status || {};
+            owner.status.shield = (owner.status.shield || 0) + Math.floor(owner.maxHp * pasiva.valor);
+            results.push({ log: `${ownerName} obtiene escudo natural` });
+          }
+          break;
+        case "enrage":
+          if (trigger === "on_hp_loss" && ctx.hpLost) {
+            owner.enrageBonus = (owner.enrageBonus || 0) + Math.floor(ctx.hpLost * pasiva.valor);
+          }
+          break;
+        case "cleanse":
+          if (trigger === "on_turn_start" && owner.status) {
+            owner.status.debuffs = {};
+            owner.status.frozen = 0;
+            owner.status.silenced = 0;
+            results.push({ log: `${ownerName} se purifica` });
+          }
+          break;
+      }
+    }
+    return results;
+  }
+
+  aplicarHPRegenClase(jugador) {
+    const info = CLASS_DATA[jugador.personaje.clase];
+    if (!info || !info.hpRegen) return 0;
+    const healed = info.hpRegen;
+    jugador.hp = Math.min(jugador.maxHp + (jugador.hpOverflow || 0), jugador.hp + healed);
+    return healed;
+  }
+
+  aplicarEfectosClase(jugador, esPrimerTurno) {
+    const info = CLASS_DATA[jugador.personaje.clase];
+    if (!info) return [];
+    const logs = [];
+
+    if (esPrimerTurno && info.energiaPrimerTurno) {
+      jugador.energia = Math.min(100, jugador.energia + info.energiaPrimerTurno);
+      logs.push(`${jugador.nombre} recibe ${info.energiaPrimerTurno} energía extra (1er turno)`);
+    }
+
+    if (esPrimerTurno && info.accionesExtra1) {
+      jugador.extraAction = true;
+      logs.push(`${jugador.nombre} tiene acciones extra este turno`);
+    }
+
+    if (esPrimerTurno && info.inmune1ronda) {
+      jugador.status = jugador.status || {};
+      jugador.status.inmune = true;
+      logs.push(`${jugador.nombre} es inmune por 1 ronda`);
+    }
+
+    if (info.danoAHP && esPrimerTurno) {
+      jugador.danoAHP = true;
+      logs.push(`${jugador.nombre}: el daño causado se convierte en HP`);
+    }
+
+    if (info.hpPenalidad) {
+      const penalidad = Math.floor(jugador.maxHp * info.hpPenalidad);
+      jugador.hp -= penalidad;
+      jugador.hp = Math.max(1, jugador.hp);
+      logs.push(`${jugador.nombre} tiene -${penalidad} HP (penalidad de clase)`);
+    }
+
+    return logs;
+  }
+
+  aplicarCritClase(jugador) {
+    const info = CLASS_DATA[jugador.personaje.clase];
+    if (!info || !info.critEfecto) return 0;
+    jugador.critClase = info.critEfecto;
+    return info.critEfecto.multi;
+  }
+
+  applyStatusEffects(jugador) {
+    if (!jugador.status) return [];
+    const logs = [];
+
+    if (jugador.status.frozen && jugador.status.frozen > 0) {
+      jugador.status.frozen--;
+      if (jugador.status.frozen > 0) logs.push(`${jugador.nombre} está paralizado (${jugador.status.frozen}t)`);
+    }
+    if (jugador.status.silenced && jugador.status.silenced > 0) {
+      jugador.status.silenced--;
+    }
+    if (jugador.status.shield && jugador.status.shield < 0) jugador.status.shield = 0;
+
+    if (jugador.status.inmune) {
+      logs.push(`${jugador.nombre} ya no es inmune`);
+      jugador.status.inmune = false;
+    }
+
+    if (jugador.status.buffs) {
+      for (const [stat, buff] of Object.entries(jugador.status.buffs)) {
+        buff.restante--;
+        if (buff.restante <= 0) {
+          delete jugador.status.buffs[stat];
+          logs.push(`Buff de ${stat} de ${jugador.nombre} se desvaneció`);
         }
-    });
-
-    socket.on('iniciarSesion', async ({ nombre, password }) => {
-        try {
-            const cuenta = await Cuenta.findOne({ nombre });
-            if (!cuenta) { socket.emit('errorLogin', 'Cuenta no encontrada.'); return; }
-            const valida = bcrypt.compareSync(password, cuenta.password);
-            if (!valida) { socket.emit('errorLogin', 'Contraseña incorrecta.'); return; }
-            socket.emit('loginExitoso', {
-                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
-                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
-            });
-        } catch (err) {
-            socket.emit('errorLogin', 'Error al iniciar sesión.');
+      }
+    }
+    if (jugador.status.debuffs) {
+      for (const [stat, debuff] of Object.entries(jugador.status.debuffs)) {
+        debuff.restante--;
+        if (debuff.restante <= 0) {
+          delete jugador.status.debuffs[stat];
+          logs.push(`Debuff de ${stat} de ${jugador.nombre} se desvaneció`);
         }
-    });
+      }
+    }
 
-    socket.on('actualizarPerfil', async ({ cuenta_id, nombre, password, foto }) => {
-        try {
-            const update = {};
-            if (foto) update.foto = foto;
-            if (nombre) update.nombre = nombre;
-            if (password) update.password = bcrypt.hashSync(password, 10);
-            const cuenta = await Cuenta.findByIdAndUpdate(cuenta_id, update, { new: true });
-            if (!cuenta) { socket.emit('errorPerfil', 'Cuenta no encontrada.'); return; }
-            socket.emit('perfilActualizado', { nombre: cuenta.nombre, foto: cuenta.foto || '' });
-        } catch (err) {
-            socket.emit('errorPerfil', 'Error al actualizar.');
+    return logs;
+  }
+
+  calcularStatsConBuffs(jugador) {
+    const pj = jugador.personaje;
+    const stats = {
+      nombre: jugador.nombre || pj.nombre,
+      fuerza: pj.fuerza,
+      resistencia: pj.resistencia,
+      velocidad: pj.velocidad,
+      magia: pj.magia,
+      suerte: pj.suerte
+    };
+
+    if (jugador.equipment) {
+      for (const eq of Object.values(jugador.equipment)) {
+        if (eq && eq.stat && stats[eq.stat] !== undefined) {
+          stats[eq.stat] += eq.valor || 0;
         }
-    });
-
-    socket.on('guardarPersonaje', async (datos) => {
-        const suma = datos.fuerza + datos.resistencia + datos.velocidad + datos.magia + datos.suerte;
-        if (suma !== 25 || datos.fuerza < 2 || datos.resistencia < 2 || datos.velocidad < 2 || datos.magia < 2 || datos.suerte < 2) {
-            socket.emit('errorPersonaje', 'Los puntos deben sumar 25 (mínimo 2 por categoría).');
-            return;
+        if (eq && eq.penalidad) {
+          for (const [s, v] of Object.entries(eq.penalidad)) {
+            if (stats[s] !== undefined) stats[s] += v;
+          }
         }
-        const mods = CLASS_DATA[datos.clase];
-        if (!mods) { socket.emit('errorPersonaje', 'Clase inválida.'); return; }
-        const finales = aplicarModsClase(datos.clase, datos);
-        const maxHP = getMaxHP(datos.clase);
-        try {
-            const cuenta = await Cuenta.findById(datos.cuenta_id);
-            if (!cuenta) { socket.emit('errorPersonaje', 'Cuenta no encontrada.'); return; }
-            cuenta.personajes.push({
-                nombre: datos.nombre, clase: datos.clase,
-                fuerza: finales.fuerza,
-                resistencia: finales.resistencia,
-                velocidad: finales.velocidad,
-                magia: finales.magia,
-                suerte: finales.suerte,
-                hp: maxHP,
-                energia: 100,
-                foto: datos.foto || ''
-            });
-            await cuenta.save();
-            const nuevoPJ = cuenta.personajes[cuenta.personajes.length - 1];
-            socket.emit('personajeGuardado', nuevoPJ);
-        } catch (err) {
-            socket.emit('errorPersonaje', 'Error al guardar.');
+      }
+    }
+
+    if (jugador.status) {
+      if (jugador.status.buffs) {
+        for (const [stat, buff] of Object.entries(jugador.status.buffs)) {
+          if (stats[stat] !== undefined) stats[stat] += buff.valor;
         }
-    });
-
-    socket.on('eliminarPersonaje', async ({ cuenta_id, personaje_id }) => {
-        try {
-            const cuenta = await Cuenta.findById(cuenta_id);
-            if (!cuenta) { socket.emit('errorPersonaje', 'Cuenta no encontrada.'); return; }
-            cuenta.personajes.pull(personaje_id);
-            await cuenta.save();
-            socket.emit('personajeEliminado', {
-                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
-                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
-            });
-        } catch (err) {
-            socket.emit('errorPersonaje', 'Error al eliminar.');
+      }
+      if (jugador.status.debuffs) {
+        for (const [stat, debuff] of Object.entries(jugador.status.debuffs)) {
+          if (stats[stat] !== undefined) stats[stat] -= debuff.valor;
         }
-    });
+      }
+    }
 
-    socket.on('asignarStats', async ({ cuenta_id, personaje_id, stats }) => {
-        try {
-            const cuenta = await Cuenta.findById(cuenta_id);
-            if (!cuenta) { socket.emit('errorPersonaje', 'Cuenta no encontrada.'); return; }
-            const pj = cuenta.personajes.id(personaje_id);
-            if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-            const pts = pj.puntosStats || 0;
-            const usados = (stats.fuerza - pj.fuerza) + (stats.resistencia - pj.resistencia) +
-                           (stats.velocidad - pj.velocidad) + (stats.magia - pj.magia) +
-                           (stats.suerte - pj.suerte);
-            if (usados > pts) { socket.emit('errorPersonaje', 'No tenés suficientes puntos.'); return; }
-            if (stats.fuerza < 2 || stats.resistencia < 2 || stats.velocidad < 2 || stats.magia < 2 || stats.suerte < 2) {
-                socket.emit('errorPersonaje', 'Mínimo 2 puntos por estadística.'); return;
-            }
-            pj.fuerza = stats.fuerza;
-            pj.resistencia = stats.resistencia;
-            pj.velocidad = stats.velocidad;
-            pj.magia = stats.magia;
-            pj.suerte = stats.suerte;
-            pj.puntosStats = pts - usados;
-            await cuenta.save();
-            socket.emit('statsAsignados', {
-                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
-                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
-            });
-        } catch (err) {
-            socket.emit('errorPersonaje', 'Error al asignar stats.');
-        }
-    });
+    return stats;
+  }
 
-    socket.on('devComando', async ({ cuenta_id, accion, params }) => {
-        try {
-            const devCuenta = await Cuenta.findById(cuenta_id);
-            if (!devCuenta || !devCuenta.dev) { socket.emit('errorPersonaje', 'Acceso denegado.'); return; }
-            if (accion === 'buscarUsuario') {
-                const target = await Cuenta.findOne({ nombre: params.username });
-                if (!target) { socket.emit('errorPersonaje', 'Usuario no encontrado.'); return; }
-                socket.emit('devUsuarioEncontrado', {
-                    id: target._id, nombre: target.nombre, dinero: target.dinero,
-                    nivel: target.nivel, experiencia: target.experiencia,
-                    foto: target.foto, personajes: target.personajes
-                });
-                return;
-            }
-            const targetId = params.targetId || cuenta_id;
-            const cuenta = await Cuenta.findById(targetId);
-            if (!cuenta) { socket.emit('errorPersonaje', 'Cuenta destino no encontrada.'); return; }
-            if (accion === 'addDinero') {
-                cuenta.dinero = Math.max(0, (cuenta.dinero || 0) + params.valor);
-            } else if (accion === 'addXP') {
-                const pj = cuenta.personajes.id(params.personaje_id);
-                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-                pj.experiencia = Math.max(0, (pj.experiencia || 0) + params.valor);
-                while (pj.experiencia >= pj.nivel) { pj.experiencia -= pj.nivel; pj.nivel++; pj.puntosStats = (pj.puntosStats || 0) + 3; }
-            } else if (accion === 'addPuntosStats') {
-                const pj = cuenta.personajes.id(params.personaje_id);
-                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-                pj.puntosStats = Math.max(0, (pj.puntosStats || 0) + params.valor);
-            } else if (accion === 'eliminarPJ') {
-                cuenta.personajes.pull(params.personaje_id);
-            } else if (accion === 'setXP') {
-                const pj = cuenta.personajes.id(params.personaje_id);
-                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-                pj.experiencia = Math.max(0, params.valor);
-                while (pj.experiencia >= pj.nivel) { pj.experiencia -= pj.nivel; pj.nivel++; pj.puntosStats = (pj.puntosStats || 0) + 3; }
-            } else if (accion === 'setPuntosStats') {
-                const pj = cuenta.personajes.id(params.personaje_id);
-                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-                pj.puntosStats = Math.max(0, params.valor);
-            } else if (accion === 'setNivel') {
-                const pj = cuenta.personajes.id(params.personaje_id);
-                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-                pj.nivel = Math.max(1, params.valor);
-            } else if (accion === 'setStats') {
-                const pj = cuenta.personajes.id(params.personaje_id);
-                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-                if (params.fuerza !== undefined) pj.fuerza = Math.max(2, params.fuerza);
-                if (params.resistencia !== undefined) pj.resistencia = Math.max(2, params.resistencia);
-                if (params.velocidad !== undefined) pj.velocidad = Math.max(2, params.velocidad);
-                if (params.magia !== undefined) pj.magia = Math.max(2, params.magia);
-                if (params.suerte !== undefined) pj.suerte = Math.max(2, params.suerte);
-            } else {
-                socket.emit('errorPersonaje', 'Comando desconocido.'); return;
-            }
-            await cuenta.save();
-            socket.emit('devResultado', {
-                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
-                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
-            });
-        } catch (err) {
-            socket.emit('errorPersonaje', 'Error al ejecutar comando.');
-        }
-    });
+  calcularRegeneracionEnergia(magJugador, magRival) {
+    const diff = magJugador - magRival;
+    if (diff <= 0) return 10;
+    const ratio = diff / Math.max(magRival, 1);
+    if (ratio > 1.5) return 25;
+    if (ratio > 1.0) return 20;
+    if (ratio > 0.5) return 15;
+    return 10;
+  }
 
-    socket.on('buscarPartida', ({ cuenta_id, personaje }) => {
-        console.log('🔍 Buscando partida para:', personaje.nombre);
-        colaEspera = colaEspera.filter(j => j.socketId !== socket.id);
-        colaEspera.push({ socketId: socket.id, cuenta_id, personaje });
-        socket.emit('esperandoRival');
+  calcularCritico(velJugador, velRival) {
+    if (velJugador <= velRival) return 0;
+    const diff = velJugador - velRival;
+    return Math.min(0.5, diff * 0.05);
+  }
 
-        if (colaEspera.length >= 2) {
-            const jugador1 = colaEspera.shift();
-            const jugador2 = colaEspera.shift();
-            const partidaId = `${jugador1.socketId}-${jugador2.socketId}`;
+  calcularTurnoInicial(jugadores) {
+    return [...jugadores].sort((a, b) => b.velocidad - a.velocidad);
+  }
 
-            const maxHP1 = getMaxHP(jugador1.personaje.clase);
-            const maxHP2 = getMaxHP(jugador2.personaje.clase);
+  objetosIguales(a, b) {
+    return a.nombre === b.nombre;
+  }
 
-            const pj1Stats = aplicarModsClase(jugador1.personaje.clase, jugador1.personaje);
-            const pj2Stats = aplicarModsClase(jugador2.personaje.clase, jugador2.personaje);
+  puedeAgregarInventario(inventario, objeto) {
+    const count = inventario.filter(o => !o._equipado).length;
+    return count < 5;
+  }
 
-            const personaje1 = { ...jugador1.personaje, ...pj1Stats };
-            const personaje2 = { ...jugador2.personaje, ...pj2Stats };
+  crearObjeto(inventario, materiales, receta) {
+    for (const mat of receta.requiere) {
+      const idx = inventario.findIndex(o => o.tipo === "material" && o.nombre === mat);
+      if (idx === -1) return { success: false, reason: `Falta material: ${mat}` };
+      inventario.splice(idx, 1);
+    }
+    if (!this.puedeAgregarInventario(inventario, receta.resultado)) {
+      return { success: false, reason: "Inventario lleno" };
+    }
+    inventario.push({ ...receta.resultado, _id: Date.now().toString() });
+    return { success: true };
+  }
 
-            const ordenTurnos = gp.calcularTurnoInicial([
-                { socketId: jugador1.socketId, velocidad: personaje1.velocidad, nombre: personaje1.nombre },
-                { socketId: jugador2.socketId, velocidad: personaje2.velocidad, nombre: personaje2.nombre }
-            ]);
-            const turnoInicial = ordenTurnos[0].socketId;
+  tirarObjeto(inventario, idx) {
+    if (idx < 0 || idx >= inventario.length) return null;
+    const obj = inventario[idx];
+    inventario.splice(idx, 1);
+    return obj;
+  }
 
-            const pasivas1 = getPasivasClase(jugador1.personaje.clase);
-            const pasivas2 = getPasivasClase(jugador2.personaje.clase);
+  tieneHabilidadInterruptor(jugador, cartaId) {
+    return jugador.skills && jugador.skills.some(s => s.id === cartaId && s.interrupt);
+  }
 
-            partidas[partidaId] = {
-                id: partidaId,
-                jugador1: {
-                    ...jugador1,
-                    personaje: personaje1,
-                    nombre: personaje1.nombre,
-                    maxHp: maxHP1, hp: maxHP1, energia: 0,
-                    pose: null, status: {}, pasivas: pasivas1,
-                    extraAction: false, critBonus: 0, enrageBonus: 0,
-                    summonHp: 0, inventario: [],
-                    equipment: { arma: null, armadura: null, accesorio: null },
-                    objetosRecibidos: []
-                },
-                jugador2: {
-                    ...jugador2,
-                    personaje: personaje2,
-                    nombre: personaje2.nombre,
-                    maxHp: maxHP2, hp: maxHP2, energia: 0,
-                    pose: null, status: {}, pasivas: pasivas2,
-                    extraAction: false, critBonus: 0, enrageBonus: 0,
-                    summonHp: 0, inventario: [],
-                    equipment: { arma: null, armadura: null, accesorio: null },
-                    objetosRecibidos: []
-                },
-                turnoActual: turnoInicial,
-                turno: 1,
-                accionesUsadas: [],
-                accionesMax: 2,
-                turnoMareado: null,
-                accionCancelada: false
-            };
+  getPasivasPorDefecto(clase) {
+    const mapa = {
+      Chaman: ["regeneracion", "veneno"],
+      Sacerdote: ["regeneracion", "bendito"],
+      Druida: ["regeneracion", "escudo_natural"],
+      Guerrero: ["fortaleza", "vampirismo"],
+      Paladin: ["fortaleza", "bendito"],
+      Berserker: ["furia_interna", "vampirismo"],
+      Acorazado: ["fortaleza", "escudo_espinas"],
+      Ogro: ["fortaleza", "furia_interna"],
+      Golem: ["fortaleza", "escudo_natural"],
+      Picaro: ["rapidez", "contraataque"],
+      Ninja: ["rapidez", "maestro_critico"],
+      Cazador: ["maestro_critico", "vampirismo"],
+      Mago: ["mana_infinito", "absorcion"],
+      MagoMaestro: ["mana_infinito", "absorcion"],
+      MagoGuerrero: ["mana_infinito", "vampirismo"],
+      SemiDios: ["bendito", "ultimo_aliento"],
+      Demonio: ["vampirismo", "furia_interna"],
+      Titan: ["fortaleza", "ultimo_aliento"]
+    };
+    return mapa[clase] || ["regeneracion", "fortaleza"];
+  }
+}
 
-            console.log(`⚔️ ${personaje1.nombre} vs ${personaje2.nombre}`);
-
-            const sJ1 = io.sockets.sockets.get(jugador1.socketId);
-            const sJ2 = io.sockets.sockets.get(jugador2.socketId);
-            if (sJ1) sJ1.join(partidaId);
-            if (sJ2) sJ2.join(partidaId);
-
-            const pJug = turnoInicial === jugador1.socketId ? partidas[partidaId].jugador1 : partidas[partidaId].jugador2;
-            const pRiv = turnoInicial === jugador1.socketId ? partidas[partidaId].jugador2 : partidas[partidaId].jugador1;
-
-            const enInicial = gp.calcularRegeneracionEnergia(pJug.personaje.magia, pRiv.personaje.magia);
-            pJug.energia = Math.min(100, pJug.energia + enInicial);
-
-            // Aplicar efectos de clase de primer turno
-            gp.aplicarEfectosClase(pJug, false);
-            gp.aplicarEfectosClase(pRiv, false);
-
-            // Aplicar crítico de clase
-            gp.aplicarCritClase(pJug);
-            gp.aplicarCritClase(pRiv);
-
-            const esJ1Primero = turnoInicial === jugador1.socketId;
-            const skills1 = getSkillsParaClase(personaje1.clase);
-            const skills2 = getSkillsParaClase(personaje2.clase);
-
-            const emitirRival = (socketId, yoPj, rivalPj, esTurno) => {
-                io.to(socketId).emit('rivalEncontrado', {
-                    partidaId,
-                    yo: {
-                        nombre: yoPj.nombre, clase: yoPj.personaje.clase,
-                        hp: yoPj.hp, energia: yoPj.energia,
-                        maxHp: yoPj.maxHp, fuerza: yoPj.personaje.fuerza,
-                        resistencia: yoPj.personaje.resistencia,
-                        velocidad: yoPj.personaje.velocidad,
-                        magia: yoPj.personaje.magia,
-                        suerte: yoPj.personaje.suerte,
-                        nivel: yoPj.personaje.nivel || 1,
-                        foto: yoPj.personaje.foto || '',
-                        status: yoPj.status || {},
-                        inventario: yoPj.inventario || [],
-                        equipment: yoPj.equipment || { arma: null, armadura: null, accesorio: null },
-                        objetosRecibidos: yoPj.objetosRecibidos || []
-                    },
-                    rival: {
-                        nombre: rivalPj.nombre, clase: rivalPj.personaje.clase,
-                        hp: rivalPj.hp, energia: rivalPj.energia,
-                        maxHp: rivalPj.maxHp, fuerza: rivalPj.personaje.fuerza,
-                        resistencia: rivalPj.personaje.resistencia,
-                        velocidad: rivalPj.personaje.velocidad,
-                        magia: rivalPj.personaje.magia,
-                        suerte: rivalPj.personaje.suerte,
-                        nivel: rivalPj.personaje.nivel || 1,
-                        status: rivalPj.status || {},
-                        objetosRecibidos: rivalPj.objetosRecibidos || []
-                    },
-                    turnoActual: turnoInicial,
-                    esmiTurno: esTurno,
-                    accionesRestantes: esTurno ? 2 : 0,
-                    skills: esTurno ? skills1 : skills2,
-                    pasivas: Object.keys(esTurno ? pasivas1 : pasivas2),
-                    recetas: MAZOS.recetas
-                });
-            };
-
-            emitirRival(jugador1.socketId, partidas[partidaId].jugador1, partidas[partidaId].jugador2, esJ1Primero);
-            emitirRival(jugador2.socketId, partidas[partidaId].jugador2, partidas[partidaId].jugador1, !esJ1Primero);
-        }
-    });
-
-    socket.on('cancelarBusqueda', () => {
-        colaEspera = colaEspera.filter(j => j.socketId !== socket.id);
-    });
-
-    socket.on('disconnect', () => {
-        for (const [id, partida] of Object.entries(partidas)) {
-            if (partida.jugador1.socketId === socket.id || partida.jugador2.socketId === socket.id) {
-                const rivalId = partida.jugador1.socketId === socket.id ? partida.jugador2.socketId : partida.jugador1.socketId;
-                const rivalData = partida.jugador1.socketId === socket.id ? partida.jugador2 : partida.jugador1;
-                io.to(rivalId).emit('finPartida', { ganador: rivalId, motivo: 'El rival se desconectó.' });
-                otorgarXP(rivalData.cuenta_id, rivalData.personaje._id, 1).then(c => { if (c) io.to(rivalId).emit('cuentaActualizada', c.toObject()); });
-                delete partidas[id];
-            }
-        }
-        colaEspera = colaEspera.filter(j => j.socketId !== socket.id);
-        console.log('❌ Desconectado:', socket.id);
-    });
-});
-
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => console.log(`Servidor en http://localhost:${PORT}`));
+module.exports = { GameProcessor, SKILLS_DATA, CLASS_DATA, MAZOS, aplicarModsClase, getMaxHP };
