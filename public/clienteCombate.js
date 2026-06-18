@@ -73,11 +73,11 @@ function renderizarCombate() {
 
             <div style="display:flex; justify-content:center; padding: 16px 0 20px;">
                 <div id="menuRadial" class="radial-container">
-                    <button id="btnAtacar" class="accion-btn">⚔️</button>
-                    <button id="btnDescansar" class="accion-btn">💤</button>
-                    <button id="btnPose" class="accion-btn">🛡️</button>
-                    <button id="btnCarta" class="accion-btn">🃏</button>
-                    <button id="btnHab" class="accion-btn">✨</button>
+                    <button id="btnAtacar" class="accion-btn" title="Atacar">⚔️</button>
+                    <button id="btnDescansar" class="accion-btn" title="Descansar">💤</button>
+                    <button id="btnPose" class="accion-btn" title="Pose">🛡️</button>
+                    <button id="btnCarta" class="accion-btn" title="Carta">🃏</button>
+                    <button id="btnHab" class="accion-btn" title="Habilidad">✨</button>
                     <button id="btnCentral" class="central-btn">${esMiTurno ? `ACCIÓN\n(${accionesRestantes}/2)` : 'ESPERA'}</button>
                 </div>
             </div>
@@ -127,10 +127,37 @@ function actualizarCentral() {
     }
 }
 
-socket.on('logBatalla', (mensaje) => {
+function estiloLog(data) {
+    const estilos = {
+        ataque: 'color:#d4a060;font-size:11px;',
+        curacion: 'color:#40c060;font-size:11px;',
+        pose: 'color:#60a0d0;font-size:11px;',
+        muerte: 'color:#ff4422;font-size:14px;font-weight:700;letter-spacing:1px;',
+        marea: 'color:#a060d0;font-size:11px;',
+        energia: 'color:#60d0d0;font-size:11px;'
+    };
+    return estilos[data.tipo] || 'color:#9a7040;font-size:10px;';
+}
+
+function colorearNombres(msg) {
+    let s = msg;
+    if (rivalPJ && rivalPJ.nombre) {
+        const re = new RegExp(rivalPJ.nombre.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+        s = s.replace(re, `<span style="color:#ff6040;font-weight:700;">${rivalPJ.nombre}</span>`);
+    }
+    if (miPJ && miPJ.nombre) {
+        const re = new RegExp(miPJ.nombre.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+        s = s.replace(re, `<span style="color:#60a0ff;font-weight:700;">${miPJ.nombre}</span>`);
+    }
+    return s;
+}
+
+socket.on('logBatalla', (data) => {
     const log = document.getElementById('logBatalla');
     if (!log) return;
-    log.innerHTML += `<div>▸ ${mensaje}</div>`;
+    const msg = typeof data === 'string' ? data : data.msg;
+    const estilo = typeof data === 'string' ? 'color:#9a7040;font-size:10px;' : estiloLog(data);
+    log.innerHTML += `<div style="${estilo}">▸ ${colorearNombres(msg)}</div>`;
     log.scrollTop = log.scrollHeight;
 });
 
