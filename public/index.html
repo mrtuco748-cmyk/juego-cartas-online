@@ -129,174 +129,146 @@
 
         /* ── COMBATE ── */
         #pantallaCombate {
-            height:100vh;
-            background:radial-gradient(circle at center,#2b2b2b,#111);
-            color:white;
-            display:flex;
-            flex-direction:column;
+            height:100vh; background:radial-gradient(circle at center,#2d2d2d,#080808);
+            color:white; display:flex; flex-direction:column;
+            overflow:hidden; width:100%;
+        }
+        #pantallaCombate.activa { align-items:stretch; justify-content:flex-start; }
+
+        .topbar {
+            height:70px; display:flex; align-items:center;
+            padding:0 30px; background:rgba(0,0,0,.35);
+            border-bottom:1px solid #8b6a2f; flex-shrink:0;
+        }
+        .orb {
+            width:45px; height:45px; border-radius:50%;
+            background:radial-gradient(circle,#fff1aa,#c79000);
+            box-shadow:0 0 12px gold,0 0 25px gold;
+        }
+
+        .battlefield { flex:1; position:relative; overflow:hidden; min-height:0; }
+
+        /* ── PERSONAJES (verticales) ── */
+        .enemy-character {
+            position:absolute; top:30px; right:220px;
+            width:260px; height:370px; border-radius:20px;
+            border:2px solid rgba(255,255,255,.1);
+            background:linear-gradient(135deg,rgba(255,255,255,.03),rgba(255,255,255,.08));
+            display:flex; align-items:center; justify-content:center;
+            font-size:140px; color:#666; z-index:2;
             overflow:hidden;
-            width:100%;
         }
-        #pantallaCombate.activa {
-            align-items:stretch;
-            justify-content:flex-start;
-        }
+        .enemy-character img { width:100%; height:100%; object-fit:cover; filter:brightness(0.5) contrast(1.3); }
 
-        .topbar{
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            padding:0 30px;
-            background:rgba(0,0,0,.45);
-            border-bottom:2px solid #6b5329;
-            flex-shrink:0;
-            height:80px;
+        .player-character {
+            position:absolute; left:120px; bottom:30px;
+            width:260px; height:370px; border-radius:20px;
+            border:2px solid rgba(255,255,255,.1);
+            background:linear-gradient(135deg,rgba(255,255,255,.03),rgba(255,255,255,.08));
+            display:flex; align-items:center; justify-content:center;
+            font-size:140px; color:#666; z-index:2;
+            overflow:hidden;
         }
-        .turn-container{ display:flex; align-items:center; gap:16px; }
-        .turn-circle{
-            width:50px; height:50px; border-radius:50%;
-            border:4px solid gold;
-            background:radial-gradient(circle,#ffe07a,#8a6500);
-            box-shadow:0 0 16px gold;
-            flex-shrink:0;
-        }
-        .turn-text{ font-size:26px; font-weight:bold; color:#ffd86b; letter-spacing:2px; }
-        .inventory-btn{
-            padding:10px 20px; border:none; border-radius:8px;
-            background:#8b6d3f; color:white; font-weight:bold;
-            cursor:pointer; font-size:14px; flex-shrink:0;
-        }
-        .inventory-btn:hover { filter:brightness(1.2); }
+        .player-character img { width:100%; height:100%; object-fit:cover; filter:brightness(0.5) contrast(1.3); }
 
-        .battlefield{ flex:1; position:relative; overflow:hidden; min-height:0; }
-
-        .character{
-            width:220px; height:360px;
-            border:2px solid #555; border-radius:16px;
-            background:rgba(255,255,255,.05);
-            display:flex; justify-content:center; align-items:center;
-            font-size:120px; color:#666;
-            backdrop-filter:blur(5px); overflow:hidden; z-index:2;
-        }
-        .character img { width:100%; height:100%; object-fit:cover; filter:brightness(0.4) contrast(1.3); }
-        .player{ position:absolute; left:40px; bottom:20px; }
-        .enemy{ position:absolute; right:40px; top:20px; }
-
-        .scroll{
-            position:absolute; left:50%; top:50%;
-            transform:translate(-50%,-50%);
-            width:min(500px,50vw); height:min(280px,50vh);
-            background:linear-gradient(#e8d6a4,#c7a96c);
-            border:6px solid #8b6d3f; border-radius:12px;
-            padding:16px; overflow-y:auto;
-            color:#3b2200; font-weight:bold;
-            box-shadow:0 0 24px rgba(0,0,0,.5), inset 0 0 20px rgba(255,255,255,.15);
+        /* ── PERGAMINO ── */
+        .log-scroll {
+            position:absolute; left:50%; top:30px;
+            transform:translateX(-50%);
+            width:600px; height:300px;
+            background:linear-gradient(#ecdcb0,#d2b06c);
+            border:6px solid #8b6430; border-radius:14px;
+            padding:16px 20px; overflow-y:auto;
+            color:#513100; box-shadow:0 0 30px rgba(0,0,0,.4);
             font-size:13px; z-index:1;
         }
-        .scroll::-webkit-scrollbar { width:4px; }
-        .scroll::-webkit-scrollbar-track { background:#c7a96c; }
-        .scroll::-webkit-scrollbar-thumb { background:#6b5329; border-radius:2px; }
-        .log{ margin-bottom:6px; padding:4px 0; border-bottom:1px solid rgba(0,0,0,0.08); }
-        .log:last-child{ border-bottom:none; }
+        .log-scroll h2 { text-align:center; margin-bottom:12px; font-size:15px; letter-spacing:2px; }
+        .log-scroll::-webkit-scrollbar { width:4px; }
+        .log-scroll::-webkit-scrollbar-track { background:#c7a96c; }
+        .log-scroll::-webkit-scrollbar-thumb { background:#6b5329; border-radius:2px; }
+        .log-entry { margin-bottom:6px; padding:3px 0; border-bottom:1px solid rgba(0,0,0,0.08); }
+        .log-entry:last-child { border-bottom:none; }
 
-        .bottom-panel{
-            flex-shrink:0;
-            display:grid;
-            grid-template-columns:1fr 1.2fr 1fr;
-            gap:12px;
-            padding:12px;
-            background:rgba(0,0,0,.55);
-            border-top:2px solid #6b5329;
-            min-height:0;
-            height:auto;
-            max-height:45vh;
-            overflow-y:auto;
+        /* ── TURNO DEBAJO DEL LOG ── */
+        .turn-message {
+            position:absolute; left:50%; top:345px;
+            transform:translateX(-50%);
+            font-size:24px; font-weight:bold;
+            color:#f3ca6b; letter-spacing:3px;
+            text-shadow:0 2px 8px rgba(0,0,0,.6);
+            z-index:3;
         }
 
-        .stats{
-            background:#1a1a1a;
-            border:2px solid #6b5329;
-            border-radius:12px;
-            padding:12px;
-            display:flex;
-            flex-direction:column;
+        /* ── FICHAS (stats sheets) ── */
+        .sheet {
+            width:380px; height:215px; padding:14px 16px;
+            background:linear-gradient(145deg,#141414,#232323);
+            border:2px solid #8b6430; border-radius:16px;
+            box-shadow:0 0 20px rgba(0,0,0,.4);
         }
-        .stats > :last-child { margin-top:auto; }
+        .enemy-sheet { position:absolute; left:40px; bottom:300px; z-index:3; }
+        .player-sheet { position:absolute; right:40px; bottom:300px; z-index:3; }
 
-        .name{ font-size:20px; color:#ffd86b; font-weight:bold; }
-        .class{ color:#ccc; margin-bottom:8px; font-size:13px; }
-
-        .bar{
-            width:100%; height:14px;
-            background:#444; border-radius:8px;
-            overflow:hidden; margin-bottom:8px;
+        .sheet h2 { color:#f3ca6b; font-size:17px; }
+        .sheet h4 { color:#c9c9c9; margin-bottom:10px; font-size:13px; font-weight:normal; }
+        .sheet .bar { width:100%; height:14px; background:#444; border-radius:12px; overflow:hidden; margin-bottom:6px; }
+        .sheet .hp-fill { height:100%; background:#ff2859; transition:width 0.3s; }
+        .sheet .energy-fill { height:100%; background:#2688ff; transition:width 0.3s; }
+        .sheet .stats-grid {
+            margin-top:8px; display:grid;
+            grid-template-columns:1fr 1fr; gap:4px;
         }
-        .hp-fill{ height:100%; background:crimson; transition:width 0.3s; }
-        .energy-fill{ height:100%; background:dodgerblue; transition:width 0.3s; }
-
-        .attributes{
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:4px;
-            margin-top:8px;
-        }
-        .attributes div{
-            background:#2b2b2b;
-            padding:4px 6px;
-            border-radius:5px;
-            font-size:13px;
+        .sheet .stats-grid div {
+            background:#2d2d2d; padding:4px 6px; border-radius:5px; font-size:12px;
         }
 
-        .cards-area{
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            gap:12px;
-            flex-wrap:wrap;
+        .sheet-status {
+            font-size:10px; color:#c090d0; text-align:center; margin-bottom:4px;
         }
-        .card-slot{
-            width:130px; height:180px;
+
+        /* ── CARTAS ACTIVAS (fanned) ── */
+        .active-cards {
+            position:absolute; left:50%; bottom:20px;
+            transform:translateX(-50%);
+            display:flex; align-items:flex-end; z-index:10;
+        }
+        .slot-card {
+            width:180px; height:250px;
             background:linear-gradient(145deg,#f0e0b2,#d2b574);
-            border:3px solid #8b6d3f; border-radius:12px;
-            color:#222; padding:8px;
+            border:3px solid #8b6d3f; border-radius:14px;
+            color:#222; padding:12px;
             display:flex; flex-direction:column;
-            justify-content:space-between;
-            cursor:pointer; transition:.2s;
+            cursor:pointer; transition:0.2s; flex-shrink:0;
         }
-        .card-slot:hover{ transform:translateY(-10px); }
-        .card-slot.selected{ border-color:#ffd700; box-shadow:0 0 16px rgba(255,215,0,0.4); }
-        .card-slot.disabled{ opacity:0.5; cursor:not-allowed; }
-        .card-slot.disabled:hover{ transform:none; }
-        .card-title{ font-size:16px; font-weight:bold; }
-        .card-cost{ text-align:right; font-size:18px; color:#004cff; font-weight:bold; }
+        .slot-card:hover { filter:brightness(1.1); }
+        .slot-card.selected { border-color:#ffd700; box-shadow:0 0 20px rgba(255,215,0,0.5); }
+        .slot-card.disabled { opacity:0.5; cursor:not-allowed; }
+        .slot-card .card-name { font-size:16px; font-weight:bold; margin-bottom:6px; }
+        .slot-card .card-cost { margin-top:auto; text-align:right; font-size:20px; color:#004cff; font-weight:bold; }
+        .slot-card .card-desc { font-size:11px; color:#555; flex:1; }
 
-        .actions{
-            display:flex;
-            gap:6px;
-            flex-wrap:wrap;
-            margin-top:8px;
+        /* ── BOTONES ACCIONES ── */
+        .btn-inventory {
+            position:absolute; left:30px; bottom:30px;
+            padding:12px 24px; border:none; border-radius:10px;
+            background:#8b6430; color:white; font-weight:bold;
+            cursor:pointer; font-size:13px; z-index:5;
         }
-        .actions button{
-            flex:1;
-            min-width:70px;
-            padding:8px 6px;
-            border:none; border-radius:6px;
-            font-weight:bold; cursor:pointer;
-            font-size:12px;
-            text-align:center;
-        }
-        .actions button:hover{ filter:brightness(1.2); }
-        .attack-btn{ background:crimson; color:white; }
-        .rest-btn{ background:dodgerblue; color:white; }
-        .pose-btn{ background:gold; color:#222; }
-        .extra-btn{ background:#5be87a; color:#222; }
+        .btn-inventory:hover { filter:brightness(1.15); }
 
-        .carta-seleccion-info {
-            position:absolute; bottom:280px; left:50%; transform:translateX(-50%);
-            background:rgba(0,0,0,.8); border:2px solid #8b6d3f; border-radius:10px;
-            padding:10px 20px; color:#ffd86b; font-weight:bold; z-index:30;
-            white-space:nowrap;
+        .actions {
+            position:absolute; right:30px; bottom:30px;
+            display:flex; gap:8px; z-index:5;
         }
+        .actions button {
+            border:none; border-radius:8px; padding:10px 16px;
+            font-weight:bold; cursor:pointer; font-size:12px;
+        }
+        .actions button:hover { filter:brightness(1.2); }
+        .btn-atk { background:#ff2859; color:white; }
+        .btn-rest { background:#2688ff; color:white; }
+        .btn-pose { background:#ffd94d; color:#222; }
+        .btn-extra { background:#77ef95; color:#222; }
 
         .inventario-panel {
             position:absolute; top:95px; right:20px; width:220px;
@@ -343,17 +315,16 @@
             top:50%; left:50%; transform:translate(-50%,-50%);
         }
         .radial-btn .icon { font-size:22px; }
-        #btnAtacar   { transform:translate(-50%,-50%) rotate(0deg) translateY(-120px) rotate(0deg); }
+        #btnAtakar   { transform:translate(-50%,-50%) rotate(0deg) translateY(-120px) rotate(0deg); }
         #btnDescansar { transform:translate(-50%,-50%) rotate(72deg) translateY(-120px) rotate(-72deg); }
         #btnPose     { transform:translate(-50%,-50%) rotate(144deg) translateY(-120px) rotate(-144deg); }
         #btnCarta    { transform:translate(-50%,-50%) rotate(216deg) translateY(-120px) rotate(-216deg); }
-        #btnExtra    { transform:translate(-50%,-50%) rotate(288deg) translateY(-120px) rotate(-288deg); }
+        #btnExtra2   { transform:translate(-50%,-50%) rotate(288deg) translateY(-120px) rotate(-288deg); }
 
         @media (max-width: 768px) {
             .splash-title { font-size: 3.5em; letter-spacing: 10px; }
             .splash-sub { font-size: 0.75em; letter-spacing: 5px; margin-bottom: 40px; }
             .splash-btn { font-size: 0.9em; padding: 14px 30px; letter-spacing: 3px; }
-
             #contenedor { width: min(98vw, 480px); }
             .main-panel { padding: 12px 10px; }
             .main-btn { font-size: 13px; padding: 11px 0; letter-spacing: 2px; }
@@ -364,73 +335,63 @@
             .coin-badge { font-size: 10px; }
             .bottom-row { padding: 8px 10px 10px; gap: 6px; }
             .round-btn { height: 58px; font-size: 8px; }
-
             .campo input, .campo select { font-size: 11px; padding: 6px 8px; }
             .stat-input { width: 38px; font-size: 11px; }
             .stat-label { font-size: 8px; width: 60px; }
-
             .pj-nombre { font-size: 10px; }
             .pj-clase { font-size: 8px; }
             .pj-stat { font-size: 7px; }
             .pj-card { padding: 8px 10px; }
 
             /* COMBATE MÓVIL */
-            .topbar{ padding:0 10px; height:50px; }
-            .turn-text{ font-size:14px; }
-            .turn-container{ gap:10px; }
-            .turn-circle{ width:28px; height:28px; border-width:3px; }
-            .inventory-btn{ padding:6px 12px; font-size:11px; }
+            .topbar { height:50px; padding:0 12px; }
+            .orb { width:30px; height:30px; }
 
-            .battlefield{ flex:0 0 auto; height:35vh; min-height:200px; }
-            .character{ width:80px; height:130px; font-size:44px; border-radius:10px; }
-            .character img { filter:brightness(0.3) contrast(1.3); }
-            .player{ left:4px; bottom:4px; }
-            .enemy{ right:4px; top:4px; }
-            .scroll{ width:94%; height:55%; font-size:10px; padding:10px; border-width:4px; }
+            .enemy-character { width:140px; height:200px; font-size:72px; top:10px; right:60px; }
+            .enemy-character img { filter:brightness(0.4) contrast(1.3); }
+            .player-character { width:100px; height:145px; font-size:54px; left:30px; bottom:10px; }
+            .player-character img { filter:brightness(0.4) contrast(1.3); }
 
-            .bottom-panel{
-                grid-template-columns:1fr;
-                height:auto;
-                max-height:none;
-                flex:1 1 auto;
-                gap:8px;
-                padding:10px;
-                overflow-y:auto;
-            }
+            .log-scroll { width:90%; height:180px; top:10px; font-size:11px; padding:10px 14px; border-width:4px; }
+            .log-scroll h2 { font-size:12px; margin-bottom:8px; }
 
-            .name{ font-size:14px; }
-            .class{ font-size:11px; margin-bottom:4px; }
-            .stats{ padding:8px; }
-            .bar{ height:10px; margin-bottom:4px; }
-            .attributes{ margin-top:4px; gap:3px; }
-            .attributes div{ font-size:10px; padding:3px 4px; }
+            .turn-message { top:200px; font-size:16px; }
 
-            .cards-area{ gap:8px; }
-            .card-slot{ width:90px; height:125px; padding:6px; border-width:2px; }
-            .card-title{ font-size:11px; }
-            .card-cost{ font-size:14px; }
+            .sheet { width:auto; height:auto; padding:10px; min-width:0; max-width:45%; }
+            .enemy-sheet { left:8px; bottom:180px; }
+            .player-sheet { right:8px; bottom:180px; }
+            .sheet h2 { font-size:13px; }
+            .sheet h4 { font-size:11px; margin-bottom:6px; }
+            .sheet .bar { height:10px; margin-bottom:4px; }
+            .sheet .stats-grid { gap:3px; margin-top:4px; }
+            .sheet .stats-grid div { font-size:10px; padding:3px 4px; }
 
-            .actions{ gap:4px; margin-top:6px; }
-            .actions button{ font-size:10px; padding:6px 4px; min-width:55px; }
+            .active-cards { bottom:80px; }
+            .slot-card { width:110px; height:155px; padding:8px; border-width:2px; }
+            .slot-card .card-name { font-size:11px; margin-bottom:3px; }
+            .slot-card .card-cost { font-size:14px; }
+            .slot-card .card-desc { font-size:9px; }
 
-            .inventario-panel { top:54px; right:6px; width:170px; max-height:130px; }
-            .acciones-extra { position:fixed; bottom:10px; left:50%; transform:translateX(-50%); min-width:200px; max-height:140px; }
-            .carta-seleccion-info { position:fixed; bottom:130px; left:50%; transform:translateX(-50%); font-size:10px; padding:6px 12px; white-space:normal; }
+            .btn-inventory { left:10px; bottom:10px; padding:8px 14px; font-size:11px; }
+            .actions { right:10px; bottom:10px; gap:4px; }
+            .actions button { padding:6px 10px; font-size:10px; }
+
+            .acciones-extra { position:fixed; bottom:70px; left:50%; transform:translateX(-50%); min-width:200px; max-height:140px; }
+            .inventario-panel { top:55px; right:6px; width:170px; max-height:130px; }
 
             .radial-container { width:190px; height:190px; }
             .radial-btn { width:48px; height:48px; font-size:9px; }
             .radial-btn .icon { font-size:14px; }
             .central-btn { width:68px; height:68px; font-size:10px; }
-            #btnAtacar   { transform:translate(-50%,-50%) rotate(0deg) translateY(-82px) rotate(0deg); }
+            #btnAtakar   { transform:translate(-50%,-50%) rotate(0deg) translateY(-82px) rotate(0deg); }
             #btnDescansar { transform:translate(-50%,-50%) rotate(72deg) translateY(-82px) rotate(-72deg); }
             #btnPose     { transform:translate(-50%,-50%) rotate(144deg) translateY(-82px) rotate(-144deg); }
             #btnCarta    { transform:translate(-50%,-50%) rotate(216deg) translateY(-82px) rotate(-216deg); }
-            #btnExtra    { transform:translate(-50%,-50%) rotate(288deg) translateY(-82px) rotate(-288deg); }
+            #btnExtra2   { transform:translate(-50%,-50%) rotate(288deg) translateY(-82px) rotate(-288deg); }
 
             .popup-box { width: 90vw; max-width: 320px; padding: 16px; }
             .carta-container { width: 100%; }
             .carta-img { height: 150px; }
-
             .actions-extra-grid button { font-size: 10px; padding: 6px 10px; }
         }
 
@@ -439,36 +400,41 @@
             .splash-sub { font-size: 0.6em; letter-spacing: 2px; margin-bottom: 24px; }
             .splash-btn { font-size: 0.75em; padding: 10px 20px; letter-spacing: 2px; clip-path: polygon(8px 0%, calc(100% - 8px) 0%, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0% 50%); }
 
-            .topbar{ padding:0 6px; height:44px; }
-            .turn-text{ font-size:12px; }
-            .turn-circle{ width:22px; height:22px; border-width:2px; }
-            .inventory-btn{ padding:4px 8px; font-size:10px; }
-            .battlefield{ height:30vh; min-height:160px; }
-            .character{ width:64px; height:105px; font-size:36px; }
-            .player{ left:2px; bottom:2px; }
-            .enemy{ right:2px; top:2px; }
-            .scroll{ width:96%; height:50%; font-size:9px; padding:6px; border-width:3px; }
+            .topbar { height:44px; padding:0 8px; }
+            .orb { width:24px; height:24px; }
 
-            .bottom-panel{ padding:6px; gap:6px; }
-            .name{ font-size:12px; }
-            .class{ font-size:10px; }
-            .stats{ padding:6px; border-radius:8px; }
-            .bar{ height:8px; }
-            .attributes div{ font-size:9px; padding:2px 3px; }
-            .card-slot{ width:76px; height:108px; padding:5px; border-width:2px; }
-            .card-title{ font-size:10px; }
-            .card-cost{ font-size:12px; }
-            .actions button{ font-size:9px; padding:5px 3px; min-width:48px; }
+            .enemy-character { width:100px; height:145px; font-size:52px; top:8px; right:40px; }
+            .player-character { width:72px; height:105px; font-size:40px; left:16px; bottom:6px; }
+
+            .log-scroll { width:96%; height:130px; font-size:10px; padding:6px 10px; }
+            .log-scroll h2 { font-size:10px; }
+            .turn-message { top:150px; font-size:13px; }
+
+            .sheet { max-width:50%; padding:6px 8px; }
+            .enemy-sheet { left:4px; bottom:140px; }
+            .player-sheet { right:4px; bottom:140px; }
+            .sheet h2 { font-size:11px; }
+            .sheet h4 { font-size:9px; }
+            .sheet .bar { height:8px; }
+            .sheet .stats-grid div { font-size:8px; padding:2px 3px; }
+
+            .slot-card { width:85px; height:120px; padding:6px; }
+            .slot-card .card-name { font-size:10px; }
+            .slot-card .card-cost { font-size:12px; }
+
+            .btn-inventory { padding:6px 10px; font-size:10px; }
+            .actions { gap:3px; }
+            .actions button { padding:5px 7px; font-size:9px; }
 
             .radial-container { width:160px; height:160px; }
             .radial-btn { width:40px; height:40px; font-size:7px; }
             .radial-btn .icon { font-size:11px; }
             .central-btn { width:56px; height:56px; font-size:9px; }
-            #btnAtacar   { transform:translate(-50%,-50%) rotate(0deg) translateY(-68px) rotate(0deg); }
+            #btnAtakar   { transform:translate(-50%,-50%) rotate(0deg) translateY(-68px) rotate(0deg); }
             #btnDescansar { transform:translate(-50%,-50%) rotate(72deg) translateY(-68px) rotate(-72deg); }
             #btnPose     { transform:translate(-50%,-50%) rotate(144deg) translateY(-68px) rotate(-144deg); }
             #btnCarta    { transform:translate(-50%,-50%) rotate(216deg) translateY(-68px) rotate(-216deg); }
-            #btnExtra    { transform:translate(-50%,-50%) rotate(288deg) translateY(-68px) rotate(-288deg); }
+            #btnExtra2   { transform:translate(-50%,-50%) rotate(288deg) translateY(-68px) rotate(-288deg); }
 
             .round-btn { height: 44px; font-size: 7px; }
             .bottom-row { gap: 3px; padding: 4px 4px 6px; }
