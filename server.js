@@ -586,13 +586,14 @@ io.on('connection', (socket) => {
             gp.aplicarEfectosClase(rivTurno, true);
         }
 
-        jugTurno.extraAction = false;
         jugTurno.critBonus = 0;
-        partida.accionesMax = 2 + (jugTurno.extraAction ? 1 : 0);
 
         const tLogs1 = gp.processPassives(jugTurno.pasivas, jugTurno, rivTurno, 'on_turn_start', {});
         const tLogs2 = gp.processPassives(rivTurno.pasivas, rivTurno, jugTurno, 'on_turn_start', {});
         [...tLogs1, ...tLogs2].forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
+
+        partida.accionesMax = 2 + (jugTurno.extraAction ? 1 : 0);
+        jugTurno.extraAction = false;
 
         if (partida.turno === 1 && jugTurno.critClase) {
             io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre}: crítico ${jugTurno.critClase.multi * 100}% por ${jugTurno.critClase.duracion} turnos`, tipo: 'carta' });
