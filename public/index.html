@@ -57,13 +57,16 @@
         .demon-eyes { display: flex; gap: 20px; }
         .demon-eye { width: 8px; height: 5px; background: #ff4400; border-radius: 50%; box-shadow: 0 0 8px #ff2200, 0 0 16px #ff0000; }
         .main-panel { background: linear-gradient(180deg, #130e0a 0%, #0e0a07 100%); border: 2px solid #2a1a08; margin: 8px; border-radius: 4px; padding: 16px 14px; }
+        .dot-notif { position: absolute; top: 2px; right: 2px; width: 10px; height: 10px; border-radius: 50%; background: #ff3300; box-shadow: 0 0 8px #ff3300; border: 1px solid #ff2200; }
+        .dot-card { position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; border-radius: 50%; background: #ff3300; box-shadow: 0 0 6px #ff3300; border: 1px solid #ff2200; }
+        .pj-card.tiene-puntos { border-color: #ff4422; }
         .ornament { text-align: center; color: #5a3a18; font-size: 16px; margin: 4px 0; letter-spacing: 4px; }
         .main-btn { display: block; width: 100%; margin: 10px 0; padding: 13px 0; font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; letter-spacing: 3px; color: #fffbe8; text-shadow: 0 1px 3px rgba(0,0,0,0.8); cursor: pointer; border: none; position: relative; clip-path: polygon(12px 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0% 50%); background: linear-gradient(180deg, #c85030 0%, #7a2010 40%, #8a2515 60%, #c04020 100%); transition: filter 0.15s; }
         .main-btn:hover { filter: brightness(1.25); }
         .main-btn:active { filter: brightness(0.85); }
         .main-btn.secundario { font-size: 13px; padding: 10px 0; background: linear-gradient(180deg, #5a2e10 0%, #3a1808 100%); letter-spacing: 2px; }
         .bottom-row { display: flex; justify-content: space-between; padding: 10px 14px 14px; gap: 8px; position: relative; }
-        .round-btn { flex: 1; height: 68px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #c8a050; text-transform: uppercase; text-align: center; line-height: 1.3; cursor: pointer; border: 2px solid #4a3010; background: radial-gradient(circle, #2a1e0c 0%, #181008 100%); transition: filter 0.15s; }
+        .round-btn { flex: 1; height: 68px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #c8a050; text-transform: uppercase; text-align: center; line-height: 1.3; cursor: pointer; border: 2px solid #4a3010; background: radial-gradient(circle, #2a1e0c 0%, #181008 100%); transition: filter 0.15s; position: relative; }
         .round-btn:hover { filter: brightness(1.3); }
         .round-btn.activo { border-color: #c85030; color: #d4a060; }
 
@@ -290,7 +293,7 @@
 
         <div class="bottom-row">
             <div class="round-btn" id="btnTienda" onclick="cambiarSeccion('tienda')">TIENDA</div>
-            <div class="round-btn" id="btnPersonajes" onclick="cambiarSeccion('personajes')">PERSO<br>NAJES</div>
+            <div class="round-btn" id="btnPersonajes" onclick="cambiarSeccion('personajes')">PERSO<br>NAJES<span class="dot-notif" id="dotPersonajes" style="display:none;"></span></div>
             <div class="round-btn" id="btnEquipamiento" onclick="cambiarSeccion('equipamiento')">EQUI<br>PAMIENTO</div>
         </div>
     </div>
@@ -315,6 +318,8 @@
     </div>
 </div>
 
+
+<div id="popupStats" class="popup-overlay"></div>
 
 <div id="pantallaCombate" class="pantalla">
     <div id="logBatalla"></div>
@@ -431,9 +436,104 @@
         socket.emit('iniciarSesion', { nombre, password: pass });
     }
 
+    // ── NOTIFICACIÓN DE PUNTOS PENDIENTES ──
+    let tempStatsEditando = null;
+    let tempStatsIdx = -1;
+
+    function actualizarNotificaciones() {
+        const dot = document.getElementById('dotPersonajes');
+        if (!cuentaActual || !cuentaActual.personajes) { dot.style.display = 'none'; return; }
+        const hayPendientes = cuentaActual.personajes.some(p => (p.puntosStats || 0) > 0);
+        dot.style.display = hayPendientes ? 'block' : 'none';
+    }
+
+    function abrirAsignarStats(personajeId, index) {
+        const pj = cuentaActual.personajes[index];
+        if ((pj.puntosStats || 0) <= 0) return;
+        tempStatsEditando = {
+            id: pj._id,
+            fuerza: pj.fuerza, resistencia: pj.resistencia,
+            velocidad: pj.velocidad, magia: pj.magia, suerte: pj.suerte,
+            pts: pj.puntosStats
+        };
+        tempStatsIdx = index;
+        renderizarPopupStats();
+    }
+
+    function renderizarPopupStats() {
+        const s = tempStatsEditando;
+        if (!s) return;
+        const usados = (s.fuerza - cuentaActual.personajes[tempStatsIdx].fuerza) +
+                       (s.resistencia - cuentaActual.personajes[tempStatsIdx].resistencia) +
+                       (s.velocidad - cuentaActual.personajes[tempStatsIdx].velocidad) +
+                       (s.magia - cuentaActual.personajes[tempStatsIdx].magia) +
+                       (s.suerte - cuentaActual.personajes[tempStatsIdx].suerte);
+        const restantes = s.pts - usados;
+
+        const popup = document.getElementById('popupStats');
+        if (!popup) return;
+        popup.innerHTML = `
+            <div class="popup-bg" onclick="cerrarPopupStats()"></div>
+            <div class="popup-box">
+                <div style="text-align:center; color:#d4a060; font-size:12px; letter-spacing:4px; margin-bottom:4px;">⚡ MEJORA</div>
+                <div style="text-align:center; color:#9a7040; font-size:10px; letter-spacing:2px; margin-bottom:14px;">${cuentaActual.personajes[tempStatsIdx].nombre}</div>
+                <div style="text-align:center; color:#ff4422; font-size:13px; letter-spacing:2px; margin-bottom:14px; font-weight:700;">PUNTOS: ${restantes}</div>
+                <hr class="divider">
+                ${['fuerza','resistencia','velocidad','magia','suerte'].map(stat => `
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 0;">
+                        <span style="color:#9a7040; font-size:10px; letter-spacing:2px; text-transform:uppercase; width:80px;">${stat}</span>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <button onclick="cambiarStat('${stat}',-1)" style="width:28px;height:28px;border-radius:50%;border:1px solid #4a3010;background:#1a0e08;color:#d4a060;font-size:14px;cursor:pointer;font-family:'Cinzel',serif;">−</button>
+                            <span style="color:#d4a060; font-size:14px; width:24px; text-align:center; font-weight:700;" id="statVal-${stat}">${s[stat]}</span>
+                            <button onclick="cambiarStat('${stat}',1)" style="width:28px;height:28px;border-radius:50%;border:1px solid #4a3010;background:#1a0e08;color:#d4a060;font-size:14px;cursor:pointer;font-family:'Cinzel',serif;">+</button>
+                        </div>
+                    </div>
+                `).join('')}
+                <hr class="divider">
+                <div class="msg-error" id="errorStats"></div>
+                <button class="main-btn" style="font-size:12px;padding:10px 0;" onclick="guardarStats()">GUARDAR</button>
+                <button class="main-btn secundario" style="margin-top:4px;" onclick="cerrarPopupStats()">CANCELAR</button>
+            </div>
+        `;
+        document.getElementById('popupStats').classList.add('visible');
+    }
+
+    function cambiarStat(stat, delta) {
+        const s = tempStatsEditando;
+        const original = cuentaActual.personajes[tempStatsIdx];
+        const usadosAntes = (s.fuerza - original.fuerza) + (s.resistencia - original.resistencia) +
+                            (s.velocidad - original.velocidad) + (s.magia - original.magia) +
+                            (s.suerte - original.suerte);
+        const restantes = s.pts - usadosAntes;
+
+        const nuevoValor = s[stat] + delta;
+        if (delta > 0 && restantes <= 0) return;
+        if (nuevoValor < 2) return;
+
+        s[stat] = nuevoValor;
+        renderizarPopupStats();
+    }
+
+    function guardarStats() {
+        const s = tempStatsEditando;
+        if (!s) return;
+        socket.emit('asignarStats', {
+            cuenta_id: cuentaActual.id,
+            personaje_id: s.id,
+            stats: { fuerza: s.fuerza, resistencia: s.resistencia, velocidad: s.velocidad, magia: s.magia, suerte: s.suerte }
+        });
+    }
+
+    function cerrarPopupStats() {
+        document.getElementById('popupStats').classList.remove('visible');
+        tempStatsEditando = null;
+        tempStatsIdx = -1;
+    }
+
     // ── UI ──
     function actualizarUI(cuenta) {
         document.getElementById('userNameDisplay').textContent = cuenta.nombre.toUpperCase();
+        actualizarNotificaciones();
         document.getElementById('dineroDisplay').textContent = cuenta.dinero;
         document.getElementById('nivelDisplay').textContent = cuenta.nivel;
         document.getElementById('expDisplay').textContent = cuenta.experiencia;
@@ -452,11 +552,14 @@
             lista.innerHTML = '<div class="vacio-msg">Aún no tenés personajes.<br>¡Creá tu primer héroe!</div>';
             return;
         }
-        lista.innerHTML = cuentaActual.personajes.map((pj, i) => `
-            <div class="pj-card">
+        lista.innerHTML = cuentaActual.personajes.map((pj, i) => {
+            const pts = pj.puntosStats || 0;
+            return `
+            <div class="pj-card ${pts > 0 ? 'tiene-puntos' : ''}" onclick="${pts > 0 ? `abrirAsignarStats('${pj._id}',${i})` : ''}" style="${pts > 0 ? 'cursor:pointer;' : ''}">
+                ${pts > 0 ? '<span class="dot-card"></span>' : ''}
                 <div class="pj-avatar">⚔</div>
                 <div class="pj-info">
-                    <div class="pj-nombre">${pj.nombre}</div>
+                    <div class="pj-nombre">${pj.nombre} ${pts > 0 ? '<span style="color:#ff4422;font-size:9px;">(+${pts} pts)</span>' : ''}</div>
                     <div class="pj-clase">${pj.clase} · Lv.${pj.nivel || 1}</div>
                     <div class="pj-stats">
                         <span class="pj-stat">FUE ${pj.fuerza}</span>
@@ -467,9 +570,10 @@
                         <span class="pj-stat">XP ${pj.experiencia || 0}/${pj.nivel || 1}</span>
                     </div>
                 </div>
-                <button onclick="eliminarPersonaje('${pj._id}')" style="background:none; border:none; color:#6a3010; cursor:pointer; font-size:16px; padding:4px;" title="Eliminar personaje">🗑</button>
-            </div>
-        `).join('');
+                <button onclick="event.stopPropagation();eliminarPersonaje('${pj._id}')" style="background:none; border:none; color:#6a3010; cursor:pointer; font-size:16px; padding:4px;" title="Eliminar personaje">🗑</button>
+            </div>`;
+        }).join('');
+        actualizarNotificaciones();
     }
 
     function renderizarSeleccionPJ() {
@@ -560,6 +664,7 @@
         actualizarUI(cuenta);
         mostrarPantalla('menu');
         mostrarSeccionMenu('pantallaMenu');
+        actualizarNotificaciones();
     });
 
     socket.on('errorCuenta', (msg) => { document.getElementById('errorRegistro').textContent = msg; });
@@ -569,6 +674,7 @@
         actualizarUI(cuenta);
         mostrarPantalla('menu');
         mostrarSeccionMenu('pantallaMenu');
+        actualizarNotificaciones();
     });
 
     socket.on('errorLogin', (msg) => { document.getElementById('errorLogin').textContent = msg; });
@@ -580,6 +686,7 @@
         document.getElementById('okConfig').textContent = '✅ Perfil actualizado correctamente.';
         document.getElementById('errorConfig').textContent = '';
         actualizarUI(cuentaActual);
+        actualizarNotificaciones();
     });
 
     socket.on('errorPerfil', (msg) => { document.getElementById('errorConfig').textContent = msg; });
@@ -613,6 +720,7 @@
         document.getElementById('errorPersonaje').textContent = '';
         document.getElementById('formPersonaje').reset();
         document.getElementById('totalStats').textContent = '25';
+        actualizarNotificaciones();
         irAPersonajes();
     });
 
@@ -621,13 +729,23 @@
     socket.on('personajeEliminado', (cuenta) => {
         cuentaActual = cuenta;
         actualizarUI(cuenta);
+        actualizarNotificaciones();
         renderizarPersonajes();
     });
 
     socket.on('cuentaActualizada', (cuenta) => {
         cuentaActual = cuenta;
         actualizarUI(cuenta);
+        actualizarNotificaciones();
         if (document.getElementById('listaPJs')) renderizarPersonajes();
+    });
+
+    socket.on('statsAsignados', (cuenta) => {
+        cuentaActual = cuenta;
+        actualizarUI(cuenta);
+        actualizarNotificaciones();
+        cerrarPopupStats();
+        renderizarPersonajes();
     });
 
     socket.on('confirmacion', (msg) => {
