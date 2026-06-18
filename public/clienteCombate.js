@@ -127,7 +127,10 @@ function renderizarCombate() {
           <div>🍀 ${miPJ.suerte}</div>
         </div>
         <div class="actions">
-          <button class="attack-btn" onclick="abrirRadial()">⚔ ACCIÓN</button>
+          <button class="attack-btn" onclick="enviarAccion('atacar')">⚔ ATACAR</button>
+          <button class="rest-btn" onclick="enviarAccion('descansar')">💤 DESCANSAR</button>
+          <button class="pose-btn" onclick="enviarAccion('pose')">🛡 POSE</button>
+          <button class="extra-btn" onclick="mostrarAccionesExtra()">🔧 EXTRA</button>
         </div>
       </div>
     </div>
