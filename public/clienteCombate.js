@@ -59,6 +59,8 @@ function renderizarCombate() {
   const pasiva = obtenerPasiva(miPJ.clase);
   const rivalHPct = Math.max(0, Math.round((rivalPJ.hp || 0) / (rivalPJ.maxHp || 40) * 100));
   const miHPct = Math.max(0, Math.round((miPJ.hp || 0) / (miPJ.maxHp || 40) * 100));
+  const rivalEnergiaPct = Math.max(0, Math.round((rivalPJ.energia || 0) / 100 * 100));
+  const miEnergiaPct = Math.max(0, Math.round((miPJ.energia || 0) / 100 * 100));
 
   const statusBadge = (pj) => {
     if (!pj.status) return '';
@@ -67,123 +69,75 @@ function renderizarCombate() {
     if (pj.status.silenced && pj.status.silenced > 0) parts.push(`🔇 ${pj.status.silenced}t`);
     if (pj.status.shield && pj.status.shield > 0) parts.push(`🛡️ ${pj.status.shield}`);
     if (pj.status.inmune) parts.push(`✨ INMUNE`);
-    return parts.length ? `<div class="status-badge">${parts.join(' ')}</div>` : '';
+    return parts.length ? `<div style="font-size:7px;color:#d0a0d0;text-align:center;">${parts.join(' ')}</div>` : '';
   };
 
   document.getElementById('pantallaCombate').innerHTML = `
     <div class="combate-container">
-      <div class="combate-superior">
-        <div class="combate-lateral">
-          <div class="silueta">
-            <div class="silueta-figura">${rivalPJ.foto ? `<img src="${rivalPJ.foto}" alt="">` : '<span class="sil-icono">☠</span>'}</div>
-          </div>
+      <div class="header-circle"></div>
+      <button class="btn-inventario" onclick="toggleInventario()" title="Inventario">🎒</button>
+      <div class="turno-indicador" id="indicadorTurno">
+        ${esMiTurno ? `⚔ TU TURNO (${accionesRestantes}/2)` : '⏳ RIVAL'}
+      </div>
+
+      <div class="combate-main">
+        <div class="silueta-enemigo">
+          ${rivalPJ.foto ? `<img src="${rivalPJ.foto}" alt="">` : '<span class="sil-icono">☠</span>'}
+        </div>
+        <div class="combate-log-pergamino" id="logBatalla">
+          <div class="log-title">BITÁCORA</div>
+        </div>
+        <div class="silueta-jugador">
+          ${miPJ.foto ? `<img src="${miPJ.foto}" alt="">` : '<span class="sil-icono">⚔</span>'}
+        </div>
+      </div>
+
+      <div class="combate-bottom">
+        <div class="stats-panel-enemigo">
+          <div style="color:#9a7040;font-size:9px;text-align:center;font-weight:700;letter-spacing:1px;">${rivalPJ.nombre}</div>
+          <div style="color:#5a3010;font-size:7px;text-align:center;letter-spacing:1px;margin-bottom:4px;">${rivalPJ.clase} · Lv.${rivalPJ.nivel || 1}</div>
           ${statusBadge(rivalPJ)}
-          <div class="panel-stats">
-            <div class="stat-nombre">${rivalPJ.nombre}</div>
-            <div class="stat-clase">${rivalPJ.clase} · Lv.${rivalPJ.nivel || 1}</div>
-            <div class="stat-hp-bar">
-              <div class="stat-hp-fill" id="barraHPRival" style="width:${rivalHPct}%"></div>
-            </div>
-            <div class="stat-hp-texto">HP <span id="rivalHP">${rivalPJ.hp || 0}</span>/${rivalPJ.maxHp || 40}</div>
-            <div class="stat-grid-chico">
-              <span>FUE ${rivalPJ.fuerza}</span><span>RES ${rivalPJ.resistencia}</span>
-              <span>VEL ${rivalPJ.velocidad}</span><span>MAG ${rivalPJ.magia}</span>
-              <span>SUE ${rivalPJ.suerte}</span><span>ENE ${rivalPJ.energia || 0}</span>
-            </div>
-          </div>
+          <div class="hp-bar">❤️ <span id="rivalHP">${rivalPJ.hp || 0}</span>/${rivalPJ.maxHp || 40}</div>
+          <div class="mp-bar">🔷 ${rivalPJ.energia || 0}/100</div>
+          <div class="stats-iconos">⚔${rivalPJ.fuerza} 🛡${rivalPJ.resistencia} 💨${rivalPJ.velocidad} 🔮${rivalPJ.magia} 🍀${rivalPJ.suerte}</div>
         </div>
-        <div class="combate-log" id="logBatalla">
-          <div style="color:#6a4018;font-size:8px;letter-spacing:3px;text-align:center;margin-bottom:6px;">✦ BITÁCORA DE BATALLA ✦</div>
-        </div>
-        <div class="combate-lateral">
-          <div class="silueta">
-            <div class="silueta-figura">${miPJ.foto ? `<img src="${miPJ.foto}" alt="">` : '<span class="sil-icono">⚔</span>'}</div>
-          </div>
-          ${statusBadge(miPJ)}
-          <div class="panel-stats">
-            <div class="stat-nombre">${miPJ.nombre}</div>
-            <div class="stat-clase">${miPJ.clase} · Lv.${miPJ.nivel || 1}</div>
-            <div class="stat-hp-bar">
-              <div class="stat-hp-fill" id="barraHPMio" style="width:${miHPct}%"></div>
-            </div>
-            <div class="stat-hp-texto">HP <span id="pjHP">${miPJ.hp || 0}</span>/${miPJ.maxHp || 40}</div>
-            <div class="stat-grid-chico">
-              <span>FUE ${miPJ.fuerza}</span><span>RES ${miPJ.resistencia}</span>
-              <span>VEL ${miPJ.velocidad}</span><span>MAG ${miPJ.magia}</span>
-              <span>SUE ${miPJ.suerte}</span><span>ENE <span id="pjEnergia">${miPJ.energia || 0}</span></span>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <div class="combate-accion-row">
-        <div class="accion-botones">
-          <button class="btn-accion" id="btnAccion1" onclick="clickAccion(0)" title="Menú acciones">A<br>C<br>C<br>I<br>Ó<br>N</button>
-          <button class="btn-accion" id="btnAccion2" onclick="clickAccion(1)" title="Menú acciones">A<br>C<br>C<br>I<br>Ó<br>N</button>
-        </div>
-        <div class="turno-indicador" id="indicadorTurno">
-          ${esMiTurno ? `⚔ TU TURNO (${accionesRestantes}/2)` : '⏳ RIVAL'}
-        </div>
-        <button class="btn-inventario" onclick="toggleInventario()" title="Inventario">🎒</button>
-      </div>
-
-      <div class="combate-cartas" id="combateCartas">
-        <div class="cartas-propia" id="cartasSkill">
+        <div class="cartas-area" id="cartasSkill">
           ${misSkills.map((skill, i) => `
-            <ui-card data='${JSON.stringify(skill).replace(/'/g, "&#39;")}' type="skill"
-              ${skill.coste > (miPJ.energia || 0) ? 'disabled' : ''}
-              onclick="seleccionarCarta(${i})" id="skillCard-${i}"></ui-card>
+            <div class="carta-slot ${skill.coste > (miPJ.energia || 0) ? 'disabled' : ''} ${cartaSeleccionada === i ? 'selected' : ''}"
+                 onclick="seleccionarCarta(${i})" id="skillCard-${i}">
+              <span>${skill.nombre}<br><span style="font-size:7px;color:#a07040;">${skill.coste}🔷</span></span>
+            </div>
           `).join('')}
         </div>
-        <div class="cartas-pasivas" id="cartasPasivas">
-          ${misPasivas.map((pid, i) => {
-            const pdata = SKILL_DATA_LOOKUP_PASIVAS[pid] || SKILLS_DATA_PASIVAS_EXTRA[pid];
-            return pdata ? `<ui-passive-card data='${JSON.stringify(pdata).replace(/'/g, "&#39;")}'></ui-passive-card>` : '';
-          }).join('')}
-          <ui-passive-card data='${JSON.stringify(pasiva).replace(/'/g, "&#39;")}'></ui-passive-card>
+
+        <div class="stats-panel-jugador">
+          <div style="color:#9a7040;font-size:9px;text-align:center;font-weight:700;letter-spacing:1px;">${miPJ.nombre}</div>
+          <div style="color:#5a3010;font-size:7px;text-align:center;letter-spacing:1px;margin-bottom:4px;">${miPJ.clase} · Lv.${miPJ.nivel || 1}</div>
+          ${statusBadge(miPJ)}
+          <div class="hp-bar">❤️ <span id="pjHP">${miPJ.hp || 0}</span>/${miPJ.maxHp || 40}</div>
+          <div class="mp-bar">🔷 <span id="pjEnergia">${miPJ.energia || 0}</span>/100</div>
+          <div class="panel-negro-extra" id="panelAccionesBtn" style="display:flex;align-items:center;justify-content:center;gap:4px;">
+            <button class="btn-accion" onclick="enviarAccion('atacar')" style="padding:3px 10px;font-size:8px;">⚔ ATACAR</button>
+            <button class="btn-accion" onclick="enviarAccion('descansar')" style="padding:3px 10px;font-size:8px;">💤</button>
+            <button class="btn-accion" onclick="enviarAccion('pose')" style="padding:3px 10px;font-size:8px;">🛡 POSE</button>
+            <button class="btn-accion" onclick="mostrarAccionesExtra()" style="padding:3px 10px;font-size:8px;">🔧 EXTRA</button>
+          </div>
         </div>
       </div>
 
-      <div class="carta-seleccion-info" id="cartaSeleccionInfo" style="display:none;text-align:center;padding:4px;color:#d4a060;font-size:10px;letter-spacing:1px;border-top:1px solid #2a1808;">
+      <div class="carta-seleccion-info" id="cartaSeleccionInfo" style="display:none;">
         Carta: <span id="cartaSeleccionadaNombre">—</span>
-        <button class="btn-usar-carta" onclick="usarCartaSeleccionada()" style="margin-left:8px;font-family:'Cinzel',serif;font-size:9px;padding:3px 10px;background:linear-gradient(180deg,#c85030,#7a2010);color:#fff;border:none;border-radius:4px;cursor:pointer;">USAR</button>
+        <button onclick="usarCartaSeleccionada()" style="margin-left:8px;font-family:'Cinzel',serif;font-size:9px;padding:3px 10px;background:linear-gradient(180deg,#c85030,#7a2010);color:#fff;border:none;border-radius:4px;cursor:pointer;">USAR</button>
         <button onclick="cancelarSeleccionCarta()" style="margin-left:4px;font-family:'Cinzel',serif;font-size:8px;padding:2px 6px;background:transparent;border:1px solid #4a3010;color:#6a4018;border-radius:3px;cursor:pointer;">X</button>
       </div>
 
-      <div id="panelInventario" class="inventario-panel" style="display:none;border-top:1px solid #2a1808;padding:6px;"></div>
-
-      <div id="panelAccionesExtra" class="acciones-extra" style="display:none;border-top:1px solid #2a1808;padding:6px;"></div>
-
-      <div id="menuRadial" class="radial-container" style="display:none;">
-        <button id="btnAtacar" class="accion-btn" title="Atacar">⚔️</button>
-        <button id="btnDescansar" class="accion-btn" title="Descansar">💤</button>
-        <button id="btnPose" class="accion-btn" title="Pose">🛡️</button>
-        <button id="btnCarta" class="accion-btn" title="Carta">🃏</button>
-        <button id="btnAccionExtra" class="accion-btn" title="Extras">🔧</button>
-        <button id="btnCentral" class="central-btn">ACCIÓN</button>
-      </div>
+      <div id="panelInventario" class="inventario-panel" style="display:none;"></div>
+      <div id="panelAccionesExtra" class="acciones-extra" style="display:none;"></div>
     </div>
   `;
 
   actualizarIndicadorTurno();
-  document.getElementById('btnCentral').onclick = () => {
-    if (!esMiTurno) return;
-    document.getElementById('menuRadial').classList.toggle('active');
-  };
-  document.getElementById('btnAtacar').onclick = () => enviarAccion('atacar');
-  document.getElementById('btnDescansar').onclick = () => enviarAccion('descansar');
-  document.getElementById('btnPose').onclick = () => enviarAccion('pose');
-  document.getElementById('btnCarta').onclick = () => {
-    document.getElementById('menuRadial').classList.remove('active');
-    document.getElementById('menuRadial').style.display = 'none';
-    if (cartaSeleccionada !== null) usarCartaSeleccionada();
-    else document.querySelector('.combate-cartas').scrollIntoView({ behavior: 'smooth' });
-  };
-  document.getElementById('btnAccionExtra').onclick = () => {
-    document.getElementById('menuRadial').classList.remove('active');
-    document.getElementById('menuRadial').style.display = 'none';
-    mostrarAccionesExtra();
-  };
 }
 
 function mostrarAccionesExtra() {
@@ -388,16 +342,16 @@ function seleccionarCarta(idx) {
   const skill = misSkills[idx];
   if (!skill || skill.coste > (miPJ.energia || 0)) return;
   cartaSeleccionada = idx;
-  document.querySelectorAll('ui-card').forEach(c => c.removeAttribute('selected'));
+  document.querySelectorAll('.carta-slot').forEach(c => c.classList.remove('selected'));
   const el = document.getElementById(`skillCard-${idx}`);
-  if (el) el.setAttribute('selected', '');
+  if (el) el.classList.add('selected');
   document.getElementById('cartaSeleccionadaNombre').textContent = skill.nombre;
   document.getElementById('cartaSeleccionInfo').style.display = 'block';
 }
 
 function cancelarSeleccionCarta() {
   cartaSeleccionada = null;
-  document.querySelectorAll('ui-card').forEach(c => c.removeAttribute('selected'));
+  document.querySelectorAll('.carta-slot').forEach(c => c.classList.remove('selected'));
   document.getElementById('cartaSeleccionInfo').style.display = 'none';
 }
 
@@ -408,17 +362,9 @@ function usarCartaSeleccionada() {
   cancelarSeleccionCarta();
 }
 
-function clickAccion(idx) {
-  if (!esMiTurno || accionesRestantes <= 0) return;
-  document.getElementById('menuRadial').style.display = 'block';
-  setTimeout(() => document.getElementById('menuRadial').classList.add('active'), 10);
-}
-
 function enviarAccion(tipo, cartaId, accionData) {
   if (!partidaActualId) return;
   if (tipo !== 'carta' && (!esMiTurno || accionesRestantes <= 0)) return;
-  document.getElementById('menuRadial').classList.remove('active');
-  document.getElementById('menuRadial').style.display = 'none';
   socket.emit('ejecutarAccion', {
     partidaId: partidaActualId,
     tipo,
@@ -434,11 +380,6 @@ function actualizarIndicadorTurno() {
   if (!el) return;
   el.innerHTML = esMiTurno ? `⚔ TU TURNO (${accionesRestantes}/2)` : '⏳ RIVAL';
   el.style.color = esMiTurno ? '#60d060' : '#c85030';
-  [document.getElementById('btnAccion1'), document.getElementById('btnAccion2')].forEach(btn => {
-    if (!btn) return;
-    btn.style.opacity = esMiTurno && accionesRestantes > 0 ? '1' : '0.3';
-    btn.style.pointerEvents = esMiTurno && accionesRestantes > 0 ? 'all' : 'none';
-  });
 }
 
 function estiloLog(data) {
@@ -503,12 +444,6 @@ socket.on('actualizarEstado', (datos) => {
   document.getElementById('pjHP').textContent = miHP;
   document.getElementById('rivalHP').textContent = rivalHP;
   document.getElementById('pjEnergia').textContent = miEnergia;
-  const barraMia = document.getElementById('barraHPMio');
-  const barraRival = document.getElementById('barraHPRival');
-  const maxMio = miPJ.maxHp || 40;
-  const maxRival = rivalPJ.maxHp || 40;
-  if (barraMia) barraMia.style.width = (Math.max(0, miHP) / maxMio * 100) + '%';
-  if (barraRival) barraRival.style.width = (Math.max(0, rivalHP) / maxRival * 100) + '%';
 
   actualizarCardsSkills();
   actualizarIndicadorTurno();
@@ -518,10 +453,10 @@ function actualizarCardsSkills() {
   const container = document.getElementById('cartasSkill');
   if (!container) return;
   container.innerHTML = misSkills.map((skill, i) => `
-    <ui-card data='${JSON.stringify(skill).replace(/'/g, "&#39;")}' type="skill"
-      ${skill.coste > (miPJ.energia || 0) ? 'disabled' : ''}
-      ${cartaSeleccionada === i ? 'selected' : ''}
-      onclick="seleccionarCarta(${i})" id="skillCard-${i}"></ui-card>
+    <div class="carta-slot ${skill.coste > (miPJ.energia || 0) ? 'disabled' : ''} ${cartaSeleccionada === i ? 'selected' : ''}"
+         onclick="seleccionarCarta(${i})" id="skillCard-${i}">
+      <span>${skill.nombre}<br><span style="font-size:7px;color:#a07040;">${skill.coste}🔷</span></span>
+    </div>
   `).join('');
 }
 
