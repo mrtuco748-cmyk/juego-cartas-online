@@ -23,8 +23,7 @@ function mostrarPantallaCombate() {
 
 function renderizarCombate() {
     document.getElementById('pantallaCombate').innerHTML = `
-        <div style="
-            width: 360px;
+        <div class="combate-container" style="
             background: radial-gradient(ellipse at center top, #1a0e08 0%, #0a0604 100%);
             border: 3px solid #4a3010;
             border-radius: 8px;
