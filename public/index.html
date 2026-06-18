@@ -14,6 +14,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            min-height: 100dvh;
             font-family: 'Cinzel', Georgia, serif;
         }
 
@@ -38,7 +39,7 @@
 
         /* ── CONTENEDOR ── */
         #contenedor {
-            width: 360px;
+            width: min(96vw, 480px);
             background: radial-gradient(ellipse at center top, #1a0e08 0%, #0a0604 100%);
             border: 3px solid #4a3010;
             border-radius: 8px;
@@ -126,6 +127,8 @@
         .vacio-msg { color: #4a3010; font-size: 10px; letter-spacing: 2px; text-align: center; padding: 20px 0; }
 
 
+        #pantallaCombate { justify-content: center; }
+        .combate-container { width: min(96vw, 480px); }
         .radial-container { position: relative; width: 150px; height: 150px; margin: 20px auto; }
 .central-btn { 
     width: 80px; height: 80px; border-radius: 50%; 
@@ -148,9 +151,16 @@
 .radial-container.active #btnDescansar { transform: translate(-50%, -50%) rotate(72deg) translateY(-80px) rotate(-72deg); }
 .radial-container.active #btnPose     { transform: translate(-50%, -50%) rotate(144deg) translateY(-80px) rotate(-144deg); }
 .radial-container.active #btnCarta    { transform: translate(-50%, -50%) rotate(216deg) translateY(-80px) rotate(-216deg); }
-.radial-container.active #btnHab      { transform: translate(-50%, -50%) rotate(288deg) translateY(-80px) rotate(-288deg); }
+        .radial-container.active #btnHab      { transform: translate(-50%, -50%) rotate(288deg) translateY(-80px) rotate(-288deg); }
 
-        
+        @media (min-width: 768px) {
+            .splash-title { font-size: 8em; letter-spacing: 30px; }
+            .splash-sub { font-size: 1.1em; letter-spacing: 12px; }
+            #contenedor, .combate-container { width: min(80vw, 520px); }
+            .main-btn { font-size: 16px; padding: 15px 0; }
+            .pj-nombre { font-size: 13px; }
+            .panel-titulo { font-size: 15px; }
+        }
     </style>
 </head>
 <body>
@@ -472,11 +482,12 @@
     function renderizarPopupStats() {
         const s = tempStatsEditando;
         if (!s) return;
-        const usados = (s.fuerza - cuentaActual.personajes[tempStatsIdx].fuerza) +
-                       (s.resistencia - cuentaActual.personajes[tempStatsIdx].resistencia) +
-                       (s.velocidad - cuentaActual.personajes[tempStatsIdx].velocidad) +
-                       (s.magia - cuentaActual.personajes[tempStatsIdx].magia) +
-                       (s.suerte - cuentaActual.personajes[tempStatsIdx].suerte);
+        const original = cuentaActual.personajes[tempStatsIdx];
+        const usados = (s.fuerza - original.fuerza) +
+                       (s.resistencia - original.resistencia) +
+                       (s.velocidad - original.velocidad) +
+                       (s.magia - original.magia) +
+                       (s.suerte - original.suerte);
         const restantes = s.pts - usados;
 
         const popup = document.getElementById('popupStats');
@@ -485,19 +496,23 @@
             <div class="popup-bg" onclick="cerrarPopupStats()"></div>
             <div class="popup-box">
                 <div style="text-align:center; color:#d4a060; font-size:12px; letter-spacing:4px; margin-bottom:4px;">⚡ MEJORA</div>
-                <div style="text-align:center; color:#9a7040; font-size:10px; letter-spacing:2px; margin-bottom:14px;">${cuentaActual.personajes[tempStatsIdx].nombre}</div>
+                <div style="text-align:center; color:#9a7040; font-size:10px; letter-spacing:2px; margin-bottom:14px;">${original.nombre}</div>
                 <div style="text-align:center; color:#ff4422; font-size:13px; letter-spacing:2px; margin-bottom:14px; font-weight:700;">PUNTOS: ${restantes}</div>
                 <hr class="divider">
-                ${['fuerza','resistencia','velocidad','magia','suerte'].map(stat => `
+                ${['fuerza','resistencia','velocidad','magia','suerte'].map(stat => {
+                    const sumado = s[stat] - original[stat];
+                    const maxAlcanzado = sumado >= 2;
+                    const puedeSumar = restantes > 0 && !maxAlcanzado;
+                    return `
                     <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 0;">
                         <span style="color:#9a7040; font-size:10px; letter-spacing:2px; text-transform:uppercase; width:80px;">${stat}</span>
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <button onclick="cambiarStat('${stat}',-1)" style="width:28px;height:28px;border-radius:50%;border:1px solid #4a3010;background:#1a0e08;color:#d4a060;font-size:14px;cursor:pointer;font-family:'Cinzel',serif;">−</button>
-                            <span style="color:#d4a060; font-size:14px; width:24px; text-align:center; font-weight:700;" id="statVal-${stat}">${s[stat]}</span>
-                            <button onclick="cambiarStat('${stat}',1)" style="width:28px;height:28px;border-radius:50%;border:1px solid #4a3010;background:#1a0e08;color:#d4a060;font-size:14px;cursor:pointer;font-family:'Cinzel',serif;">+</button>
+                            <span style="color:#d4a060; font-size:14px; width:24px; text-align:center; font-weight:700;">${s[stat]}</span>
+                            <button onclick="cambiarStat('${stat}')" style="width:28px;height:28px;border-radius:50%;border:1px solid ${puedeSumar ? '#4a3010' : '#2a1800'};background:#1a0e08;color:${puedeSumar ? '#d4a060' : '#3a2008'};font-size:16px;cursor:${puedeSumar ? 'pointer' : 'default'};font-family:'Cinzel',serif;${puedeSumar ? '' : 'opacity:0.3;'}">+</button>
+                            <span style="color:#5a3010; font-size:8px; letter-spacing:1px;">${sumado}/2</span>
                         </div>
-                    </div>
-                `).join('')}
+                    </div>`;
+                }).join('')}
                 <hr class="divider">
                 <div class="msg-error" id="errorStats"></div>
                 <button class="main-btn" style="font-size:12px;padding:10px 0;" onclick="guardarStats()">GUARDAR</button>
@@ -507,19 +522,19 @@
         document.getElementById('popupStats').classList.add('visible');
     }
 
-    function cambiarStat(stat, delta) {
+    function cambiarStat(stat) {
         const s = tempStatsEditando;
         const original = cuentaActual.personajes[tempStatsIdx];
         const usadosAntes = (s.fuerza - original.fuerza) + (s.resistencia - original.resistencia) +
                             (s.velocidad - original.velocidad) + (s.magia - original.magia) +
                             (s.suerte - original.suerte);
         const restantes = s.pts - usadosAntes;
+        const sumado = s[stat] - original[stat];
 
-        const nuevoValor = s[stat] + delta;
-        if (delta > 0 && restantes <= 0) return;
-        if (nuevoValor < 2) return;
+        if (restantes <= 0) return;
+        if (sumado >= 2) return;
 
-        s[stat] = nuevoValor;
+        s[stat] = s[stat] + 1;
         renderizarPopupStats();
     }
 
