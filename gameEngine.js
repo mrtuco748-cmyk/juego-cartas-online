@@ -507,6 +507,12 @@ class GameProcessor {
     return 10;
   }
 
+  calcularCritico(velJugador, velRival) {
+    if (velJugador <= velRival) return 0;
+    const diff = velJugador - velRival;
+    return Math.min(0.5, diff * 0.05);
+  }
+
   calcularTurnoInicial(jugadores) {
     return [...jugadores].sort((a, b) => b.velocidad - a.velocidad);
   }
