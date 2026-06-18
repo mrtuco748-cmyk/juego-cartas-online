@@ -203,6 +203,7 @@
                 <span style="color:#d4a060; font-size:10px; letter-spacing:2px;" id="userNameDisplay">—</span>
                 <button onclick="cerrarSesion()" style="color:#6a3010; font-size:9px; letter-spacing:1px; cursor:pointer; border:1px solid #3a1808; border-radius:3px; padding:2px 6px; background:transparent; font-family:'Cinzel',serif;">SALIR</button>
             </div>
+            <div class="top-icon-btn" id="btnDev" onclick="abrirDevPanel()" style="display:none;">🔧</div>
             <div class="top-icon-btn" onclick="abrirConfig()">⚙</div>
         </div>
         <div class="resource-bar">
@@ -320,6 +321,14 @@
 
 
 <div id="popupStats" class="popup-overlay"></div>
+
+<div id="popupDev" class="popup-overlay">
+    <div class="popup-bg" onclick="cerrarDevPanel()"></div>
+    <div class="popup-box">
+        <div style="text-align:center; color:#d4a060; font-size:12px; letter-spacing:4px; margin-bottom:16px;">🔧 PANEL DEV</div>
+        <div id="devContenido"></div>
+    </div>
+</div>
 
 <div id="pantallaCombate" class="pantalla">
     <div id="logBatalla"></div>
@@ -530,9 +539,87 @@
         tempStatsIdx = -1;
     }
 
+    // ── PANEL DEV ──
+    function abrirDevPanel() {
+        const c = document.getElementById('devContenido');
+        if (!cuentaActual || !cuentaActual.personajes) { c.innerHTML = '<div class="vacio-msg">Sin personajes</div>'; return; }
+        c.innerHTML = `
+            <div style="color:#9a7040;font-size:9px;letter-spacing:2px;text-align:center;margin-bottom:10px;">SELECCIONÁ UN PERSONAJE</div>
+            ${cuentaActual.personajes.map((pj, i) => `
+                <div style="background:rgba(0,0,0,0.4);border:1px solid #3a2008;border-radius:4px;padding:10px 12px;margin-bottom:6px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span style="color:#d4a060;font-size:10px;letter-spacing:2px;">${pj.nombre} (Lv.${pj.nivel || 1})</span>
+                        <span style="color:#6a4018;font-size:9px;">XP ${pj.experiencia || 0}/${pj.nivel || 1} · pts ${pj.puntosStats || 0}</span>
+                    </div>
+                    <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;">
+                        <button onclick="devXP('${pj._id}',1)" style="font-family:'Cinzel',serif;font-size:9px;padding:2px 6px;background:#1a0e08;border:1px solid #4a3010;color:#9a7040;cursor:pointer;">+1 XP</button>
+                        <button onclick="devXP('${pj._id}',5)" style="font-family:'Cinzel',serif;font-size:9px;padding:2px 6px;background:#1a0e08;border:1px solid #4a3010;color:#9a7040;cursor:pointer;">+5 XP</button>
+                        <button onclick="devStats('${pj._id}',3)" style="font-family:'Cinzel',serif;font-size:9px;padding:2px 6px;background:#1a0e08;border:1px solid #4a3010;color:#9a7040;cursor:pointer;">+3 pts stats</button>
+                        <button onclick="devStats('${pj._id}',10)" style="font-family:'Cinzel',serif;font-size:9px;padding:2px 6px;background:#1a0e08;border:1px solid #4a3010;color:#9a7040;cursor:pointer;">+10 pts stats</button>
+                        <button onclick="devNivel('${pj._id}',1)" style="font-family:'Cinzel',serif;font-size:9px;padding:2px 6px;background:#1a0e08;border:1px solid #4a3010;color:#9a7040;cursor:pointer;">+1 nivel</button>
+                        <button onclick="devSetStatsForm('${pj._id}')" style="font-family:'Cinzel',serif;font-size:9px;padding:2px 6px;background:#1a0e08;border:1px solid #4a3010;color:#c85030;cursor:pointer;">Fijar Stats</button>
+                    </div>
+                </div>
+            `).join('')}
+            <hr class="divider">
+            <div style="text-align:center;margin-top:6px;">
+                <button onclick="devDinero(1000)" style="font-family:'Cinzel',serif;font-size:10px;padding:4px 16px;background:#1a0e08;border:1px solid #4a3010;color:#c8a040;cursor:pointer;">+1000 💰</button>
+            </div>
+            <div class="msg-error" id="errorDev"></div>
+        `;
+        document.getElementById('popupDev').classList.add('visible');
+    }
+
+    function cerrarDevPanel() { document.getElementById('popupDev').classList.remove('visible'); }
+
+    function devXP(id, n) { emitirDev('setXP', { personaje_id: id, valor: n }); }
+    function devStats(id, n) { emitirDev('setPuntosStats', { personaje_id: id, valor: n }); }
+    function devNivel(id, n) { emitirDev('setNivel', { personaje_id: id, valor: n }); }
+    function devDinero(n) { emitirDev('addDinero', { valor: n }); }
+
+    function devSetStatsForm(id) {
+        const pj = cuentaActual.personajes.find(p => p._id === id);
+        if (!pj) return;
+        const c = document.getElementById('devContenido');
+        c.innerHTML = `
+            <div style="color:#d4a060;font-size:11px;letter-spacing:2px;text-align:center;margin-bottom:10px;">${pj.nombre} — FIJAR STATS</div>
+            ${['fuerza','resistencia','velocidad','magia','suerte'].map(s => `
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;">
+                    <span style="color:#9a7040;font-size:10px;letter-spacing:2px;text-transform:uppercase;">${s}</span>
+                    <input type="number" id="devStat-${s}" value="${pj[s]}" min="2" style="width:50px;background:rgba(0,0,0,0.5);border:1px solid #4a3010;border-radius:3px;color:#d4b060;font-family:'Cinzel',serif;font-size:12px;padding:3px 6px;text-align:center;">
+                </div>
+            `).join('')}
+            <hr class="divider">
+            <div class="msg-error" id="errorDev"></div>
+            <button class="main-btn" style="font-size:11px;padding:8px 0;" onclick="devGuardarStats('${id}')">GUARDAR</button>
+            <button class="main-btn secundario" style="margin-top:4px;font-size:10px;padding:7px 0;" onclick="abrirDevPanel()">← VOLVER</button>
+        `;
+    }
+
+    function devGuardarStats(id) {
+        const stats = {};
+        ['fuerza','resistencia','velocidad','magia','suerte'].forEach(s => {
+            stats[s] = parseInt(document.getElementById('devStat-' + s).value) || 2;
+        });
+        emitirDev('setStats', { personaje_id: id, ...stats });
+    }
+
+    function emitirDev(accion, params) {
+        socket.emit('devComando', { cuenta_id: cuentaActual.id, accion, params });
+    }
+
+    socket.on('devResultado', (cuenta) => {
+        cuentaActual = cuenta;
+        actualizarUI(cuenta);
+        actualizarNotificaciones();
+        abrirDevPanel();
+        if (document.getElementById('listaPJs')) renderizarPersonajes();
+    });
+
     // ── UI ──
     function actualizarUI(cuenta) {
         document.getElementById('userNameDisplay').textContent = cuenta.nombre.toUpperCase();
+        document.getElementById('btnDev').style.display = cuenta.dev ? 'flex' : 'none';
         actualizarNotificaciones();
         document.getElementById('dineroDisplay').textContent = cuenta.dinero;
         document.getElementById('nivelDisplay').textContent = cuenta.nivel;
