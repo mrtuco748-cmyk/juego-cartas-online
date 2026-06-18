@@ -40,7 +40,7 @@ function renderizarCombate() {
                     <div id="barraHPRival" style="height:100%; width:100%; background:linear-gradient(90deg,#c85030,#ff6040); border-radius:3px; transition:width 0.4s;"></div>
                 </div>
                 <div style="color:#9a7040; font-size:9px; margin-top:2px;">
-                    HP: <span id="rivalHP">${rivalPJ.hp}</span>/100
+                    HP: <span id="rivalHP">${rivalPJ.hp}</span>/40
                 </div>
             </div>
 
@@ -67,7 +67,7 @@ function renderizarCombate() {
                     <div id="barraHPMio" style="height:100%; width:100%; background:linear-gradient(90deg,#208040,#40c060); border-radius:3px; transition:width 0.4s;"></div>
                 </div>
                 <div style="color:#9a7040; font-size:9px; margin-top:2px;">
-                    HP: <span id="pjHP">${miPJ.hp}</span>/100
+                    HP: <span id="pjHP">${miPJ.hp}</span>/40
                     &nbsp;|&nbsp; Energía: <span id="pjEnergia">${miPJ.energia}</span>
                 </div>
             </div>
@@ -148,8 +148,8 @@ socket.on('actualizarEstado', (datos) => {
     document.getElementById('pjHP').textContent = miHP;
     document.getElementById('rivalHP').textContent = rivalHP;
     document.getElementById('pjEnergia').textContent = miEnergia;
-    document.getElementById('barraHPMio').style.width = Math.max(0, miHP) + '%';
-    document.getElementById('barraHPRival').style.width = Math.max(0, rivalHP) + '%';
+    document.getElementById('barraHPMio').style.width = (Math.max(0, miHP) / 40 * 100) + '%';
+    document.getElementById('barraHPRival').style.width = (Math.max(0, rivalHP) / 40 * 100) + '%';
 
     actualizarIndicadorTurno();
     actualizarCentral();
