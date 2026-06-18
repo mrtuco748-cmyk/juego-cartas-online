@@ -23,6 +23,7 @@ const personajeSchema = new mongoose.Schema({
     energia: { type: Number, default: 100 },
     nivel: { type: Number, default: 1 },
     experiencia: { type: Number, default: 0 },
+    puntosStats: { type: Number, default: 0 },
     tas: { type: Array, default: [] },
     tps: { type: Array, default: [] }
 });
@@ -59,6 +60,7 @@ async function otorgarXP(cuentaId, personajeId, xp) {
         while (pj.experiencia >= pj.nivel) {
             pj.experiencia -= pj.nivel;
             pj.nivel++;
+            pj.puntosStats = (pj.puntosStats || 0) + 3;
         }
         await cuenta.save();
         return cuenta;
@@ -310,6 +312,42 @@ io.on('connection', (socket) => {
         } catch (err) {
             console.error('❌ Error eliminando personaje:', err.message);
             socket.emit('errorPersonaje', 'Error al eliminar el personaje.');
+        }
+    });
+
+    // ── ASIGNAR STATS ──
+    socket.on('asignarStats', async ({ cuenta_id, personaje_id, stats }) => {
+        try {
+            const cuenta = await Cuenta.findById(cuenta_id);
+            if (!cuenta) { socket.emit('errorPersonaje', 'Cuenta no encontrada.'); return; }
+            const pj = cuenta.personajes.id(personaje_id);
+            if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
+
+            const pts = pj.puntosStats || 0;
+            const usados = (stats.fuerza - pj.fuerza) + (stats.resistencia - pj.resistencia) +
+                           (stats.velocidad - pj.velocidad) + (stats.magia - pj.magia) +
+                           (stats.suerte - pj.suerte);
+            if (usados > pts) { socket.emit('errorPersonaje', 'No tenés suficientes puntos.'); return; }
+            if (stats.fuerza < 2 || stats.resistencia < 2 || stats.velocidad < 2 || stats.magia < 2 || stats.suerte < 2) {
+                socket.emit('errorPersonaje', 'Mínimo 2 puntos por estadística.'); return;
+            }
+
+            pj.fuerza = stats.fuerza;
+            pj.resistencia = stats.resistencia;
+            pj.velocidad = stats.velocidad;
+            pj.magia = stats.magia;
+            pj.suerte = stats.suerte;
+            pj.puntosStats = pts - usados;
+
+            await cuenta.save();
+            socket.emit('statsAsignados', {
+                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
+                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
+                foto: cuenta.foto, personajes: cuenta.personajes
+            });
+        } catch (err) {
+            console.error('❌ Error asignando stats:', err.message);
+            socket.emit('errorPersonaje', 'Error al asignar stats.');
         }
     });
 
