@@ -343,31 +343,31 @@ function toggleInventario() {
   if (!inventarioVisible) { panel.style.display = 'none'; return; }
   panel.style.display = 'block';
   const inv = miPJ.inventario || [];
-  const eq = miPJ.equipment || { arma: null, armadura: null, accesorio: null };
+  const eq = miPJ.equipment || { mano1: null, mano2: null, armadura: null, accesorio: null };
+  const equipoTexto = `M1:${eq.mano1 ? eq.mano1.nombre : '—'} M2:${eq.mano2 ? (eq.mano2 === eq.mano1 ? '(2M)' : eq.mano2.nombre) : '—'} Arm:${eq.armadura ? eq.armadura.nombre : '—'} Acc:${eq.accesorio ? eq.accesorio.nombre : '—'}`;
   panel.innerHTML = `
     <div style="color:#9a7040;font-size:9px;letter-spacing:2px;text-align:center;margin-bottom:4px;">INVENTARIO (${inv.filter(o => !o._equipado).length}/5)</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:4px;">
-      <div style="font-size:8px;color:#6a4018;">Arma: ${eq.arma ? eq.arma.nombre : '—'}</div>
-      <div style="font-size:8px;color:#6a4018;">Armadura: ${eq.armadura ? eq.armadura.nombre : '—'}</div>
-      <div style="font-size:8px;color:#6a4018;">Accesorio: ${eq.accesorio ? eq.accesorio.nombre : '—'}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:4px;font-size:8px;color:#6a4018;">
+      ${equipoTexto}
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
       ${inv.map((o, i) => `
         <div style="background:rgba(0,0,0,0.4);border:1px solid #3a2008;border-radius:4px;padding:4px 6px;text-align:center;">
           <div style="color:#d4a060;font-size:9px;">${o.nombre}</div>
-          <div style="font-size:7px;color:#6a4018;">${o.tipo}</div>
+          <div style="font-size:7px;color:#6a4018;">${o.tipo}${o.manos ? ' ('+o.manos+'M)' : ''}</div>
           <div style="display:flex;gap:2px;margin-top:2px;">
             ${(o.tipo === 'arma' || o.tipo === 'armadura' || o.tipo === 'accesorio') ? `<button onclick="enviarAccion('equipar', null, { objIdx: ${i} });toggleInventario();" style="font-size:7px;padding:1px 4px;background:rgba(0,0,0,0.3);border:1px solid #3a6a3a;color:#60d060;border-radius:2px;cursor:pointer;font-family:'Cinzel',serif;">EQUIPAR</button>` : ''}
-            ${(o.tipo === 'consumible') ? `<button onclick="enviarAccion('usar_objeto', null, { objIdx: ${i} });toggleInventario();" style="font-size:7px;padding:1px 4px;background:rgba(0,0,0,0.3);border:1px solid #6a3a3a;color:#d06060;border-radius:2px;cursor:pointer;font-family:'Cinzel',serif;">USAR</button>` : ''}
-            ${(o.tipo === 'material' || o.tipo === 'arma') ? `<button onclick="enviarAccion('lanzar', null, { objIdx: ${i} });toggleInventario();" style="font-size:7px;padding:1px 4px;background:rgba(0,0,0,0.3);border:1px solid #3a3a6a;color:#6060d0;border-radius:2px;cursor:pointer;font-family:'Cinzel',serif;">LANZAR</button>` : ''}
+            ${(o.tipo === 'consumible' || o.tipo === 'especial') ? `<button onclick="enviarAccion('usar_objeto', null, { objIdx: ${i} });toggleInventario();" style="font-size:7px;padding:1px 4px;background:rgba(0,0,0,0.3);border:1px solid #6a3a3a;color:#d06060;border-radius:2px;cursor:pointer;font-family:'Cinzel',serif;">USAR</button>` : ''}
+            ${(o.tipo !== 'consumible' && o.tipo !== 'especial' && o.tipo !== 'nada' && o.tipo !== 'moneda') ? `<button onclick="enviarAccion('lanzar', null, { objIdx: ${i} });toggleInventario();" style="font-size:7px;padding:1px 4px;background:rgba(0,0,0,0.3);border:1px solid #3a3a6a;color:#6060d0;border-radius:2px;cursor:pointer;font-family:'Cinzel',serif;">LANZAR</button>` : ''}
           </div>
         </div>
       `).join('')}
     </div>
-    <div style="display:flex;gap:4px;justify-content:center;margin-top:4px;">
-      ${eq.arma ? `<button onclick="enviarAccion('desequipar', null, { slot: 'arma' });toggleInventario();" style="font-size:8px;padding:2px 8px;background:rgba(0,0,0,0.3);border:1px solid #4a3010;color:#c85030;border-radius:3px;cursor:pointer;font-family:'Cinzel',serif;">Desequipar arma</button>` : ''}
-      ${eq.armadura ? `<button onclick="enviarAccion('desequipar', null, { slot: 'armadura' });toggleInventario();" style="font-size:8px;padding:2px 8px;background:rgba(0,0,0,0.3);border:1px solid #4a3010;color:#c85030;border-radius:3px;cursor:pointer;font-family:'Cinzel',serif;">Desequipar armadura</button>` : ''}
-      ${eq.accesorio ? `<button onclick="enviarAccion('desequipar', null, { slot: 'accesorio' });toggleInventario();" style="font-size:8px;padding:2px 8px;background:rgba(0,0,0,0.3);border:1px solid #4a3010;color:#c85030;border-radius:3px;cursor:pointer;font-family:'Cinzel',serif;">Desequipar accesorio</button>` : ''}
+    <div style="display:flex;gap:4px;justify-content:center;margin-top:4px;flex-wrap:wrap;">
+      ${eq.mano1 ? `<button onclick="enviarAccion('desequipar', null, { slot: 'mano1' });toggleInventario();" style="font-size:8px;padding:2px 8px;background:rgba(0,0,0,0.3);border:1px solid #4a3010;color:#c85030;border-radius:3px;cursor:pointer;font-family:'Cinzel',serif;">Deseq M1</button>` : ''}
+      ${eq.mano2 && eq.mano2 !== eq.mano1 ? `<button onclick="enviarAccion('desequipar', null, { slot: 'mano2' });toggleInventario();" style="font-size:8px;padding:2px 8px;background:rgba(0,0,0,0.3);border:1px solid #4a3010;color:#c85030;border-radius:3px;cursor:pointer;font-family:'Cinzel',serif;">Deseq M2</button>` : ''}
+      ${eq.armadura ? `<button onclick="enviarAccion('desequipar', null, { slot: 'armadura' });toggleInventario();" style="font-size:8px;padding:2px 8px;background:rgba(0,0,0,0.3);border:1px solid #4a3010;color:#c85030;border-radius:3px;cursor:pointer;font-family:'Cinzel',serif;">Deseq Armadura</button>` : ''}
+      ${eq.accesorio ? `<button onclick="enviarAccion('desequipar', null, { slot: 'accesorio' });toggleInventario();" style="font-size:8px;padding:2px 8px;background:rgba(0,0,0,0.3);border:1px solid #4a3010;color:#c85030;border-radius:3px;cursor:pointer;font-family:'Cinzel',serif;">Deseq Accesorio</button>` : ''}
     </div>
     <button onclick="toggleInventario()" style="display:block;margin:6px auto 0;font-family:'Cinzel',serif;font-size:8px;padding:3px 12px;background:transparent;border:1px solid #3a2008;color:#6a4018;border-radius:3px;cursor:pointer;">CERRAR</button>
   `;

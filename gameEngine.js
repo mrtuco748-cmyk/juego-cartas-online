@@ -81,56 +81,82 @@ function getMaxHP(clase) {
 
 const MAZOS = {
   investigacion: [
-    { nombre: "Madera", tipo: "material", desc: "Material básico para crear" },
-    { nombre: "Hierro", tipo: "material", desc: "Metal resistente" },
-    { nombre: "Piedra", tipo: "material", desc: "Roca sólida" },
-    { nombre: "Cuero", tipo: "material", desc: "Piel curtida" },
-    { nombre: "Tela", tipo: "material", desc: "Fibra textil" },
-    { nombre: "Gemas", tipo: "material", desc: "Gemas brillantes" },
-    { nombre: "Cuerda", tipo: "material", desc: "Fibra trenzada" },
-    { nombre: "Hueso", tipo: "material", desc: "Restos óseos" },
-    { nombre: "Poción Menor", tipo: "consumible", desc: "Cura 10 HP", efecto: "cura", valor: 10 },
-    { nombre: "Poción de Energía", tipo: "consumible", desc: "Recupera 10 energía", efecto: "energia", valor: 10 },
-    { nombre: "Vendas", tipo: "consumible", desc: "Cura 5 HP", efecto: "cura", valor: 5 },
-    { nombre: "Cofre de Armas", tipo: "cofre", desc: "Saca una carta del mazo de armas" },
-    { nombre: "Cofre de Accesorios", tipo: "cofre", desc: "Saca una carta del mazo de accesorios" }
+    { nombre: "Rama", probabilidad: 20, tipo: "material", desc: "Útil para crafteo" },
+    { nombre: "Piedra", probabilidad: 20, tipo: "material", desc: "Útil para crafteo" },
+    { nombre: "Basura", probabilidad: 30, tipo: "consumible", desc: "Inmundicia apestosa", efectos: [{ tipo: "consumir", efecto: "basura" }] },
+    { nombre: "Nada", probabilidad: 10, tipo: "nada", desc: "No encontraste nada" },
+    { nombre: "Pierna", probabilidad: 5, tipo: "consumible", desc: "Una pierna putrefacta", efectos: [{ tipo: "consumir", efecto: "pierna" }] },
+    { nombre: "Carne Podrida", probabilidad: 5, tipo: "consumible", desc: "Carne en mal estado", efectos: [{ tipo: "consumir", efecto: "carne_podrida" }] },
+    { nombre: "Lingote de Hierro", probabilidad: 10, tipo: "material", desc: "Metal resistente para crafteo" },
+    { nombre: "Cuerda", probabilidad: 15, tipo: "material", desc: "Fibra trenzada útil" },
+    { nombre: "Huesos", probabilidad: 15, tipo: "material", desc: "Restos óseos" },
+    { nombre: "Polvo Mágico", probabilidad: 10, tipo: "consumible", desc: "Brilla con energía arcana", efectos: [{ tipo: "consumir", efecto: "stat_boost", stat: "magia", valor: 3 }] },
+    { nombre: "Gema", probabilidad: 8, tipo: "material", desc: "Gema brillante", valorVenta: 100 },
+    { nombre: "Cuerno", probabilidad: 10, tipo: "arma", desc: "Cuerno de bestia", manos: 1, stats: { dañoDirecto: 8 }, efectos: [{ tipo: "turn_start", efecto: "damage_self", valor: 4 }] },
+    { nombre: "Botella", probabilidad: 11, tipo: "material", desc: "Botella de vidrio vacía" },
+    { nombre: "Pesas", probabilidad: 8, tipo: "accesorio", desc: "Pesas de entrenamiento", manos: 1, stats: { velocidad: -2 }, efectos: [{ tipo: "cada_6_turnos", efecto: "stat_boost", stat: "fuerza", valor: 4 }], contadorId: "pesas" },
+    { nombre: "Espejo", probabilidad: 7, tipo: "material", desc: "Espejo antiguo" },
+    { nombre: "Tela", probabilidad: 12, tipo: "material", desc: "Fibra textil" },
+    { nombre: "Sombrero de Mago", probabilidad: 5, tipo: "armadura", desc: "Sombrero puntiagudo", stats: { magia: 4 }, efectos: [{ tipo: "turn_start", efecto: "energia", valor: 5 }] },
+    { nombre: "Cofre", probabilidad: 5, tipo: "cofre", desc: "Un cofre misterioso" },
+    { nombre: "1 Moneda", probabilidad: 7, tipo: "moneda", desc: "Moneda de oro antiguo", valorVenta: 1 },
+    { nombre: "Runa Energética", probabilidad: 7, tipo: "consumible", desc: "Runa pulsante de energía", efectos: [
+      { tipo: "consumir", efecto: "energia", valor: 20 },
+      { tipo: "persistente", efecto: "regen_energy", valor: 5, id: "runa_energetica" }
+    ] },
+    { nombre: "La Copa", probabilidad: 5, tipo: "arma", desc: "Copa que ansía almas", manos: 1, efectos: [{ tipo: "invocar_asesinatos", valor: 3 }] },
+    { nombre: "Libro Maldito", probabilidad: 8, tipo: "especial", desc: "Libro de maldiciones", efectos: [{ tipo: "aplicar_enemigo", efecto: "maldicion" }] },
+    { nombre: "Ojo de Orus", probabilidad: 5, tipo: "accesorio", desc: "Ojo místico", efectos: [
+      { tipo: "pasivo", efecto: "crit_mult", valor: 0.50 },
+      { tipo: "pasivo", efecto: "dodge_bonus", valor: 3 }
+    ] },
+    { nombre: "Pata de Conejo", probabilidad: 5, tipo: "accesorio", desc: "Pata de conejo de la suerte", stats: { suerte: 7 } },
+    { nombre: "Venda", probabilidad: 5, tipo: "consumible", desc: "Vendas limpias", efectos: [
+      { tipo: "consumir", efecto: "cura", valor: 7 },
+      { tipo: "persistente", efecto: "regen_hp", valor: 2, duracion: 5, id: "venda_regen" }
+    ] },
+    { nombre: "Ambrosía", probabilidad: 1, tipo: "consumible", desc: "Néctar divino", efectos: [
+      { tipo: "consumir", efecto: "stat_boost_all", valor: 4 },
+      { tipo: "persistente", efecto: "regen_hp", valor: 5, id: "ambrosia_hp" },
+      { tipo: "persistente", efecto: "regen_energy", valor: 5, id: "ambrosia_en" }
+    ] },
+    { nombre: "Piedra Sintamani", probabilidad: 2, tipo: "consumible", desc: "Piedra de poder", efectos: [
+      { tipo: "consumir", efecto: "cura", valor: 10 },
+      { tipo: "consumir", efecto: "max_hp_up", valor: 20 },
+      { tipo: "consumir", efecto: "stat_boost", stat: "suerte", valor: 5 }
+    ] },
+    { nombre: "Semilla del Sabio", probabilidad: 1, tipo: "consumible", desc: "Semilla ancestral", efectos: [
+      { tipo: "consumir", efecto: "full_heal" },
+      { tipo: "consumir", efecto: "energia", valor: 20 }
+    ] },
+    { nombre: "Runa Divina", probabilidad: 1, tipo: "consumible", desc: "Runa celestial", efectos: [
+      { tipo: "consumir", efecto: "cura", valor: 10 },
+      { tipo: "consumir", efecto: "energia", valor: 20 },
+      { tipo: "consumir", efecto: "stat_boost", stat: "velocidad", valor: 5 },
+      { tipo: "persistente", efecto: "regen_energy", valor: 5, id: "runa_divina_en" }
+    ] },
+    { nombre: "Totem", probabilidad: 0.5, tipo: "accesorio", desc: "Tótem de resurrección", efectos: [{ tipo: "pasivo", efecto: "revive", valor: 1/3 }] },
+    { nombre: "Hidromiel", probabilidad: 2, tipo: "consumible", desc: "Hidromiel de los dioses", efectos: [
+      { tipo: "consumir", efecto: "stat_boost_all", valor: 3 },
+      { tipo: "consumir", efecto: "cura", valor: 20 },
+      { tipo: "consumir", efecto: "energia", valor: 20 },
+      { tipo: "consumir", efecto: "stat_boost", stat: "magia", valor: 7 },
+      { tipo: "persistente", efecto: "regen_hp", valor: 5, id: "hidromiel_hp" },
+      { tipo: "persistente", efecto: "regen_energy", valor: 5, id: "hidromiel_en" }
+    ] }
   ],
-  armas: [
-    { nombre: "Espada Corta", tipo: "arma", peso: 2, filo: 3, desc: "Daño +2 peso +3 filo" },
-    { nombre: "Hacha", tipo: "arma", peso: 4, filo: 2, desc: "Daño +4 peso +2 filo" },
-    { nombre: "Daga", tipo: "arma", peso: 1, filo: 4, desc: "Daño +1 peso +4 filo" },
-    { nombre: "Lanza", tipo: "arma", peso: 3, filo: 3, desc: "Daño +3 peso +3 filo" },
-    { nombre: "Martillo", tipo: "arma", peso: 5, filo: 1, desc: "Daño +5 peso +1 filo" },
-    { nombre: "Bastón", tipo: "arma", peso: 2, filo: 1, desc: "Daño +2 peso +1 filo, +2 magia" }
+  cofres: [
+    { nombre: "Polvo Mágico", tipo: "consumible", desc: "Brilla con energía arcana", efectos: [{ tipo: "consumir", efecto: "stat_boost", stat: "magia", valor: 3 }] },
+    { nombre: "Gema", tipo: "material", desc: "Gema brillante", valorVenta: 100 },
+    { nombre: "Cuerno", tipo: "arma", desc: "Cuerno de bestia", manos: 1, stats: { dañoDirecto: 8 }, efectos: [{ tipo: "turn_start", efecto: "damage_self", valor: 4 }] },
+    { nombre: "Sombrero de Mago", tipo: "armadura", desc: "Sombrero puntiagudo", stats: { magia: 4 }, efectos: [{ tipo: "turn_start", efecto: "energia", valor: 5 }] },
+    { nombre: "Ojo de Orus", tipo: "accesorio", desc: "Ojo místico", efectos: [{ tipo: "pasivo", efecto: "crit_mult", valor: 0.50 }, { tipo: "pasivo", efecto: "dodge_bonus", valor: 3 }] },
+    { nombre: "Pata de Conejo", tipo: "accesorio", desc: "Pata de conejo de la suerte", stats: { suerte: 7 } },
+    { nombre: "Runa Energética", tipo: "consumible", desc: "Runa pulsante de energía", efectos: [{ tipo: "consumir", efecto: "energia", valor: 20 }, { tipo: "persistente", efecto: "regen_energy", valor: 5, id: "runa_energetica" }] },
+    { nombre: "Venda", tipo: "consumible", desc: "Vendas limpias", efectos: [{ tipo: "consumir", efecto: "cura", valor: 7 }, { tipo: "persistente", efecto: "regen_hp", valor: 2, duracion: 5, id: "venda_regen" }] },
+    { nombre: "1 Moneda", tipo: "moneda", desc: "Moneda de oro antiguo", valorVenta: 1 }
   ],
-  accesorios: [
-    { nombre: "Anillo de Protección", tipo: "accesorio", desc: "+2 resistencia", stat: "resistencia", valor: 2 },
-    { nombre: "Amuleto de Poder", tipo: "accesorio", desc: "+2 fuerza", stat: "fuerza", valor: 2 },
-    { nombre: "Capa de Sombras", tipo: "accesorio", desc: "+2 velocidad", stat: "velocidad", valor: 2 },
-    { nombre: "Grimorio", tipo: "accesorio", desc: "+2 magia", stat: "magia", valor: 2 },
-    { nombre: "Trébol", tipo: "accesorio", desc: "+2 suerte", stat: "suerte", valor: 2 },
-    { nombre: "Armadura Ligera", tipo: "armadura", desc: "+3 resistencia", stat: "resistencia", valor: 3 }
-  ],
-  armaduras: [
-    { nombre: "Armadura de Cuero", tipo: "armadura", desc: "+3 resistencia", stat: "resistencia", valor: 3 },
-    { nombre: "Armadura de Placas", tipo: "armadura", desc: "+5 resistencia, -1 velocidad", stat: "resistencia", valor: 5, penalidad: { velocidad: -1 } },
-    { nombre: "Túnica Mágica", tipo: "armadura", desc: "+2 resistencia, +2 magia", stat: "resistencia", valor: 2 }
-  ],
-  recetas: [
-    { nombre: "Espada Corta", requiere: ["Madera", "Hierro"], resultado: { nombre: "Espada Corta", tipo: "arma", peso: 2, filo: 3 } },
-    { nombre: "Hacha", requiere: ["Madera", "Hierro", "Piedra"], resultado: { nombre: "Hacha", tipo: "arma", peso: 4, filo: 2 } },
-    { nombre: "Daga", requiere: ["Hierro", "Hueso"], resultado: { nombre: "Daga", tipo: "arma", peso: 1, filo: 4 } },
-    { nombre: "Lanza", requiere: ["Madera", "Hierro", "Cuerda"], resultado: { nombre: "Lanza", tipo: "arma", peso: 3, filo: 3 } },
-    { nombre: "Martillo", requiere: ["Madera", "Piedra", "Hierro"], resultado: { nombre: "Martillo", tipo: "arma", peso: 5, filo: 1 } },
-    { nombre: "Bastón", requiere: ["Madera", "Gemas"], resultado: { nombre: "Bastón", tipo: "arma", peso: 2, filo: 1 } },
-    { nombre: "Vendas", requiere: ["Tela"], resultado: { nombre: "Vendas", tipo: "consumible", efecto: "cura", valor: 5 } },
-    { nombre: "Poción Menor", requiere: ["Gemas", "Hierro"], resultado: { nombre: "Poción Menor", tipo: "consumible", efecto: "cura", valor: 10 } },
-    { nombre: "Poción de Energía", requiere: ["Gemas", "Cuero"], resultado: { nombre: "Poción de Energía", tipo: "consumible", efecto: "energia", valor: 10 } },
-    { nombre: "Armadura de Cuero", requiere: ["Cuero", "Cuerda"], resultado: { nombre: "Armadura de Cuero", tipo: "armadura", stat: "resistencia", valor: 3 } },
-    { nombre: "Armadura de Placas", requiere: ["Hierro", "Hierro", "Cuero"], resultado: { nombre: "Armadura de Placas", tipo: "armadura", stat: "resistencia", valor: 5 } },
-    { nombre: "Anillo de Protección", requiere: ["Gemas", "Hierro"], resultado: { nombre: "Anillo de Protección", tipo: "accesorio", stat: "resistencia", valor: 2 } },
-    { nombre: "Amuleto de Poder", requiere: ["Gemas", "Cuero"], resultado: { nombre: "Amuleto de Poder", tipo: "accesorio", stat: "fuerza", valor: 2 } }
-  ]
+  recetas: []
 };
 
 class GameProcessor {
@@ -494,10 +520,16 @@ class GameProcessor {
 
     if (jugador.equipment) {
       for (const eq of Object.values(jugador.equipment)) {
-        if (eq && eq.stat && stats[eq.stat] !== undefined) {
+        if (!eq) continue;
+        if (eq.stat && stats[eq.stat] !== undefined) {
           stats[eq.stat] += eq.valor || 0;
         }
-        if (eq && eq.penalidad) {
+        if (eq.stats) {
+          for (const [s, v] of Object.entries(eq.stats)) {
+            if (stats[s] !== undefined) stats[s] += v;
+          }
+        }
+        if (eq.penalidad) {
           for (const [s, v] of Object.entries(eq.penalidad)) {
             if (stats[s] !== undefined) stats[s] += v;
           }
@@ -596,6 +628,158 @@ class GameProcessor {
       Titan: ["fortaleza", "ultimo_aliento"]
     };
     return mapa[clase] || ["regeneracion", "fortaleza"];
+  }
+
+  aplicarEfectosConsumible(obj, source, rival) {
+    const logs = [];
+    if (!obj.efectos) return logs;
+    for (const efecto of obj.efectos) {
+      switch (efecto.efecto) {
+        case "cura":
+          source.hp = Math.min(source.maxHp + (source.hpOverflow || 0), source.hp + efecto.valor);
+          logs.push(`${source.nombre} usa ${obj.nombre}: +${efecto.valor} HP`);
+          break;
+        case "energia":
+          source.energia = Math.min(100, source.energia + efecto.valor);
+          logs.push(`${source.nombre} usa ${obj.nombre}: +${efecto.valor} energía`);
+          break;
+        case "basura":
+          source.hp = Math.max(1, source.hp - 5);
+          logs.push(`${source.nombre} come basura: -5 HP`);
+          break;
+        case "pierna":
+          source.hp = Math.max(1, source.hp - 10);
+          logs.push(`${source.nombre} muerde una pierna podrida: -10 HP`);
+          break;
+        case "carne_podrida":
+          source.hp = Math.max(1, source.hp - 3);
+          logs.push(`${source.nombre} come carne podrida: -3 HP`);
+          break;
+        case "stat_boost":
+          source.personaje[efecto.stat] += efecto.valor;
+          logs.push(`${source.nombre} gana +${efecto.valor} ${efecto.stat}`);
+          break;
+        case "stat_boost_all":
+          for (const s of ["fuerza", "resistencia", "velocidad", "magia", "suerte"]) {
+            source.personaje[s] += efecto.valor;
+          }
+          logs.push(`${source.nombre} gana +${efecto.valor} a todas las stats`);
+          break;
+        case "full_heal":
+          source.hp = source.maxHp + (source.hpOverflow || 0);
+          logs.push(`${source.nombre} recupera todo su HP`);
+          break;
+        case "max_hp_up":
+          source.maxHp += efecto.valor;
+          source.hp += efecto.valor;
+          logs.push(`${source.nombre} aumenta su HP máximo en ${efecto.valor}`);
+          break;
+        case "persistente":
+          source.persistentEffects = source.persistentEffects || [];
+          if (!source.persistentEffects.find(e => e.id === efecto.id)) {
+            source.persistentEffects.push({ ...efecto, restante: efecto.duracion || -1 });
+            logs.push(`${source.nombre} obtiene efecto persistente: ${efecto.id}`);
+          }
+          break;
+        case "aplicar_enemigo":
+          if (rival) {
+            rival.status = rival.status || {};
+            rival.status.maldicion = (rival.status.maldicion || 0) + 1;
+            logs.push(`${source.nombre} maldice a ${rival.nombre} con ${obj.nombre}`);
+          }
+          break;
+      }
+    }
+    return logs;
+  }
+
+  procesarEfectosPersistentes(jugador) {
+    const logs = [];
+    if (!jugador.persistentEffects) return logs;
+    for (let i = jugador.persistentEffects.length - 1; i >= 0; i--) {
+      const ef = jugador.persistentEffects[i];
+      switch (ef.efecto) {
+        case "regen_hp":
+          jugador.hp = Math.min(jugador.maxHp + (jugador.hpOverflow || 0), jugador.hp + ef.valor);
+          logs.push(`${jugador.nombre} regenera +${ef.valor} HP (${ef.id})`);
+          break;
+        case "regen_energy":
+          jugador.energia = Math.min(100, jugador.energia + ef.valor);
+          logs.push(`${jugador.nombre} recupera +${ef.valor} energía (${ef.id})`);
+          break;
+        case "damage_self":
+          jugador.hp -= ef.valor;
+          logs.push(`${jugador.nombre} recibe ${ef.valor} de daño (${ef.id})`);
+          break;
+      }
+      if (ef.restante > 0) {
+        ef.restante--;
+        if (ef.restante === 0) {
+          jugador.persistentEffects.splice(i, 1);
+          logs.push(`Efecto ${ef.id} se desvaneció`);
+        }
+      }
+    }
+    if (jugador.contadores) {
+      for (const [key, cont] of Object.entries(jugador.contadores)) {
+        cont.valor = (cont.valor || 0) + 1;
+        if (cont.valor >= (cont.intervalo || 6)) {
+          cont.valor = 0;
+          cont.callback(jugador, logs);
+        }
+      }
+    }
+    return logs;
+  }
+
+  procesarEfectosEquipados(jugador) {
+    const logs = [];
+    if (!jugador.equipment) return logs;
+    const equipados = new Set();
+    for (const eq of Object.values(jugador.equipment)) {
+      if (eq) equipados.add(eq);
+    }
+    for (const eq of equipados) {
+      if (!eq.efectos) continue;
+      for (const ef of eq.efectos) {
+        if (ef.tipo === 'turn_start') {
+          switch (ef.efecto) {
+            case "damage_self":
+              jugador.hp -= ef.valor;
+              logs.push(`${jugador.nombre} recibe ${ef.valor} daño de ${eq.nombre}`);
+              break;
+            case "energia":
+              jugador.energia = Math.min(100, jugador.energia + ef.valor);
+              logs.push(`${jugador.nombre} recupera +${ef.valor} energía de ${eq.nombre}`);
+              break;
+          }
+        } else if (ef.tipo === 'cada_6_turnos') {
+          jugador.contadores = jugador.contadores || {};
+          const cId = eq.contadorId || eq.nombre;
+          if (!jugador.contadores[cId]) {
+            jugador.contadores[cId] = { valor: 0, intervalo: 6, callback: (j, logArr) => {
+              j.personaje[ef.stat] += ef.valor;
+              logArr.push(`${j.nombre} gana +${ef.valor} ${ef.stat} permanente de ${eq.nombre}`);
+            }};
+          }
+        } else if (ef.tipo === 'pasivo') {
+          if (ef.efecto === 'crit_mult') {
+            jugador.critBonus = (jugador.critBonus || 0) + ef.valor;
+          }
+          if (ef.efecto === 'dodge_bonus') {
+            jugador.dodgeBonus = (jugador.dodgeBonus || 0) + ef.valor;
+          }
+          if (ef.efecto === 'revive' && !jugador._totemUsed) {
+            if (jugador.hp <= 0 && Math.random() < ef.valor) {
+              jugador.hp = Math.floor(jugador.maxHp * 0.5);
+              jugador._totemUsed = true;
+              logs.push(`${jugador.nombre} revive gracias a ${eq.nombre}`);
+            }
+          }
+        }
+      }
+    }
+    return logs;
   }
 }
 
