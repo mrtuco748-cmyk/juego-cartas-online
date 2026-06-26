@@ -146,140 +146,135 @@
             box-shadow:0 0 12px gold,0 0 25px gold;
         }
 
-        .battlefield { flex:1; position:relative; overflow:hidden; min-height:0; }
+        /* ── BATTLEFIELD GRID ── */
+        .battlefield {
+            flex:1; display:grid;
+            grid-template-columns:220px 1fr 220px;
+            grid-template-rows:1fr auto;
+            gap:10px; padding:10px; min-height:0; align-items:start;
+        }
+        .col-left  { grid-column:1; grid-row:1; display:flex; flex-direction:column; gap:8px; }
+        .col-mid   { grid-column:2; grid-row:1; display:flex; flex-direction:column; gap:8px; min-height:0; }
+        .col-right { grid-column:3; grid-row:1; display:flex; flex-direction:column; gap:8px; }
+        .col-bottom {
+            grid-column:1/-1; grid-row:2; display:flex;
+            flex-direction:row; align-items:center; gap:8px;
+        }
+        .col-bottom .btn-inventory { margin-right:auto; }
+        .col-bottom .actions { margin-left:auto; }
 
-        /* ── PERSONAJES (verticales) ── */
+        /* ── CHARACTERS ── */
         .enemy-character, .player-character {
-            position:absolute; width:260px; height:370px; border-radius:20px;
-            border:2px solid rgba(255,255,255,.1);
+            width:100%; height:clamp(120px, 20vh, 220px);
+            border-radius:16px; border:2px solid rgba(255,255,255,.1);
             background:linear-gradient(135deg,rgba(255,255,255,.03),rgba(255,255,255,.08));
             display:flex; align-items:center; justify-content:center;
-            font-size:140px; color:#666; z-index:2;
-            overflow:hidden;
-            transition: transform 0.5s ease;
+            font-size:60px; color:#666; overflow:hidden;
+            transition:transform 0.5s ease;
         }
-        .enemy-character { top:30px; right:120px; }
-        .player-character { left:120px; bottom:30px; }
         .enemy-character img, .player-character img { width:100%; height:100%; object-fit:cover; filter:brightness(0.5) contrast(1.3); }
-        .player-character.tu-turno { transform: translateX(40px) scale(1.05); }
-        .enemy-character.tu-turno { transform: translateX(-40px) scale(1.05); }
+        .player-character.tu-turno { transform:translateX(20px) scale(1.05); }
+        .enemy-character.tu-turno  { transform:translateX(-20px) scale(1.05); }
 
-        /* ── PERGAMINO ── */
-        .log-scroll {
-            position:absolute; left:50%; top:30px;
-            transform:translateX(-50%);
-            width:600px; height:300px;
-            background:linear-gradient(#ecdcb0,#d2b06c);
-            border:6px solid #8b6430; border-radius:14px;
-            padding:16px 20px; overflow-y:auto;
-            color:#513100; box-shadow:0 0 30px rgba(0,0,0,.4);
-            font-size:13px; z-index:1;
-        }
-        .log-scroll h2 { text-align:center; margin-bottom:12px; font-size:15px; letter-spacing:2px; }
-        .log-scroll::-webkit-scrollbar { width:4px; }
-        .log-scroll::-webkit-scrollbar-track { background:#c7a96c; }
-        .log-scroll::-webkit-scrollbar-thumb { background:#6b5329; border-radius:2px; }
-        .log-entry { margin-bottom:6px; padding:3px 0; border-bottom:1px solid rgba(0,0,0,0.08); }
-        .log-entry:last-child { border-bottom:none; }
+        /* ── CHARACTER BIOS ── */
+        .character-bio { display:flex; flex-direction:column; align-items:center; transition:transform 0.4s ease; }
+        .character-bio.tu-turno { transform:scale(1.06); }
 
-        /* ── TURNO DEBAJO DEL LOG ── */
-        .turn-message {
-            position:absolute; left:50%; top:345px;
-            transform:translateX(-50%);
-            font-size:24px; font-weight:bold;
-            color:#f3ca6b; letter-spacing:3px;
-            text-shadow:0 2px 8px rgba(0,0,0,.6);
-            z-index:3;
-        }
-
-        /* ── FICHAS (stats sheets) ── */
-        .sheet {
-            width:100%; padding:14px 16px;
-            background:linear-gradient(145deg,#141414,#232323);
-            border:2px solid #8b6430; border-radius:16px;
-            box-shadow:0 0 20px rgba(0,0,0,.4);
-        }
-        .character-bio {
-            position:absolute; z-index:3; display:flex; flex-direction:column;
-            align-items:center; width:260px; transition: transform 0.4s ease;
-        }
-        .left-bio { left:40px; bottom:300px; }
-        .right-bio { right:40px; bottom:300px; }
-        .left-bio.tu-turno { transform: scale(1.12) translateX(20px); }
-        .right-bio.tu-turno { transform: scale(1.12) translateX(-20px); }
         .char-portrait {
-            width:70px; height:70px; border-radius:12px;
+            width:60px; height:60px; border-radius:10px;
             border:2px solid #8b6430; background:#1a0e08;
             overflow:hidden; display:flex; align-items:center;
             justify-content:center; margin-bottom:4px; flex-shrink:0;
         }
         .char-portrait img { width:100%; height:100%; object-fit:cover; }
+        .portrait-placeholder { font-size:24px; color:#3a2008; }
 
-        @keyframes shakeLight { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
-        @keyframes shakeHeavy { 0%,100%{transform:translateX(0)} 10%,50%,90%{transform:translateX(-8px)} 30%,70%{transform:translateX(8px)} }
-        .shake-light { animation: shakeLight 0.35s ease; }
-        .shake-heavy { animation: shakeHeavy 0.5s ease; }
-        @keyframes dodgeLeft { 0%{transform:translateX(0)} 40%{transform:translateX(-40px)} 100%{transform:translateX(0)} }
-        @keyframes dodgeRight { 0%{transform:translateX(0)} 40%{transform:translateX(40px)} 100%{transform:translateX(0)} }
-        .dodge-anim-l { animation: dodgeLeft 0.4s ease; }
-        .dodge-anim-r { animation: dodgeRight 0.4s ease; }
-        @keyframes logFadeIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
-        .logEntryAnim { animation: logFadeIn 0.3s ease; }
-
-        .sheet h2 { color:#f3ca6b; font-size:17px; }
-        .sheet h4 { color:#c9c9c9; margin-bottom:10px; font-size:13px; font-weight:normal; }
-        .sheet .bar { width:100%; height:14px; background:#444; border-radius:12px; overflow:hidden; margin-bottom:6px; }
+        .sheet {
+            width:100%; padding:12px;
+            background:linear-gradient(145deg,#141414,#232323);
+            border:2px solid #8b6430; border-radius:14px;
+            box-shadow:0 0 20px rgba(0,0,0,.4);
+        }
+        .sheet h2 { color:#f3ca6b; font-size:15px; margin:4px 0; }
+        .sheet h4 { color:#c9c9c9; margin-bottom:8px; font-size:12px; font-weight:normal; }
+        .sheet .bar { width:100%; height:12px; background:#444; border-radius:10px; overflow:hidden; margin-bottom:4px; }
         .sheet .hp-fill { height:100%; background:#ff2859; transition:width 0.3s; }
         .sheet .energy-fill { height:100%; background:#2688ff; transition:width 0.3s; }
-        .sheet .stats-grid {
-            margin-top:8px; display:grid;
-            grid-template-columns:1fr 1fr; gap:4px;
+        .sheet .stats-grid { margin-top:6px; display:grid; grid-template-columns:1fr 1fr; gap:3px; }
+        .sheet .stats-grid div { background:#2d2d2d; padding:3px 5px; border-radius:4px; font-size:11px; }
+        .sheet-status { font-size:10px; color:#c090d0; text-align:center; margin-bottom:4px; }
+        .hp-energy-text { font-size:10px; display:flex; justify-content:space-between; margin-bottom:3px; }
+        .e-color { color:#2688ff; }
+        .mod-pos { color:#60d060; }
+        .mod-neg { color:#ff6040; }
+
+        /* ── LOG SCROLL ── */
+        .log-scroll {
+            flex:1; min-height:80px;
+            background:linear-gradient(#ecdcb0,#d2b06c);
+            border:5px solid #8b6430; border-radius:12px;
+            padding:14px 18px; overflow-y:auto;
+            color:#513100; box-shadow:0 0 30px rgba(0,0,0,.4); font-size:13px;
         }
-        .sheet .stats-grid div {
-            background:#2d2d2d; padding:4px 6px; border-radius:5px; font-size:12px;
+        .log-scroll h2 { text-align:center; margin-bottom:10px; font-size:14px; letter-spacing:2px; }
+        .log-scroll::-webkit-scrollbar { width:4px; }
+        .log-scroll::-webkit-scrollbar-track { background:#c7a96c; }
+        .log-scroll::-webkit-scrollbar-thumb { background:#6b5329; border-radius:2px; }
+        .log-entry { margin-bottom:5px; padding:2px 0; border-bottom:1px solid rgba(0,0,0,0.08); }
+        .log-entry:last-child { border-bottom:none; }
+        #logBatch { overflow-y:auto; height:100%; }
+
+        /* ── TURN MESSAGE ── */
+        .turn-message {
+            text-align:center; font-size:22px; font-weight:bold;
+            color:#f3ca6b; letter-spacing:3px;
+            text-shadow:0 2px 8px rgba(0,0,0,.6); padding:6px 0;
         }
 
-        .sheet-status {
-            font-size:10px; color:#c090d0; text-align:center; margin-bottom:4px;
-        }
+        /* ── ANIMATIONS ── */
+        @keyframes shakeLight { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+        @keyframes shakeHeavy { 0%,100%{transform:translateX(0)} 10%,50%,90%{transform:translateX(-8px)} 30%,70%{transform:translateX(8px)} }
+        .shake-light { animation:shakeLight 0.35s ease; }
+        .shake-heavy { animation:shakeHeavy 0.5s ease; }
+        @keyframes dodgeLeft { 0%{transform:translateX(0)} 40%{transform:translateX(-30px)} 100%{transform:translateX(0)} }
+        @keyframes dodgeRight { 0%{transform:translateX(0)} 40%{transform:translateX(30px)} 100%{transform:translateX(0)} }
+        .dodge-anim-l { animation:dodgeLeft 0.4s ease; }
+        .dodge-anim-r { animation:dodgeRight 0.4s ease; }
+        @keyframes logFadeIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+        .logEntryAnim { animation:logFadeIn 0.3s ease; }
 
-        /* ── CARTAS ACTIVAS (fanned) ── */
+        /* ── ACTIVE CARDS (fanned) ── */
         .active-cards {
-            position:absolute; left:50%; bottom:20px;
-            transform:translateX(-50%);
-            display:flex; align-items:flex-end; z-index:10;
+            display:flex; align-items:flex-end; justify-content:center;
+            flex:1; min-width:0; min-height:200px;
         }
         .slot-card {
-            width:180px; height:250px;
+            width:160px; height:220px;
             background:linear-gradient(145deg,#f0e0b2,#d2b574);
             border:3px solid #8b6d3f; border-radius:14px;
-            color:#222; padding:12px;
+            color:#222; padding:10px;
             display:flex; flex-direction:column;
             cursor:pointer; transition:0.2s; flex-shrink:0;
         }
         .slot-card:hover { filter:brightness(1.1); }
         .slot-card.selected { border-color:#ffd700; box-shadow:0 0 20px rgba(255,215,0,0.5); }
         .slot-card.disabled { opacity:0.5; cursor:not-allowed; }
-        .slot-card .card-name { font-size:16px; font-weight:bold; margin-bottom:6px; }
-        .slot-card .card-cost { margin-top:auto; text-align:right; font-size:20px; color:#004cff; font-weight:bold; }
+        .slot-card .card-name { font-size:14px; font-weight:bold; margin-bottom:5px; }
+        .slot-card .card-cost { margin-top:auto; text-align:right; font-size:18px; color:#004cff; font-weight:bold; }
         .slot-card .card-desc { font-size:11px; color:#555; flex:1; }
 
-        /* ── BOTONES ACCIONES ── */
+        /* ── BOTTOM CONTROLS ── */
         .btn-inventory {
-            position:absolute; left:30px; bottom:30px;
-            padding:12px 24px; border:none; border-radius:10px;
+            padding:10px 20px; border:none; border-radius:10px;
             background:#8b6430; color:white; font-weight:bold;
-            cursor:pointer; font-size:13px; z-index:5;
+            cursor:pointer; font-size:12px;
         }
         .btn-inventory:hover { filter:brightness(1.15); }
 
-        .actions {
-            position:absolute; right:30px; bottom:30px;
-            display:flex; gap:8px; z-index:5;
-        }
+        .actions { display:flex; gap:6px; }
         .actions button {
-            border:none; border-radius:8px; padding:10px 16px;
-            font-weight:bold; cursor:pointer; font-size:12px;
+            border:none; border-radius:8px; padding:9px 14px;
+            font-weight:bold; cursor:pointer; font-size:11px;
         }
         .actions button:hover { filter:brightness(1.2); }
         .btn-atk { background:#ff2859; color:white; }
@@ -288,21 +283,19 @@
         .btn-extra { background:#77ef95; color:#222; }
 
         .inventario-panel {
-            position:absolute; top:95px; right:20px; width:220px;
+            position:fixed; top:95px; right:20px; width:220px;
             background:#1a1a1a; border:2px solid #6b5329; border-radius:10px;
             padding:10px; z-index:30; max-height:200px; overflow-y:auto;
         }
 
         .acciones-extra {
-            position:absolute; bottom:280px; left:50%; transform:translateX(-50%);
+            position:fixed; bottom:100px; left:50%; transform:translateX(-50%);
             background:#1a1a1a; border:2px solid #6b5329; border-radius:10px;
             padding:10px; z-index:30; max-height:180px; overflow-y:auto;
             min-width:280px;
         }
 
-        .actions-extra-grid {
-            display:flex; flex-wrap:wrap; gap:6px; justify-content:center;
-        }
+        .actions-extra-grid { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
         .actions-extra-grid button {
             padding:8px 14px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:12px;
         }
@@ -364,36 +357,44 @@
             .topbar { height:50px; padding:0 12px; }
             .orb { width:30px; height:30px; }
 
-            .enemy-character { width:140px; height:200px; font-size:72px; top:10px; right:60px; }
-            .enemy-character img { filter:brightness(0.4) contrast(1.3); }
-            .player-character { width:100px; height:145px; font-size:54px; left:30px; bottom:10px; }
-            .player-character img { filter:brightness(0.4) contrast(1.3); }
+            .battlefield {
+                grid-template-columns:1fr 1fr;
+                grid-template-rows:auto 1fr auto;
+                gap:6px; padding:6px;
+            }
+            .col-left  { grid-column:1; grid-row:1; }
+            .col-mid   { grid-column:1/-1; grid-row:2; }
+            .col-right { grid-column:2; grid-row:1; }
+            .col-bottom { grid-column:1/-1; grid-row:3; }
 
-            .log-scroll { width:90%; height:180px; top:10px; font-size:11px; padding:10px 14px; border-width:4px; }
-            .log-scroll h2 { font-size:12px; margin-bottom:8px; }
+            .enemy-character, .player-character {
+                height:clamp(80px, 12vh, 130px); font-size:36px;
+            }
 
-            .turn-message { top:200px; font-size:16px; }
+            .char-portrait { width:48px; height:48px; }
+            .sheet { padding:8px; }
+            .sheet h2 { font-size:12px; }
+            .sheet h4 { font-size:10px; margin-bottom:5px; }
+            .sheet .bar { height:10px; margin-bottom:3px; }
+            .sheet .stats-grid { gap:2px; margin-top:4px; }
+            .sheet .stats-grid div { font-size:9px; padding:2px 4px; }
+            .hp-energy-text { font-size:9px; }
 
-            .sheet { width:auto; height:auto; padding:10px; min-width:0; max-width:45%; }
-            .enemy-sheet { left:8px; bottom:180px; }
-            .player-sheet { right:8px; bottom:180px; }
-            .sheet h2 { font-size:13px; }
-            .sheet h4 { font-size:11px; margin-bottom:6px; }
-            .sheet .bar { height:10px; margin-bottom:4px; }
-            .sheet .stats-grid { gap:3px; margin-top:4px; }
-            .sheet .stats-grid div { font-size:10px; padding:3px 4px; }
+            .log-scroll { font-size:11px; padding:10px 14px; border-width:4px; min-height:60px; }
+            .log-scroll h2 { font-size:12px; }
+            .turn-message { font-size:16px; }
 
-            .active-cards { bottom:80px; }
+            .active-cards { min-height:130px; }
             .slot-card { width:110px; height:155px; padding:8px; border-width:2px; }
             .slot-card .card-name { font-size:11px; margin-bottom:3px; }
             .slot-card .card-cost { font-size:14px; }
             .slot-card .card-desc { font-size:9px; }
 
-            .btn-inventory { left:10px; bottom:10px; padding:8px 14px; font-size:11px; }
-            .actions { right:10px; bottom:10px; gap:4px; }
+            .btn-inventory { padding:8px 14px; font-size:11px; }
+            .actions { gap:4px; }
             .actions button { padding:6px 10px; font-size:10px; }
 
-            .acciones-extra { position:fixed; bottom:70px; left:50%; transform:translateX(-50%); min-width:200px; max-height:140px; }
+            .acciones-extra { max-height:140px; min-width:200px; }
             .inventario-panel { top:55px; right:6px; width:170px; max-height:130px; }
 
             .radial-container { width:190px; height:190px; }
@@ -420,21 +421,25 @@
             .topbar { height:44px; padding:0 8px; }
             .orb { width:24px; height:24px; }
 
-            .enemy-character { width:100px; height:145px; font-size:52px; top:8px; right:40px; }
-            .player-character { width:72px; height:105px; font-size:40px; left:16px; bottom:6px; }
+            .battlefield { gap:4px; padding:4px; }
 
-            .log-scroll { width:96%; height:130px; font-size:10px; padding:6px 10px; }
-            .log-scroll h2 { font-size:10px; }
-            .turn-message { top:150px; font-size:13px; }
+            .enemy-character, .player-character {
+                height:clamp(60px, 10vh, 100px); font-size:28px; border-radius:10px;
+            }
 
-            .sheet { max-width:50%; padding:6px 8px; }
-            .enemy-sheet { left:4px; bottom:140px; }
-            .player-sheet { right:4px; bottom:140px; }
-            .sheet h2 { font-size:11px; }
-            .sheet h4 { font-size:9px; }
+            .char-portrait { width:38px; height:38px; }
+            .sheet { padding:6px; }
+            .sheet h2 { font-size:10px; }
+            .sheet h4 { font-size:8px; }
             .sheet .bar { height:8px; }
             .sheet .stats-grid div { font-size:8px; padding:2px 3px; }
+            .hp-energy-text { font-size:8px; }
 
+            .log-scroll { border-width:3px; font-size:10px; padding:6px 10px; min-height:50px; }
+            .log-scroll h2 { font-size:10px; }
+            .turn-message { font-size:13px; }
+
+            .active-cards { min-height:100px; }
             .slot-card { width:85px; height:120px; padding:6px; }
             .slot-card .card-name { font-size:10px; }
             .slot-card .card-cost { font-size:12px; }

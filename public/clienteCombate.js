@@ -127,23 +127,23 @@ function renderizarCombate() {
   const statLine = (label, stat, c) => {
     const base = c.permanent[stat];
     const b = c.buffMod[stat];
-    if (b > 0) return `<div>${label} ${base} <span style="color:#60d060;">+${b}</span></div>`;
-    if (b < 0) return `<div>${label} ${base} <span style="color:#ff6040;">${b}</span></div>`;
+    if (b > 0) return `<div>${label} ${base} <span class="mod-pos">+${b}</span></div>`;
+    if (b < 0) return `<div>${label} ${base} <span class="mod-neg">${b}</span></div>`;
     return `<div>${label} ${base}</div>`;
   };
 
   const sheetHTML = (pj, prefix) => {
     const c = calcularStatsConBuffsCliente(pj);
-    return `<div class="character-bio ${prefix === 'pj' ? 'left-bio' : 'right-bio'}">
-      <div class="char-portrait">${pj.foto ? `<img src="${pj.foto}">` : '<span style="font-size:24px;color:#3a2008;">?</span>'}</div>
+    return `<div class="character-bio">
+      <div class="char-portrait">${pj.foto ? `<img src="${pj.foto}">` : '<span class="portrait-placeholder">?</span>'}</div>
       <div class="sheet">
         ${statusBadge(pj)}
         <h2>${pj.nombre}</h2>
         <h4>${pj.clase} · Nv.${pj.nivel || 1}</h4>
         <div class="bar"><div class="hp-fill" id="${prefix}HPFill" style="width:${prefix === 'pj' ? miHPct : rivalHPct}%"></div></div>
-        <div style="font-size:11px;display:flex;justify-content:space-between;margin-bottom:4px;">
+        <div class="hp-energy-text">
           <span>HP <span id="${prefix}HP">${pj.hp || 0}</span>/${pj.maxHp || 40}</span>
-          <span><span style="color:#2688ff;">E</span> <span id="${prefix}Energia">${pj.energia || 0}</span>/100</span>
+          <span><span class="e-color">E</span> <span id="${prefix}Energia">${pj.energia || 0}</span>/100</span>
         </div>
         <div class="bar"><div class="energy-fill" id="${prefix}EnergyFill" style="width:${prefix === 'pj' ? miEnPct : rivalEnPct}%"></div></div>
         <div class="stats-grid">
@@ -158,7 +158,7 @@ function renderizarCombate() {
   };
 
   const totalCards = misSkills.length;
-  const angleStep = totalCards > 1 ? Math.min(10, 50 / totalCards) : 0;
+  const angleStep = totalCards > 1 ? Math.min(8, 40 / totalCards) : 0;
   const startAngle = -((totalCards - 1) * angleStep) / 2;
 
   document.getElementById('pantallaCombate').innerHTML = `
@@ -167,50 +167,53 @@ function renderizarCombate() {
     </div>
 
     <div class="battlefield">
-      <!-- PLAYER (LEFT) -->
-      <div class="player-character">${miPJ.foto ? `<img src="${miPJ.foto}">` : '?'}</div>
-      ${sheetHTML(miPJ, 'pj')}
-
-      <!-- RIVAL (RIGHT) -->
-      <div class="enemy-character">${rivalPJ.foto ? `<img src="${rivalPJ.foto}">` : '?'}</div>
-      ${sheetHTML(rivalPJ, 'rival')}
-
-      <div class="log-scroll" ondragover="onLogDragOver(event)" ondrop="onLogDrop(event)">
-        <h2>REGISTRO DE COMBATE</h2>
-        <div id="logBatch" style="overflow-y:auto;height:100%;"></div>
+      <div class="col-left">
+        <div class="player-character">${miPJ.foto ? `<img src="${miPJ.foto}">` : '?'}</div>
+        ${sheetHTML(miPJ, 'pj')}
       </div>
 
-      <div class="turn-message" id="indicadorTurno">
-        ${esMiTurno ? `TU TURNO (${accionesRestantes}/2)` : 'RIVAL'}
+      <div class="col-mid">
+        <div class="log-scroll" ondragover="onLogDragOver(event)" ondrop="onLogDrop(event)">
+          <h2>REGISTRO DE COMBATE</h2>
+          <div id="logBatch"></div>
+        </div>
+        <div class="turn-message" id="indicadorTurno">
+          ${esMiTurno ? `TU TURNO (${accionesRestantes}/2)` : 'RIVAL'}
+        </div>
       </div>
 
-      <div class="active-cards" id="cartasSkill">
-        ${misSkills.map((skill, i) => {
-          const angle = startAngle + i * angleStep;
-          const ty = Math.abs(angle) * 1.3;
-          const zIdx = totalCards === 1 ? 5 : totalCards - Math.abs(i - Math.floor((totalCards - 1) / 2));
-          const cls = (skill.coste > (miPJ.energia || 0) ? 'disabled ' : '') + (cartaSeleccionada === i ? 'selected' : '');
-          const skillData = SKILL_DATA_LOOKUP[skill.id];
-          return `<div class="slot-card ${cls}" style="transform:rotate(${angle}deg) translateY(${ty}px);z-index:${zIdx}" draggable="true"
-            ondragstart="onCardDragStart(event, ${i})"
-            ontouchstart="onCardTouchStart(event, ${i})"
-            ontouchmove="onCardTouchMove(event)"
-            ontouchend="onCardTouchEnd(event)"
-            onclick="seleccionarCarta(${i})" id="skillCard-${i}">
-            <div class="card-name">${skill.nombre}</div>
-            <div class="card-desc">${skillData ? describirEfecto(skillData) : ''}</div>
-            <div class="card-cost">${skill.coste} <span style="color:#2688ff;">E</span></div>
-          </div>`;
-        }).join('')}
+      <div class="col-right">
+        <div class="enemy-character">${rivalPJ.foto ? `<img src="${rivalPJ.foto}">` : '?'}</div>
+        ${sheetHTML(rivalPJ, 'rival')}
       </div>
 
-      <button class="btn-inventory" onclick="toggleInventario()">INVENTARIO</button>
-
-      <div class="actions">
-        <button class="btn-atk" onclick="enviarAccion('atacar')">ATACAR</button>
-        <button class="btn-rest" onclick="enviarAccion('descansar')">DESCANSAR</button>
-        <button class="btn-pose" onclick="enviarAccion('pose')">POSE</button>
-        <button class="btn-extra" onclick="mostrarAccionesExtra()">EXTRA</button>
+      <div class="col-bottom">
+        <button class="btn-inventory" onclick="toggleInventario()">INVENTARIO</button>
+        <div class="active-cards" id="cartasSkill">
+          ${misSkills.map((skill, i) => {
+            const angle = startAngle + i * angleStep;
+            const ty = Math.abs(angle) * 1.3;
+            const zIdx = totalCards === 1 ? 5 : totalCards - Math.abs(i - Math.floor((totalCards - 1) / 2));
+            const cls = (skill.coste > (miPJ.energia || 0) ? 'disabled ' : '') + (cartaSeleccionada === i ? 'selected' : '');
+            const skillData = SKILL_DATA_LOOKUP[skill.id];
+            return `<div class="slot-card ${cls}" style="transform:rotate(${angle}deg) translateY(${ty}px);z-index:${zIdx}" draggable="true"
+              ondragstart="onCardDragStart(event, ${i})"
+              ontouchstart="onCardTouchStart(event, ${i})"
+              ontouchmove="onCardTouchMove(event)"
+              ontouchend="onCardTouchEnd(event)"
+              onclick="seleccionarCarta(${i})" id="skillCard-${i}">
+              <div class="card-name">${skill.nombre}</div>
+              <div class="card-desc">${skillData ? describirEfecto(skillData) : ''}</div>
+              <div class="card-cost">${skill.coste} <span class="e-color">E</span></div>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="actions">
+          <button class="btn-atk" onclick="enviarAccion('atacar')">ATACAR</button>
+          <button class="btn-rest" onclick="enviarAccion('descansar')">DESCANSAR</button>
+          <button class="btn-pose" onclick="enviarAccion('pose')">POSE</button>
+          <button class="btn-extra" onclick="mostrarAccionesExtra()">EXTRA</button>
+        </div>
       </div>
     </div>
 
@@ -549,9 +552,9 @@ function actualizarIndicadorTurno() {
   el.textContent = esMiTurno ? `TU TURNO (${accionesRestantes}/2)` : 'RIVAL';
   document.querySelectorAll('.character-bio, .player-character, .enemy-character').forEach(el2 => el2.classList.remove('tu-turno'));
   if (esMiTurno) {
-    document.querySelectorAll('.left-bio, .player-character').forEach(el2 => { if (el2) el2.classList.add('tu-turno'); });
+    document.querySelectorAll('.col-left .player-character, .col-left .character-bio').forEach(el2 => { if (el2) el2.classList.add('tu-turno'); });
   } else {
-    document.querySelectorAll('.right-bio, .enemy-character').forEach(el2 => { if (el2) el2.classList.add('tu-turno'); });
+    document.querySelectorAll('.col-right .enemy-character, .col-right .character-bio').forEach(el2 => { if (el2) el2.classList.add('tu-turno'); });
   }
 }
 function agitarPersonaje(selector, intensidad) {
