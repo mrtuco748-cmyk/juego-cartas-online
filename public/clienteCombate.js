@@ -79,13 +79,10 @@ const CLASS_MODS = {
 };
 
 function calcularStatsConBuffsCliente(pj) {
-  const cm = CLASS_MODS[pj.clase] || {};
   const STATS = ['fuerza','resistencia','velocidad','magia','suerte'];
-  const base = {}, claseMod = {}, equipMod = {}, buffMod = {}, total = {};
+  const permanent = {}, buffMod = {}, total = {};
   for (const s of STATS) {
     const serverStat = pj[s] || 0;
-    const cMod = cm[s] || 0;
-    const originalBase = serverStat - cMod;
     let eMod = 0;
     if (pj.equipment) {
       for (const eq of Object.values(pj.equipment)) {
@@ -100,13 +97,11 @@ function calcularStatsConBuffsCliente(pj) {
       if (pj.status.buffs && pj.status.buffs[s]) bMod += pj.status.buffs[s].valor;
       if (pj.status.debuffs && pj.status.debuffs[s]) bMod -= pj.status.debuffs[s].valor;
     }
-    base[s] = originalBase;
-    claseMod[s] = cMod;
-    equipMod[s] = eMod;
+    permanent[s] = serverStat + eMod;
     buffMod[s] = bMod;
-    total[s] = originalBase + cMod + eMod + bMod;
+    total[s] = serverStat + eMod + bMod;
   }
-  return { total, base, claseMod, equipMod, buffMod };
+  return { total, permanent, buffMod };
 }
 
 let prevMiHP = 0, prevRivalHP = 0;
@@ -130,12 +125,11 @@ function renderizarCombate() {
   };
 
   const statLine = (label, stat, c) => {
-    const parts = [];
-    if (c.claseMod[stat]) parts.push(`<span style="color:#a08060;">${c.claseMod[stat] > 0 ? '+' : ''}${c.claseMod[stat]}cl</span>`);
-    if (c.equipMod[stat]) parts.push(`<span style="color:#60d060;">${c.equipMod[stat] > 0 ? '+' : ''}${c.equipMod[stat]}eq</span>`);
-    if (c.buffMod[stat]) parts.push(`<span style="color:${c.buffMod[stat] > 0 ? '#60d060' : '#ff6040'};">${c.buffMod[stat] > 0 ? '+' : ''}${c.buffMod[stat]}b</span>`);
-    const modStr = parts.length ? ` <span style="font-size:9px;">${parts.join(' ')}</span>` : '';
-    return `<div>${label} ${c.base[stat]}${modStr}</div>`;
+    const base = c.permanent[stat];
+    const b = c.buffMod[stat];
+    if (b > 0) return `<div>${label} ${base} <span style="color:#60d060;">+${b}</span></div>`;
+    if (b < 0) return `<div>${label} ${base} <span style="color:#ff6040;">${b}</span></div>`;
+    return `<div>${label} ${base}</div>`;
   };
 
   const sheetHTML = (pj, prefix) => {
@@ -645,10 +639,10 @@ function procesarLogQueue() {
     const sel = esYo ? '.player-character' : '.enemy-character';
     const elChar = document.querySelector(sel);
     if (elChar) {
-      elChar.classList.remove('dodge-anim');
+      elChar.classList.remove('dodge-anim-l', 'dodge-anim-r');
       void elChar.offsetWidth;
-      elChar.classList.add('dodge-anim');
-      setTimeout(() => elChar.classList.remove('dodge-anim'), 500);
+      elChar.classList.add(esYo ? 'dodge-anim-l' : 'dodge-anim-r');
+      setTimeout(() => elChar.classList.remove('dodge-anim-l', 'dodge-anim-r'), 500);
     }
   }
 

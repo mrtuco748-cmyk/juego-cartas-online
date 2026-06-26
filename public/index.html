@@ -219,8 +219,10 @@
         @keyframes shakeHeavy { 0%,100%{transform:translateX(0)} 10%,50%,90%{transform:translateX(-8px)} 30%,70%{transform:translateX(8px)} }
         .shake-light { animation: shakeLight 0.35s ease; }
         .shake-heavy { animation: shakeHeavy 0.5s ease; }
-        @keyframes dodgeBack { 0%{transform:translateX(0)} 40%{transform:translateX(-40px)} 100%{transform:translateX(0)} }
-        .dodge-anim { animation: dodgeBack 0.4s ease; }
+        @keyframes dodgeLeft { 0%{transform:translateX(0)} 40%{transform:translateX(-40px)} 100%{transform:translateX(0)} }
+        @keyframes dodgeRight { 0%{transform:translateX(0)} 40%{transform:translateX(40px)} 100%{transform:translateX(0)} }
+        .dodge-anim-l { animation: dodgeLeft 0.4s ease; }
+        .dodge-anim-r { animation: dodgeRight 0.4s ease; }
         @keyframes logFadeIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
         .logEntryAnim { animation: logFadeIn 0.3s ease; }
 

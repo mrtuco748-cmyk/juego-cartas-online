@@ -919,11 +919,8 @@ io.on('connection', (socket) => {
             const maxHP1 = getMaxHP(jugador1.personaje.clase);
             const maxHP2 = getMaxHP(jugador2.personaje.clase);
 
-            const pj1Stats = aplicarModsClase(jugador1.personaje.clase, jugador1.personaje);
-            const pj2Stats = aplicarModsClase(jugador2.personaje.clase, jugador2.personaje);
-
-            const personaje1 = { ...jugador1.personaje, ...pj1Stats };
-            const personaje2 = { ...jugador2.personaje, ...pj2Stats };
+            const personaje1 = { ...jugador1.personaje };
+            const personaje2 = { ...jugador2.personaje };
 
             const ordenTurnos = gp.calcularTurnoInicial([
                 { socketId: jugador1.socketId, velocidad: personaje1.velocidad, nombre: personaje1.nombre },
