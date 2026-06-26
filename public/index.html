@@ -519,19 +519,19 @@
 <div id="menu" class="pantalla">
     <div id="contenedor">
         <div class="top-bar">
-            <div class="top-icon-btn">ℹ</div>
+            <div class="top-icon-btn" style="font-size:16px;font-weight:bold;">i</div>
             <div style="display:flex; align-items:center; gap:8px;">
-                <div id="topFoto" style="width:28px; height:28px; border-radius:50%; border:1px solid #4a3010; background:#1a0e08; display:flex; align-items:center; justify-content:center; color:#5a3a18; font-size:14px; overflow:hidden;">👤</div>
+                <div id="topFoto" style="width:28px; height:28px; border-radius:50%; border:1px solid #4a3010; background:#1a0e08; display:flex; align-items:center; justify-content:center; color:#5a3a18; font-size:14px; overflow:hidden;">U</div>
                 <span style="color:#d4a060; font-size:10px; letter-spacing:2px;" id="userNameDisplay">—</span>
                 <button onclick="cerrarSesion()" style="color:#6a3010; font-size:9px; letter-spacing:1px; cursor:pointer; border:1px solid #3a1808; border-radius:3px; padding:2px 6px; background:transparent; font-family:'Cinzel',serif;">SALIR</button>
             </div>
-            <div class="top-icon-btn" id="btnDev" onclick="abrirDevPanel()" style="display:none;">🔧</div>
-            <div class="top-icon-btn" onclick="abrirConfig()">⚙</div>
+            <div class="top-icon-btn" id="btnDev" onclick="abrirDevPanel()" style="display:none;font-size:10px;">DEV</div>
+            <div class="top-icon-btn" onclick="abrirConfig()" style="font-size:16px;font-weight:bold;">C</div>
         </div>
         <div class="resource-bar">
-            <div class="coin-badge">💰 <span id="dineroDisplay">0</span></div>
-            <div class="coin-badge">⭐ Nv.<span id="nivelDisplay">1</span></div>
-            <div class="coin-badge">✦ Exp.<span id="expDisplay">0</span></div>
+            <div class="coin-badge">Oro <span id="dineroDisplay">0</span></div>
+            <div class="coin-badge">Nv.<span id="nivelDisplay">1</span></div>
+            <div class="coin-badge">Exp.<span id="expDisplay">0</span></div>
         </div>
         <div class="header-banner">
             <div class="demon-eyes"><div class="demon-eye"></div><div class="demon-eye"></div></div>
@@ -541,17 +541,17 @@
 
             <!-- MENÚ PRINCIPAL -->
             <div id="pantallaMenu">
-                <div class="ornament">✦ ❧ ✦</div>
+                <div class="ornament">— — —</div>
                 <button class="main-btn" onclick="irASeleccionPJ()">JUGAR</button>
-                <div class="ornament" style="font-size:14px; margin:2px 0">☙ ✦ ❧</div>
+                <div class="ornament" style="font-size:14px; margin:2px 0">— — —</div>
                 <button class="main-btn" style="font-size:14px; padding:11px 0; background:linear-gradient(180deg,#b84020 0%,#6a1808 40%,#7a1d0e 60%,#b03018 100%)">PRÁCTICA</button>
-                <div class="ornament" style="font-size:13px; margin:2px 0">✦ ❦ ✦</div>
+                <div class="ornament" style="font-size:13px; margin:2px 0">— — —</div>
                 <button class="main-btn" style="font-size:13px; padding:10px 0; background:linear-gradient(180deg,#a83818 0%,#601508 40%,#701a0c 60%,#a02818 100%)">EL ARENA</button>
             </div>
 
             <!-- PERSONAJES -->
             <div id="pantallaPersonajes">
-                <div class="panel-titulo">⚔ MIS PERSONAJES ⚔</div>
+                <div class="panel-titulo">MIS PERSONAJES</div>
                 <div class="scroll-panel" id="listaPJs"></div>
                 <hr class="divider">
                 <button class="main-btn" style="font-size:12px; padding:10px 0" onclick="irACrearPJ()">+ CREAR PERSONAJE</button>
@@ -560,7 +560,7 @@
 
             <!-- CREAR PERSONAJE -->
             <div id="pantallaCreacion">
-                <div class="panel-titulo">⚔ FORJA TU HÉROE ⚔</div>
+                <div class="panel-titulo">FORJA TU HÉROE</div>
                 <form id="formPersonaje">
                     <div class="campo"><label>Nombre del héroe</label><input type="text" id="nombre" placeholder="Nombre del héroe" required></div>
                     <hr class="divider">
@@ -595,7 +595,7 @@
 
             <!-- SELECCIÓN DE PJ PARA JUGAR -->
             <div id="pantallaSeleccionPJ">
-                <div class="panel-titulo">⚔ ELIGE TU PERSONAJE ⚔</div>
+                <div class="panel-titulo">ELIGE TU PERSONAJE</div>
                 <div class="scroll-panel" id="listaPJsJugar"></div>
                 <div class="msg-error" id="errorSeleccion"></div>
                 <hr class="divider">
@@ -606,7 +606,7 @@
             <!-- ESPERA -->
             <div id="pantallaEspera">
                 <div class="espera-container">
-                    <div class="panel-titulo">⚔ BUSCANDO RIVAL ⚔</div>
+                    <div class="panel-titulo">BUSCANDO RIVAL</div>
                     <div class="espera-spinner"></div>
                     <div style="color:#6a4018; font-size:10px; letter-spacing:2px; margin-top:8px;" id="esperaMsg">Esperando oponente...</div>
                     <hr class="divider">
@@ -628,9 +628,9 @@
 <div id="popupConfig" class="popup-overlay">
     <div class="popup-bg" onclick="cerrarConfig()"></div>
     <div class="popup-box">
-        <div style="text-align:center; color:#d4a060; font-size:12px; letter-spacing:4px; margin-bottom:16px;">⚙ CONFIGURACIÓN</div>
+        <div style="text-align:center; color:#d4a060; font-size:12px; letter-spacing:4px; margin-bottom:16px;">CONFIGURACIÓN</div>
         <div style="text-align:center; margin-bottom:14px;">
-            <div id="configFotoPreview" style="width:70px; height:70px; border-radius:50%; border:2px solid #4a3010; background:#1a0e08; margin:0 auto; display:flex; align-items:center; justify-content:center; color:#5a3a18; font-size:28px; overflow:hidden;">👤</div>
+            <div id="configFotoPreview" style="width:70px; height:70px; border-radius:50%; border:2px solid #4a3010; background:#1a0e08; margin:0 auto; display:flex; align-items:center; justify-content:center; color:#5a3a18; font-size:28px; overflow:hidden;">U</div>
         </div>
         <hr class="divider">
         <div class="campo"><label>URL de foto de perfil (debe ser una URL de imagen)</label><input type="text" id="configFotoUrl" placeholder="https://i.imgur.com/..."></div>
@@ -654,7 +654,7 @@
 <div id="popupDev" class="popup-overlay">
     <div class="popup-bg" onclick="cerrarDevPanel()"></div>
     <div class="popup-box">
-        <div style="text-align:center; color:#d4a060; font-size:12px; letter-spacing:4px; margin-bottom:16px;">🔧 PANEL DEV</div>
+        <div style="text-align:center; color:#d4a060; font-size:12px; letter-spacing:4px; margin-bottom:16px;">PANEL DEV</div>
         <div id="devContenido"></div>
     </div>
 </div>
@@ -848,7 +848,7 @@
         popup.innerHTML = `
             <div class="popup-bg" onclick="cerrarPopupStats()"></div>
             <div class="popup-box">
-                <div style="text-align:center; color:#d4a060; font-size:12px; letter-spacing:4px; margin-bottom:4px;">⚡ MEJORA</div>
+                <div style="text-align:center; color:#d4a060; font-size:12px; letter-spacing:4px; margin-bottom:4px;">MEJORA</div>
                 <div style="text-align:center; color:#9a7040; font-size:10px; letter-spacing:2px; margin-bottom:14px;">${original.nombre}</div>
                 <div style="text-align:center; color:#ff4422; font-size:13px; letter-spacing:2px; margin-bottom:14px; font-weight:700;">PUNTOS: ${restantes}</div>
                 <hr class="divider">
@@ -931,11 +931,11 @@
             `).join('')}
             <hr class="divider">
             <div style="text-align:center;margin-top:6px;">
-                <button onclick="devDinero(1000)" style="font-family:'Cinzel',serif;font-size:10px;padding:4px 16px;background:#1a0e08;border:1px solid #4a3010;color:#c8a040;cursor:pointer;">+1000 💰</button>
-                <button onclick="devDinero(-1000)" style="font-family:'Cinzel',serif;font-size:10px;padding:4px 16px;background:#1a0e08;border:1px solid #603010;color:#c85030;cursor:pointer;">-1000 💰</button>
+                <button onclick="devDinero(1000)" style="font-family:'Cinzel',serif;font-size:10px;padding:4px 16px;background:#1a0e08;border:1px solid #4a3010;color:#c8a040;cursor:pointer;">+1000</button>
+                <button onclick="devDinero(-1000)" style="font-family:'Cinzel',serif;font-size:10px;padding:4px 16px;background:#1a0e08;border:1px solid #603010;color:#c85030;cursor:pointer;">-1000</button>
             </div>
             <hr class="divider">
-            <div style="color:#c85030;font-size:10px;letter-spacing:2px;text-align:center;margin:8px 0;">⚡ SUPER ADMIN</div>
+            <div style="color:#c85030;font-size:10px;letter-spacing:2px;text-align:center;margin:8px 0;">SUPER ADMIN</div>
             <div style="display:flex;gap:4px;">
                 <input type="text" id="devBuscarInput" placeholder="Nombre de usuario" style="flex:1;background:rgba(0,0,0,0.5);border:1px solid #4a3010;border-radius:3px;color:#d4b060;font-family:'Cinzel',serif;font-size:10px;padding:6px 8px;outline:none;">
                 <button onclick="devBuscarUsuario()" style="font-family:'Cinzel',serif;font-size:10px;padding:4px 10px;background:#1a0e08;border:1px solid #4a3010;color:#d4a060;cursor:pointer;">BUSCAR</button>
@@ -967,12 +967,12 @@
         const c = document.getElementById('devContenido');
         c.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                <span style="color:#d4a060;font-size:12px;letter-spacing:2px;">👤 ${t.nombre}</span>
-                <span style="color:#c8a040;font-size:10px;">💰 ${t.dinero}</span>
+                <span style="color:#d4a060;font-size:12px;letter-spacing:2px;">${t.nombre}</span>
+                <span style="color:#c8a040;font-size:10px;">${t.dinero}</span>
             </div>
             <div style="margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap;">
-                <button onclick="devModDinero(1000)" style="font-family:'Cinzel',serif;font-size:9px;padding:2px 6px;background:#1a0e08;border:1px solid #4a3010;color:#c8a040;cursor:pointer;">+1000💰</button>
-                <button onclick="devModDinero(-1000)" style="font-family:'Cinzel',serif;font-size:9px;padding:2px 6px;background:#1a0e08;border:1px solid #4a3010;color:#c85030;cursor:pointer;">-1000💰</button>
+                <button onclick="devModDinero(1000)" style="font-family:'Cinzel',serif;font-size:9px;padding:2px 6px;background:#1a0e08;border:1px solid #4a3010;color:#c8a040;cursor:pointer;">+1000</button>
+                <button onclick="devModDinero(-1000)" style="font-family:'Cinzel',serif;font-size:9px;padding:2px 6px;background:#1a0e08;border:1px solid #4a3010;color:#c85030;cursor:pointer;">-1000</button>
             </div>
             <hr class="divider" style="margin:6px 0;">
             <div style="color:#9a7040;font-size:9px;letter-spacing:2px;margin-bottom:6px;">PERSONAJES</div>
@@ -987,7 +987,7 @@
                         <button onclick="devModXP('${pj._id}',-1)" style="font-family:'Cinzel',serif;font-size:9px;padding:1px 5px;background:#1a0e08;border:1px solid #4a3010;color:#c85030;cursor:pointer;">-1 XP</button>
                         <button onclick="devModPts('${pj._id}',3)" style="font-family:'Cinzel',serif;font-size:9px;padding:1px 5px;background:#1a0e08;border:1px solid #4a3010;color:#9a7040;cursor:pointer;">+3 pts</button>
                         <button onclick="devModPts('${pj._id}',-3)" style="font-family:'Cinzel',serif;font-size:9px;padding:1px 5px;background:#1a0e08;border:1px solid #4a3010;color:#c85030;cursor:pointer;">-3 pts</button>
-                        <button onclick="devEliminarPJ('${pj._id}','${pj.nombre}')" style="font-family:'Cinzel',serif;font-size:9px;padding:1px 5px;background:#1a0e08;border:1px solid #603010;color:#ff4422;cursor:pointer;">🗑</button>
+                        <button onclick="devEliminarPJ('${pj._id}','${pj.nombre}')" style="font-family:'Cinzel',serif;font-size:9px;padding:1px 5px;background:#1a0e08;border:1px solid #603010;color:#ff4422;cursor:pointer;">X</button>
                     </div>
                 </div>
             `).join('')}
@@ -1056,8 +1056,8 @@
             div.innerHTML = `
                 <div style="background:rgba(0,0,0,0.4);border:1px solid #4a3010;border-radius:4px;padding:8px;margin-top:4px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <span style="color:#d4a060;font-size:11px;letter-spacing:2px;">👤 ${cuenta.nombre}</span>
-                        <span style="color:#c8a040;font-size:10px;">💰 ${cuenta.dinero}</span>
+                        <span style="color:#d4a060;font-size:11px;letter-spacing:2px;">${cuenta.nombre}</span>
+                        <span style="color:#c8a040;font-size:10px;">${cuenta.dinero}</span>
                     </div>
                     <div style="color:#6a4018;font-size:9px;margin:4px 0;">${(cuenta.personajes || []).length} personajes</div>
                     <button onclick="devMostrarUsuario()" style="font-family:'Cinzel',serif;font-size:10px;padding:4px 12px;background:#1a0e08;border:1px solid #4a3010;color:#d4a060;cursor:pointer;width:100%;margin-top:4px;">ADMINISTRAR</button>
@@ -1078,7 +1078,7 @@
         if (cuenta.foto) {
             topFoto.innerHTML = `<img src="${cuenta.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
         } else {
-            topFoto.innerHTML = '👤';
+            topFoto.innerHTML = 'U';
         }
     }
 
@@ -1091,7 +1091,7 @@
         }
         lista.innerHTML = cuentaActual.personajes.map((pj, i) => {
             const pts = pj.puntosStats || 0;
-            const avatar = pj.foto ? `<img src="${pj.foto}" alt="">` : '⚔';
+            const avatar = pj.foto ? `<img src="${pj.foto}" alt="">` : '&nbsp;';
             return `
             <div class="pj-card ${pts > 0 ? 'tiene-puntos' : ''}" onclick="mostrarCartaPersonaje(${i})">
                 ${pts > 0 ? '<span class="dot-card"></span>' : ''}
@@ -1109,8 +1109,8 @@
                     </div>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:4px;">
-                    ${pts > 0 ? `<button onclick="event.stopPropagation();abrirAsignarStats('${pj._id}',${i})" style="background:rgba(200,80,48,0.2);border:1px solid #8a3020;border-radius:3px;color:#d4a060;cursor:pointer;font-size:9px;font-family:'Cinzel',serif;padding:2px 6px;letter-spacing:1px;" title="Mejorar stats">⬆</button>` : ''}
-                    <button onclick="event.stopPropagation();eliminarPersonaje('${pj._id}')" style="background:none;border:none;color:#6a3010;cursor:pointer;font-size:14px;padding:2px;" title="Eliminar personaje">🗑</button>
+                    ${pts > 0 ? `<button onclick="event.stopPropagation();abrirAsignarStats('${pj._id}',${i})" style="background:rgba(200,80,48,0.2);border:1px solid #8a3020;border-radius:3px;color:#d4a060;cursor:pointer;font-size:9px;font-family:'Cinzel',serif;padding:2px 6px;letter-spacing:1px;" title="Mejorar stats">SUBIR</button>` : ''}
+                    <button onclick="event.stopPropagation();eliminarPersonaje('${pj._id}')" style="background:none;border:none;color:#6a3010;cursor:pointer;font-size:12px;padding:2px;" title="Eliminar personaje">X</button>
                 </div>
             </div>`;
         }).join('');
@@ -1120,7 +1120,7 @@
     function renderizarSeleccionPJ() {
         const lista = document.getElementById('listaPJsJugar');
         lista.innerHTML = cuentaActual.personajes.map((pj, i) => {
-            const avatar = pj.foto ? `<img src="${pj.foto}" alt="">` : '⚔';
+            const avatar = pj.foto ? `<img src="${pj.foto}" alt="">` : '&nbsp;';
             return `
             <div class="pj-card" id="pjjugar-${i}" onclick="seleccionarPJ(${i})">
                 <div class="pj-avatar">${avatar}</div>
@@ -1174,7 +1174,7 @@
         const enPct = Math.round((pj.energia || maxEnergia) / maxEnergia * 100);
         const xpPct = pj.nivel ? Math.round((pj.experiencia || 0) / pj.nivel * 100) : 0;
         const pts = pj.puntosStats || 0;
-        const avatar = pj.foto ? `<img src="${pj.foto}" alt="${pj.nombre}">` : '<span class="sin-foto">⚔</span>';
+        const avatar = pj.foto ? `<img src="${pj.foto}" alt="${pj.nombre}">` : '<span class="sin-foto" style="font-size:0;">&nbsp;</span>';
 
         document.getElementById('cartaContenido').innerHTML = `
             <div class="carta-container">
@@ -1201,7 +1201,7 @@
                     <div class="carta-bar-label"><span>XP</span><span>${pj.experiencia || 0}/${pj.nivel || 1}</span></div>
                     <div class="carta-bar-bg"><div class="carta-bar-fill" style="width:${xpPct}%"></div></div>
                 </div>
-                ${pts > 0 ? `<button class="carta-btn-mejorar" onclick="cerrarCartaPersonaje();abrirAsignarStats('${pj._id}',${index})">⬆ MEJORAR STATS (${pts})</button>` : ''}
+                ${pts > 0 ? `<button class="carta-btn-mejorar" onclick="cerrarCartaPersonaje();abrirAsignarStats('${pj._id}',${index})">MEJORAR STATS (${pts})</button>` : ''}
                 <button class="carta-btn-cerrar" onclick="cerrarCartaPersonaje()">CERRAR</button>
             </div>`;
         document.getElementById('popupCarta').classList.add('visible');
@@ -1230,7 +1230,7 @@
         if (cuentaActual.foto) {
             preview.innerHTML = `<img src="${cuentaActual.foto}" style="width:100%;height:100%;object-fit:cover;">`;
         } else {
-            preview.innerHTML = '👤';
+            preview.innerHTML = 'U';
         }
         document.getElementById('popupConfig').classList.add('visible');
     }
@@ -1268,11 +1268,11 @@
 
     socket.on('errorLogin', (msg) => { document.getElementById('errorLogin').textContent = msg; });
 
-    socket.on('asignarRol', (rol) => { console.log('🎮 Rol asignado:', rol); });
+    socket.on('asignarRol', (rol) => { console.log('Rol asignado:', rol); });
 
     socket.on('perfilActualizado', (datos) => {
         cuentaActual = { ...cuentaActual, ...datos };
-        document.getElementById('okConfig').textContent = '✅ Perfil actualizado correctamente.';
+        document.getElementById('okConfig').textContent = 'Perfil actualizado correctamente.';
         document.getElementById('errorConfig').textContent = '';
         actualizarUI(cuentaActual);
         actualizarNotificaciones();
@@ -1285,7 +1285,7 @@
     });
 
     socket.on('errorAccion', (msg) => {
-        console.error('❌ Acción rechazada:', msg);
+        console.error('Acción rechazada:', msg);
     });
 
     // ── FORMULARIO PERSONAJE ──
