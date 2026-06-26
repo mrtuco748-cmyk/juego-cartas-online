@@ -603,6 +603,27 @@
                 <button class="main-btn secundario" onclick="irAMenuDesdeSeccion()">← VOLVER</button>
             </div>
 
+            <!-- TIENDA -->
+            <div id="pantallaTienda">
+                <div class="panel-titulo">TIENDA DE CARTAS</div>
+                <div id="tiendaPersonajeSelector"></div>
+                <hr class="divider">
+                <div class="tabs">
+                    <div class="tab activo" onclick="cambiarTabTienda('activas')">ACTIVAS</div>
+                    <div class="tab" onclick="cambiarTabTienda('pasivas')">PASIVAS</div>
+                </div>
+                <div id="tabTiendaActivas" class="tab-panel activo">
+                    <div class="scroll-panel" id="tiendaListaActivas"></div>
+                </div>
+                <div id="tabTiendaPasivas" class="tab-panel">
+                    <div class="scroll-panel" id="tiendaListaPasivas"></div>
+                </div>
+                <div class="msg-error" id="errorTienda"></div>
+                <div class="msg-ok" id="okTienda"></div>
+                <hr class="divider">
+                <button class="main-btn secundario" onclick="irAMenuDesdeSeccion()">← VOLVER</button>
+            </div>
+
             <!-- ESPERA -->
             <div id="pantallaEspera">
                 <div class="espera-container">
@@ -704,7 +725,10 @@
             "escudo_natural": { nombre: "Escudo Natural", efecto: "auto_shield", desc: "Escudo automático" },
             "furia_interna": { nombre: "Furia Interna", efecto: "enrage", desc: "+3% furia por HP perdido" },
             "bendito": { nombre: "Bendito", efecto: "cleanse", desc: "Purifica efectos negativos" },
-            "totem": { nombre: "Tótem", efecto: "survival", desc: "Sobrevive con 1 HP" }
+            "totem": { nombre: "Tótem", efecto: "survival", desc: "Sobrevive con 1 HP" },
+            "concentracion": { nombre: "Concentración", efecto: "reduce_energy_cost", desc: "Reduce 3 de coste de cartas" },
+            "golpe_pesado": { nombre: "Golpe Pesado", efecto: "stun_chance", desc: "15% de aturdir al golpear" },
+            "armadura_viva": { nombre: "Armadura Viva", efecto: "thorns_resistance", desc: "8% de daño devuelto" }
         };
         const SKILLS_DATA_PASIVAS_EXTRA = SKILL_DATA_LOOKUP_PASIVAS;
 
@@ -723,7 +747,7 @@
     }
 
     function mostrarSeccionMenu(id) {
-        ['pantallaMenu','pantallaPersonajes','pantallaCreacion','pantallaSeleccionPJ','pantallaEspera'].forEach(s => {
+        ['pantallaMenu','pantallaPersonajes','pantallaCreacion','pantallaSeleccionPJ','pantallaEspera','pantallaTienda'].forEach(s => {
             document.getElementById(s).style.display = 'none';
         });
         document.getElementById(id).style.display = 'block';
@@ -748,7 +772,8 @@
             mostrarSeccionMenu('pantallaPersonajes');
         } else if (seccion === 'tienda') {
             document.getElementById('btnTienda').classList.add('activo');
-            mostrarSeccionMenu('pantallaMenu');
+            mostrarSeccionMenu('pantallaTienda');
+            cargarTienda();
         } else if (seccion === 'equipamiento') {
             document.getElementById('btnEquipamiento').classList.add('activo');
             mostrarSeccionMenu('pantallaMenu');
@@ -1246,6 +1271,165 @@
         err.textContent = '';
         socket.emit('actualizarPerfil', { cuenta_id: cuentaActual.id, nombre, password, foto });
     }
+
+    // ── TIENDA ──
+    let tiendaData = null;
+    let tiendaPjSeleccionado = null;
+
+    function cargarTienda() {
+        document.getElementById('errorTienda').textContent = '';
+        document.getElementById('okTienda').textContent = '';
+        socket.emit('obtenerTienda', { cuenta_id: cuentaActual.id });
+    }
+
+    function cambiarTabTienda(tipo) {
+        document.querySelectorAll('#pantallaTienda .tab').forEach(t => t.classList.remove('activo'));
+        document.querySelectorAll('#pantallaTienda .tab-panel').forEach(p => p.classList.remove('activo'));
+        if (tipo === 'activas') {
+            document.querySelectorAll('#pantallaTienda .tab')[0].classList.add('activo');
+            document.getElementById('tabTiendaActivas').classList.add('activo');
+        } else {
+            document.querySelectorAll('#pantallaTienda .tab')[1].classList.add('activo');
+            document.getElementById('tabTiendaPasivas').classList.add('activo');
+        }
+    }
+
+    function renderizarTienda(data) {
+        tiendaData = data;
+        const pjs = cuentaActual.personajes || [];
+        if (pjs.length === 0) {
+            document.getElementById('tiendaPersonajeSelector').innerHTML = '<div class="vacio-msg">No tenes personajes. Crea uno primero.</div>';
+            return;
+        }
+
+        document.getElementById('tiendaPersonajeSelector').innerHTML = `
+            <div class="campo">
+                <label>Selecciona un personaje</label>
+                <select id="tiendaPjSelect" onchange="seleccionarPjTienda()">
+                    <option value="">-- Elegir --</option>
+                    ${pjs.map((pj, i) => `<option value="${i}">${pj.nombre} (${pj.clase})</option>`).join('')}
+                </select>
+            </div>
+        `;
+    }
+
+    function seleccionarPjTienda() {
+        const idx = document.getElementById('tiendaPjSelect').value;
+        if (!idx && idx !== 0) { tiendaPjSeleccionado = null; return; }
+        const pj = cuentaActual.personajes[idx];
+        tiendaPjSeleccionado = pj;
+        const compradas = (pj.skillsCompradas || []);
+        const pasivasComp = (pj.pasivasCompradas || []);
+
+        document.getElementById('tiendaListaActivas').innerHTML = (tiendaData.skills || []).map(s => {
+            const yaTiene = compradas.includes(s.id) || SKILL_DATA_LOOKUP[s.id] && false;
+            const esDeClase = getSkillsDeClase(pj.clase).includes(s.id);
+            if (esDeClase) return '';
+            return `
+                <div style="background:rgba(0,0,0,0.4);border:1px solid #3a2008;border-radius:4px;padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <div style="color:#d4a060;font-size:10px;letter-spacing:1px;">${s.nombre}</div>
+                        <div style="color:#6a4018;font-size:8px;">${s.efecto.replace(/_/g,' ')} · EN ${s.coste || 0}</div>
+                    </div>
+                    <div>
+                        ${yaTiene ? '<span style="color:#60d060;font-size:9px;">ADQUIRIDA</span>' :
+                        `<button onclick="comprarSkill('${pj._id}','activa','${s.id}')" style="font-family:'Cinzel',serif;font-size:9px;padding:4px 10px;background:linear-gradient(180deg,#c85030,#7a2010);color:#fff;border:none;border-radius:3px;cursor:pointer;">${s.precio}</button>`}
+                    </div>
+                </div>
+            `;
+        }).filter(Boolean).join('') || '<div class="vacio-msg">Ya tenes todas las cartas activas disponibles</div>';
+
+        document.getElementById('tiendaListaPasivas').innerHTML = (tiendaData.pasivas || []).map(s => {
+            const yaTiene = pasivasComp.includes(s.id) || (SKILL_DATA_LOOKUP_PASIVAS[s.id] && false);
+            const esDeClase = getPasivasDeClase(pj.clase).includes(s.id);
+            if (esDeClase) return '';
+            return `
+                <div style="background:rgba(0,0,0,0.4);border:1px solid #3a2008;border-radius:4px;padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <div style="color:#d4a060;font-size:10px;letter-spacing:1px;">${s.nombre}</div>
+                        <div style="color:#6a4018;font-size:8px;">${s.efecto.replace(/_/g,' ')} · ${s.desc || ''}</div>
+                    </div>
+                    <div>
+                        ${yaTiene ? '<span style="color:#60d060;font-size:9px;">ADQUIRIDA</span>' :
+                        `<button onclick="comprarSkill('${pj._id}','pasiva','${s.id}')" style="font-family:'Cinzel',serif;font-size:9px;padding:4px 10px;background:linear-gradient(180deg,#c85030,#7a2010);color:#fff;border:none;border-radius:3px;cursor:pointer;">${s.precio}</button>`}
+                    </div>
+                </div>
+            `;
+        }).filter(Boolean).join('') || '<div class="vacio-msg">Ya tenes todas las pasivas disponibles</div>';
+    }
+
+    function getSkillsDeClase(clase) {
+        const mapa = {
+            Chaman: ["golpe_directo","curacion_divina","escudo_arcano","drenar_vida"],
+            Sacerdote: ["curacion_divina","bendicion","sello_silencio","escudo_arcano"],
+            Druida: ["rafaga","drenar_vida","escudo_arcano","escarcha"],
+            Guerrero: ["golpe_directo","golpe_veloz","furia_berserker","explosion_mana"],
+            Paladin: ["golpe_directo","escudo_arcano","curacion_divina","bendicion"],
+            Berserker: ["golpe_directo","furia_berserker","golpe_veloz","sacrificio"],
+            Acorazado: ["escudo_arcano","cubo_perfecto","golpe_directo","reflejo_magico"],
+            Ogro: ["golpe_directo","golpe_veloz","tormenta","sacrificio"],
+            Golem: ["escudo_arcano","cubo_perfecto","golpe_directo","explosion_mana"],
+            Picaro: ["golpe_veloz","golpe_directo","drenar_vida","cubo_perfecto"],
+            Ninja: ["golpe_veloz","golpe_directo","drenar_vida","sello_silencio"],
+            Cazador: ["golpe_directo","golpe_veloz","rafaga","escarcha"],
+            Mago: ["explosion_mana","tormenta","escarcha","drenar_vida"],
+            MagoMaestro: ["explosion_mana","tormenta","cataclismo","sello_silencio"],
+            MagoGuerrero: ["golpe_directo","explosion_mana","escudo_arcano","golpe_veloz"],
+            SemiDios: ["cataclismo","curacion_divina","bendicion","invocacion"],
+            Demonio: ["sacrificio","maldicion","drenar_vida","tormenta"],
+            Titan: ["cataclismo","golpe_directo","escudo_arcano","cubo_perfecto"]
+        };
+        return mapa[clase] || [];
+    }
+
+    function getPasivasDeClase(clase) {
+        const mapa = {
+            Chaman: ["regeneracion","veneno"],
+            Sacerdote: ["regeneracion","bendito"],
+            Druida: ["regeneracion","escudo_natural"],
+            Guerrero: ["fortaleza","vampirismo"],
+            Paladin: ["fortaleza","bendito"],
+            Berserker: ["golpe_pesado","furia_interna"],
+            Acorazado: ["fortaleza","armadura_viva"],
+            Ogro: ["fortaleza","furia_interna"],
+            Golem: ["fortaleza","escudo_natural"],
+            Picaro: ["rapidez","contraataque"],
+            Ninja: ["rapidez","maestro_critico"],
+            Cazador: ["maestro_critico","vampirismo"],
+            Mago: ["mana_infinito","absorcion"],
+            MagoMaestro: ["mana_infinito","absorcion"],
+            MagoGuerrero: ["concentracion","vampirismo"],
+            SemiDios: ["bendito","ultimo_aliento"],
+            Demonio: ["vampirismo","furia_interna"],
+            Titan: ["fortaleza","ultimo_aliento"]
+        };
+        return mapa[clase] || [];
+    }
+
+    function comprarSkill(personajeId, tipo, skillId) {
+        document.getElementById('errorTienda').textContent = '';
+        document.getElementById('okTienda').textContent = '';
+        socket.emit('comprarCarta', { cuenta_id: cuentaActual.id, personaje_id: personajeId, tipo, skillId });
+    }
+
+    socket.on('tiendaData', (data) => {
+        renderizarTienda(data);
+    });
+
+    socket.on('compraExitosa', (cuenta) => {
+        cuentaActual = cuenta;
+        actualizarUI(cuenta);
+        document.getElementById('okTienda').textContent = 'Compra exitosa!';
+        if (tiendaPjSeleccionado) {
+            const pj = cuenta.personajes.find(p => p._id === tiendaPjSeleccionado._id);
+            if (pj) tiendaPjSeleccionado = pj;
+            seleccionarPjTienda();
+        }
+    });
+
+    socket.on('errorTienda', (msg) => {
+        document.getElementById('errorTienda').textContent = msg;
+    });
 
     // ── SOCKET EVENTOS ──
     socket.on('cuentaCreada', (cuenta) => {

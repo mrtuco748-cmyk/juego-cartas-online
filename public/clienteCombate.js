@@ -399,7 +399,7 @@ function usarCartaSeleccionada() {
 
 function enviarAccion(tipo, cartaId, accionData) {
   if (!partidaActualId) return;
-  if (tipo !== 'carta' && (!esMiTurno || accionesRestantes <= 0)) return;
+  if (!esMiTurno || accionesRestantes <= 0) return;
   socket.emit('ejecutarAccion', {
     partidaId: partidaActualId,
     tipo,
@@ -473,6 +473,8 @@ socket.on('actualizarEstado', (datos) => {
 
   miPJ.hp = miHP;
   rivalPJ.hp = rivalHP;
+  miPJ.energia = miEnergia;
+  rivalPJ.energia = yoMio ? datos.j2energia : datos.j1energia;
   miPJ.status = miStatus;
   rivalPJ.status = rivalStatus;
   accionesRestantes = datos.accionesRestantes || 0;

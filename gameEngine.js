@@ -36,7 +36,10 @@ const SKILLS_DATA = {
     vampirismo: { nombre: "Vampirismo", efecto: "life_steal", valor: 0.08, trigger: "on_hit" },
     escudo_natural: { nombre: "Escudo Natural", efecto: "auto_shield", valor: 0.15, trigger: "on_turn_start" },
     furia_interna: { nombre: "Furia Interna", efecto: "enrage", valor: 0.03, trigger: "on_hp_loss" },
-    bendito: { nombre: "Bendito", efecto: "cleanse", trigger: "on_turn_start" }
+    bendito: { nombre: "Bendito", efecto: "cleanse", trigger: "on_turn_start" },
+    concentracion: { nombre: "Concentración", efecto: "reduce_energy_cost", valor: 3, trigger: "on_turn_start" },
+    golpe_pesado: { nombre: "Golpe Pesado", efecto: "stun_chance", probabilidad: 0.15, duracion: 1, trigger: "on_hit" },
+    armadura_viva: { nombre: "Armadura Viva", efecto: "thorns_resistance", valor: 0.08, trigger: "on_take_damage" }
   }
 };
 
@@ -236,11 +239,12 @@ class GameProcessor {
     ctx.rival = target;
     ctx.cancelAttack = false;
 
-    if (source.energia < card.coste) {
-      return { success: false, reason: "Energía insuficiente", log: `Energía insuficiente (${source.energia}/${card.coste})` };
+    const costeFinal = Math.max(0, card.coste - (source.reducedCost || 0));
+    if (source.energia < costeFinal) {
+      return { success: false, reason: "Energía insuficiente", log: `Energía insuficiente (${source.energia}/${costeFinal})` };
     }
 
-    source.energia -= card.coste;
+    source.energia -= costeFinal;
     const effectFn = this.effects[card.efecto];
     if (!effectFn) {
       return { success: false, reason: `Efecto desconocido: ${card.efecto}` };
@@ -359,6 +363,26 @@ class GameProcessor {
             owner.status.frozen = 0;
             owner.status.silenced = 0;
             results.push({ log: `${ownerName} se purifica` });
+          }
+          break;
+        case "reduce_energy_cost":
+          if (trigger === "on_turn_start") {
+            owner.reducedCost = (owner.reducedCost || 0) + pasiva.valor;
+            results.push({ log: `${ownerName} concentra su energia (-${pasiva.valor} coste de cartas)` });
+          }
+          break;
+        case "stun_chance":
+          if (trigger === "on_hit" && ctx.target && Math.random() < pasiva.probabilidad) {
+            ctx.target.status = ctx.target.status || {};
+            ctx.target.status.frozen = (ctx.target.status.frozen || 0) + pasiva.duracion;
+            results.push({ log: `${ctx.target.nombre} queda aturdido (Golpe Pesado)` });
+          }
+          break;
+        case "thorns_resistance":
+          if (trigger === "on_take_damage" && ctx.damage) {
+            const thorns = Math.floor(ctx.damage * pasiva.valor);
+            if (rival) rival.hp -= thorns;
+            results.push({ log: `${ownerName} devuelve ${thorns} daño con Armadura Viva` });
           }
           break;
       }
@@ -557,8 +581,8 @@ class GameProcessor {
       Druida: ["regeneracion", "escudo_natural"],
       Guerrero: ["fortaleza", "vampirismo"],
       Paladin: ["fortaleza", "bendito"],
-      Berserker: ["furia_interna", "vampirismo"],
-      Acorazado: ["fortaleza", "escudo_espinas"],
+      Berserker: ["furia_interna", "golpe_pesado"],
+      Acorazado: ["fortaleza", "armadura_viva"],
       Ogro: ["fortaleza", "furia_interna"],
       Golem: ["fortaleza", "escudo_natural"],
       Picaro: ["rapidez", "contraataque"],
@@ -566,7 +590,7 @@ class GameProcessor {
       Cazador: ["maestro_critico", "vampirismo"],
       Mago: ["mana_infinito", "absorcion"],
       MagoMaestro: ["mana_infinito", "absorcion"],
-      MagoGuerrero: ["mana_infinito", "vampirismo"],
+      MagoGuerrero: ["concentracion", "vampirismo"],
       SemiDios: ["bendito", "ultimo_aliento"],
       Demonio: ["vampirismo", "furia_interna"],
       Titan: ["fortaleza", "ultimo_aliento"]
