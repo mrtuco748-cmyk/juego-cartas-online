@@ -149,27 +149,20 @@
         .battlefield { flex:1; position:relative; overflow:hidden; min-height:0; }
 
         /* ── PERSONAJES (verticales) ── */
-        .enemy-character {
-            position:absolute; top:30px; right:220px;
-            width:260px; height:370px; border-radius:20px;
+        .enemy-character, .player-character {
+            position:absolute; width:260px; height:370px; border-radius:20px;
             border:2px solid rgba(255,255,255,.1);
             background:linear-gradient(135deg,rgba(255,255,255,.03),rgba(255,255,255,.08));
             display:flex; align-items:center; justify-content:center;
             font-size:140px; color:#666; z-index:2;
             overflow:hidden;
+            transition: transform 0.5s ease;
         }
-        .enemy-character img { width:100%; height:100%; object-fit:cover; filter:brightness(0.5) contrast(1.3); }
-
-        .player-character {
-            position:absolute; left:120px; bottom:30px;
-            width:260px; height:370px; border-radius:20px;
-            border:2px solid rgba(255,255,255,.1);
-            background:linear-gradient(135deg,rgba(255,255,255,.03),rgba(255,255,255,.08));
-            display:flex; align-items:center; justify-content:center;
-            font-size:140px; color:#666; z-index:2;
-            overflow:hidden;
-        }
-        .player-character img { width:100%; height:100%; object-fit:cover; filter:brightness(0.5) contrast(1.3); }
+        .enemy-character { top:30px; right:120px; }
+        .player-character { left:120px; bottom:30px; }
+        .enemy-character img, .player-character img { width:100%; height:100%; object-fit:cover; filter:brightness(0.5) contrast(1.3); }
+        .player-character.tu-turno { transform: translateX(40px) scale(1.05); }
+        .enemy-character.tu-turno { transform: translateX(-40px) scale(1.05); }
 
         /* ── PERGAMINO ── */
         .log-scroll {
@@ -201,13 +194,26 @@
 
         /* ── FICHAS (stats sheets) ── */
         .sheet {
-            width:380px; height:215px; padding:14px 16px;
+            width:100%; padding:14px 16px;
             background:linear-gradient(145deg,#141414,#232323);
             border:2px solid #8b6430; border-radius:16px;
             box-shadow:0 0 20px rgba(0,0,0,.4);
         }
-        .enemy-sheet { position:absolute; left:40px; bottom:300px; z-index:3; }
-        .player-sheet { position:absolute; right:40px; bottom:300px; z-index:3; }
+        .character-bio {
+            position:absolute; z-index:3; display:flex; flex-direction:column;
+            align-items:center; width:260px; transition: transform 0.4s ease;
+        }
+        .left-bio { left:40px; bottom:300px; }
+        .right-bio { right:40px; bottom:300px; }
+        .left-bio.tu-turno { transform: scale(1.12) translateX(20px); }
+        .right-bio.tu-turno { transform: scale(1.12) translateX(-20px); }
+        .char-portrait {
+            width:70px; height:70px; border-radius:12px;
+            border:2px solid #8b6430; background:#1a0e08;
+            overflow:hidden; display:flex; align-items:center;
+            justify-content:center; margin-bottom:4px; flex-shrink:0;
+        }
+        .char-portrait img { width:100%; height:100%; object-fit:cover; }
 
         .sheet h2 { color:#f3ca6b; font-size:17px; }
         .sheet h4 { color:#c9c9c9; margin-bottom:10px; font-size:13px; font-weight:normal; }

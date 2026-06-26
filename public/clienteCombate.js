@@ -9,6 +9,8 @@ let misRecetas = [];
 let cartaSeleccionada = null;
 let inventarioVisible = false;
 let modoAccion = null;
+let draggedCardIdx = null;
+let touchClone = null;
 
 const PASIVAS_POR_CLASE = {
   Chaman: { nombre: 'Espiritu Natural', desc: 'Recupera 2 HP por turno.', icono: '' },
@@ -56,7 +58,6 @@ function mostrarPantallaCombate() {
 }
 
 function renderizarCombate() {
-  const pasiva = obtenerPasiva(miPJ.clase);
   const rivalHPct = Math.max(0, Math.round((rivalPJ.hp || 0) / (rivalPJ.maxHp || 40) * 100));
   const miHPct = Math.max(0, Math.round((miPJ.hp || 0) / (miPJ.maxHp || 40) * 100));
   const rivalEnPct = Math.max(0, Math.round((rivalPJ.energia || 0) / 100 * 100));
@@ -72,6 +73,27 @@ function renderizarCombate() {
     return parts.length ? `<div class="sheet-status">${parts.join(' ')}</div>` : '';
   };
 
+  const sheetHTML = (pj, prefix) => `
+    <div class="character-bio ${prefix === 'pj' ? 'left-bio' : 'right-bio'}">
+      <div class="char-portrait">${pj.foto ? `<img src="${pj.foto}">` : '<span style="font-size:24px;color:#3a2008;">?</span>'}</div>
+      <div class="sheet">
+        ${statusBadge(pj)}
+        <h2>${pj.nombre}</h2>
+        <h4>${pj.clase} · Nv.${pj.nivel || 1}</h4>
+        <div class="bar"><div class="hp-fill" id="${prefix}HPFill" style="width:${prefix === 'pj' ? miHPct : rivalHPct}%"></div></div>
+        <div style="font-size:11px;display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span>HP <span id="${prefix}HP">${pj.hp || 0}</span>/${pj.maxHp || 40}</span>
+          <span><span style="color:#2688ff;">E</span> <span id="${prefix}Energia">${pj.energia || 0}</span>/100</span>
+        </div>
+        <div class="bar"><div class="energy-fill" id="${prefix}EnergyFill" style="width:${prefix === 'pj' ? miEnPct : rivalEnPct}%"></div></div>
+        <div class="stats-grid">
+          <div>F ${pj.fuerza}</div><div>R ${pj.resistencia}</div>
+          <div>V ${pj.velocidad}</div><div>M ${pj.magia}</div>
+          <div>S ${pj.suerte}</div>
+        </div>
+      </div>
+    </div>`;
+
   const totalCards = misSkills.length;
   const angleStep = totalCards > 1 ? Math.min(10, 50 / totalCards) : 0;
   const startAngle = -((totalCards - 1) * angleStep) / 2;
@@ -82,9 +104,15 @@ function renderizarCombate() {
     </div>
 
     <div class="battlefield">
-      <div class="enemy-character">${rivalPJ.foto ? `<img src="${rivalPJ.foto}">` : '?'}</div>
+      <!-- PLAYER (LEFT) -->
+      <div class="player-character">${miPJ.foto ? `<img src="${miPJ.foto}">` : '?'}</div>
+      ${sheetHTML(miPJ, 'pj')}
 
-      <div class="log-scroll">
+      <!-- RIVAL (RIGHT) -->
+      <div class="enemy-character">${rivalPJ.foto ? `<img src="${rivalPJ.foto}">` : '?'}</div>
+      ${sheetHTML(rivalPJ, 'rival')}
+
+      <div class="log-scroll" ondragover="onLogDragOver(event)" ondrop="onLogDrop(event)">
         <h2>REGISTRO DE COMBATE</h2>
         <div id="logBatch" style="overflow-y:auto;height:100%;"></div>
       </div>
@@ -93,46 +121,22 @@ function renderizarCombate() {
         ${esMiTurno ? `TU TURNO (${accionesRestantes}/2)` : 'RIVAL'}
       </div>
 
-      <div class="player-character">${miPJ.foto ? `<img src="${miPJ.foto}">` : '?'}</div>
-
-      <div class="sheet enemy-sheet">
-        ${statusBadge(rivalPJ)}
-        <h2>${rivalPJ.nombre}</h2>
-        <h4>${rivalPJ.clase} · Nv.${rivalPJ.nivel || 1}</h4>
-        <div class="bar"><div class="hp-fill" id="rivalHPFill" style="width:${rivalHPct}%"></div></div>
-        <div style="font-size:11px;display:flex;justify-content:space-between;margin-bottom:4px;"><span>HP <span id="rivalHP">${rivalPJ.hp || 0}</span>/${rivalPJ.maxHp || 40}</span><span>EN ${rivalPJ.energia || 0}/100</span></div>
-        <div class="bar"><div class="energy-fill" style="width:${rivalEnPct}%"></div></div>
-        <div class="stats-grid">
-          <div>F ${rivalPJ.fuerza}</div><div>R ${rivalPJ.resistencia}</div>
-          <div>V ${rivalPJ.velocidad}</div><div>M ${rivalPJ.magia}</div>
-          <div>S ${rivalPJ.suerte}</div>
-        </div>
-      </div>
-
-      <div class="sheet player-sheet">
-        ${statusBadge(miPJ)}
-        <h2>${miPJ.nombre}</h2>
-        <h4>${miPJ.clase} · Nv.${miPJ.nivel || 1}</h4>
-        <div class="bar"><div class="hp-fill" id="pjHPFill" style="width:${miHPct}%"></div></div>
-        <div style="font-size:11px;display:flex;justify-content:space-between;margin-bottom:4px;"><span>HP <span id="pjHP">${miPJ.hp || 0}</span>/${miPJ.maxHp || 40}</span><span>EN <span id="pjEnergia">${miPJ.energia || 0}</span>/100</span></div>
-        <div class="bar"><div class="energy-fill" style="width:${miEnPct}%"></div></div>
-        <div class="stats-grid">
-          <div>F ${miPJ.fuerza}</div><div>R ${miPJ.resistencia}</div>
-          <div>V ${miPJ.velocidad}</div><div>M ${miPJ.magia}</div>
-          <div>S ${miPJ.suerte}</div>
-        </div>
-      </div>
-
       <div class="active-cards" id="cartasSkill">
         ${misSkills.map((skill, i) => {
           const angle = startAngle + i * angleStep;
           const ty = Math.abs(angle) * 1.3;
           const zIdx = totalCards === 1 ? 5 : totalCards - Math.abs(i - Math.floor((totalCards - 1) / 2));
           const cls = (skill.coste > (miPJ.energia || 0) ? 'disabled ' : '') + (cartaSeleccionada === i ? 'selected' : '');
-          return `<div class="slot-card ${cls}" style="transform:rotate(${angle}deg) translateY(${ty}px);z-index:${zIdx}" onclick="seleccionarCarta(${i})" id="skillCard-${i}">
+          const skillData = SKILL_DATA_LOOKUP[skill.id];
+          return `<div class="slot-card ${cls}" style="transform:rotate(${angle}deg) translateY(${ty}px);z-index:${zIdx}" draggable="true"
+            ondragstart="onCardDragStart(event, ${i})"
+            ontouchstart="onCardTouchStart(event, ${i})"
+            ontouchmove="onCardTouchMove(event)"
+            ontouchend="onCardTouchEnd(event)"
+            onclick="seleccionarCarta(${i})" id="skillCard-${i}">
             <div class="card-name">${skill.nombre}</div>
-            <div class="card-desc">${SKILL_DATA_LOOKUP[skill.id] ? SKILL_DATA_LOOKUP[skill.id].efecto.replace(/_/g,' ') : ''}</div>
-            <div class="card-cost">${skill.coste} EN</div>
+            <div class="card-desc">${skillData ? describirEfecto(skillData) : ''}</div>
+            <div class="card-cost">${skill.coste} <span style="color:#2688ff;">E</span></div>
           </div>`;
         }).join('')}
       </div>
@@ -398,6 +402,71 @@ function usarCartaSeleccionada() {
   cancelarSeleccionCarta();
 }
 
+function onCardDragStart(e, idx) {
+  const skill = misSkills[idx];
+  if (!skill || skill.coste > (miPJ.energia || 0)) return;
+  draggedCardIdx = idx;
+  e.dataTransfer.setData('text/plain', idx);
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onCardTouchStart(e, idx) {
+  const skill = misSkills[idx];
+  if (!skill || skill.coste > (miPJ.energia || 0)) return;
+  draggedCardIdx = idx;
+  const touch = e.touches[0];
+  touchClone = document.createElement('div');
+  touchClone.textContent = skill.nombre;
+  touchClone.style.cssText = 'position:fixed;padding:6px 12px;background:#d2b574;border:2px solid #8b6d3f;border-radius:8px;color:#222;font-size:12px;font-weight:bold;z-index:1000;pointer-events:none;';
+  touchClone.style.left = (touch.clientX - 40) + 'px';
+  touchClone.style.top = (touch.clientY - 20) + 'px';
+  document.body.appendChild(touchClone);
+}
+
+function onCardTouchMove(e) {
+  if (!touchClone) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  touchClone.style.left = (touch.clientX - 40) + 'px';
+  touchClone.style.top = (touch.clientY - 20) + 'px';
+}
+
+function onCardTouchEnd(e) {
+  if (!touchClone) return;
+  touchClone.remove();
+  touchClone = null;
+  const touch = e.changedTouches[0];
+  const logEl = document.querySelector('.log-scroll');
+  if (logEl) {
+    const rect = logEl.getBoundingClientRect();
+    if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+        touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+      usarCartaDrag();
+    }
+  }
+}
+
+function onLogDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function onLogDrop(e) {
+  e.preventDefault();
+  usarCartaDrag();
+}
+
+function usarCartaDrag() {
+  if (draggedCardIdx === null) return;
+  const skill = misSkills[draggedCardIdx];
+  if (!skill || skill.coste > (miPJ.energia || 0)) return;
+  enviarAccion('carta', skill.id || skill.nombre);
+  draggedCardIdx = null;
+  const info = document.getElementById('cartaSeleccionInfo');
+  if (info) info.style.display = 'none';
+  document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
+}
+
 function enviarAccion(tipo, cartaId, accionData) {
   if (!partidaActualId) return;
   if (!esMiTurno || accionesRestantes <= 0) return;
@@ -415,16 +484,28 @@ function actualizarIndicadorTurno() {
   const el = document.getElementById('indicadorTurno');
   if (!el) return;
   el.textContent = esMiTurno ? `TU TURNO (${accionesRestantes}/2)` : 'RIVAL';
+  document.querySelectorAll('.character-bio, .player-character, .enemy-character').forEach(el2 => el2.classList.remove('tu-turno'));
+  if (esMiTurno) {
+    document.querySelectorAll('.left-bio, .player-character').forEach(el2 => { if (el2) el2.classList.add('tu-turno'); });
+  } else {
+    document.querySelectorAll('.right-bio, .enemy-character').forEach(el2 => { if (el2) el2.classList.add('tu-turno'); });
+  }
 }
 function actualizarHP() {
   const el1 = document.getElementById('rivalHP'), el2 = document.getElementById('pjHP');
   const f1 = document.getElementById('rivalHPFill'), f2 = document.getElementById('pjHPFill');
   const en = document.getElementById('pjEnergia');
+  const rivalEn = document.getElementById('rivalEnergia');
+  const rivalEnFill = document.getElementById('rivalEnergyFill');
+  const miEnFill = document.getElementById('pjEnergyFill');
   if (el1) el1.textContent = rivalPJ.hp || 0;
   if (el2) el2.textContent = miPJ.hp || 0;
   if (en) en.textContent = miPJ.energia || 0;
+  if (rivalEn) rivalEn.textContent = rivalPJ.energia || 0;
   if (f1) f1.style.width = Math.max(0, Math.round((rivalPJ.hp || 0) / (rivalPJ.maxHp || 40) * 100)) + '%';
   if (f2) f2.style.width = Math.max(0, Math.round((miPJ.hp || 0) / (miPJ.maxHp || 40) * 100)) + '%';
+  if (rivalEnFill) rivalEnFill.style.width = Math.max(0, Math.round((rivalPJ.energia || 0) / 100 * 100)) + '%';
+  if (miEnFill) miEnFill.style.width = Math.max(0, Math.round((miPJ.energia || 0) / 100 * 100)) + '%';
 }
 
 function estiloLog(data) {
@@ -519,10 +600,16 @@ function actualizarCardsSkills() {
     const ty = Math.abs(angle) * 1.3;
     const zIdx = total === 1 ? 5 : total - Math.abs(i - Math.floor((total - 1) / 2));
     const cls = (skill.coste > (miPJ.energia || 0) ? 'disabled ' : '') + (cartaSeleccionada === i ? 'selected' : '');
-    return `<div class="slot-card ${cls}" style="transform:rotate(${angle}deg) translateY(${ty}px);z-index:${zIdx}" onclick="seleccionarCarta(${i})" id="skillCard-${i}">
+    const skillData = SKILL_DATA_LOOKUP[skill.id];
+    return `<div class="slot-card ${cls}" style="transform:rotate(${angle}deg) translateY(${ty}px);z-index:${zIdx}" draggable="true"
+      ondragstart="onCardDragStart(event, ${i})"
+      ontouchstart="onCardTouchStart(event, ${i})"
+      ontouchmove="onCardTouchMove(event)"
+      ontouchend="onCardTouchEnd(event)"
+      onclick="seleccionarCarta(${i})" id="skillCard-${i}">
       <div class="card-name">${skill.nombre}</div>
-      <div class="card-desc">${SKILL_DATA_LOOKUP[skill.id] ? SKILL_DATA_LOOKUP[skill.id].efecto.replace(/_/g,' ') : ''}</div>
-      <div class="card-cost">${skill.coste} EN</div>
+      <div class="card-desc">${skillData ? describirEfecto(skillData) : ''}</div>
+      <div class="card-cost">${skill.coste} <span style="color:#2688ff;">E</span></div>
     </div>`;
   }).join('');
 }
