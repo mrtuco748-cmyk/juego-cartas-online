@@ -133,9 +133,9 @@ function renderizarCombate() {
     const parts = [];
     if (c.claseMod[stat]) parts.push(`<span style="color:#a08060;">${c.claseMod[stat] > 0 ? '+' : ''}${c.claseMod[stat]}cl</span>`);
     if (c.equipMod[stat]) parts.push(`<span style="color:#60d060;">${c.equipMod[stat] > 0 ? '+' : ''}${c.equipMod[stat]}eq</span>`);
-    if (c.buffMod[stat]) parts.push(`<span style="color:${c.buffMod[stat] > 0 ? '#60d060' : '#ff6040'};">${c.buffMod[stat] > 0 ? '+' : ''}${c.buffMod[stat]}buf</span>`);
-    const modStr = parts.length ? ` <span style="font-size:8px;">${parts.join(' ')}</span>` : '';
-    return `<div>${label} ${c.total[stat]}${modStr}</div>`;
+    if (c.buffMod[stat]) parts.push(`<span style="color:${c.buffMod[stat] > 0 ? '#60d060' : '#ff6040'};">${c.buffMod[stat] > 0 ? '+' : ''}${c.buffMod[stat]}b</span>`);
+    const modStr = parts.length ? ` <span style="font-size:9px;">${parts.join(' ')}</span>` : '';
+    return `<div>${label} ${c.base[stat]}${modStr}</div>`;
   };
 
   const sheetHTML = (pj, prefix) => {
