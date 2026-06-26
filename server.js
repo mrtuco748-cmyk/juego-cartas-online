@@ -1054,6 +1054,7 @@ io.on('connection', (socket) => {
                         magia: rivalPj.personaje.magia,
                         suerte: rivalPj.personaje.suerte,
                         nivel: rivalPj.personaje.nivel || 1,
+                        foto: rivalPj.personaje.foto || '',
                         status: rivalPj.status || {},
                         objetosRecibidos: rivalPj.objetosRecibidos || []
                     },
