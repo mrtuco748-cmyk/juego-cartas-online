@@ -187,8 +187,7 @@ function renderizarCombate() {
         ${sheetHTML(rivalPJ, 'rival')}
       </div>
 
-      <div class="col-bottom">
-        <button class="btn-inventory" onclick="toggleInventario()">INVENTARIO</button>
+      <div class="cards-row">
         <div class="active-cards" id="cartasSkill">
           ${misSkills.map((skill, i) => {
             const angle = startAngle + i * angleStep;
@@ -208,6 +207,10 @@ function renderizarCombate() {
             </div>`;
           }).join('')}
         </div>
+      </div>
+
+      <div class="actions-row">
+        <button class="btn-inventory" onclick="toggleInventario()">INVENTARIO</button>
         <div class="actions">
           <button class="btn-atk" onclick="enviarAccion('atacar')">ATACAR</button>
           <button class="btn-rest" onclick="enviarAccion('descansar')">DESCANSAR</button>
