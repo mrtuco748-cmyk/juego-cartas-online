@@ -24,7 +24,7 @@ const SKILLS_DATA = {
   },
   pasivas: {
     veneno: { nombre: "Veneno", efecto: "dot", valor: 0.05, trigger: "on_hit" },
-    totem: { nombre: "Tótem", efecto: "survival", hp_min: 1, trigger: "on_death_blow" },
+    totem: { nombre: "Tótem", efecto: "survival", hp_min: 1, trigger: "on_death" },
     regeneracion: { nombre: "Regeneración", efecto: "regen_hp", valor: 0.03, trigger: "on_turn_start" },
     mana_infinito: { nombre: "Maná Infinito", efecto: "regen_energy", valor: 5, trigger: "on_turn_start" },
     contraataque: { nombre: "Contraataque", efecto: "counter", valor: 0.50, trigger: "on_take_damage" },
@@ -258,9 +258,10 @@ class GameProcessor {
       },
       aoe_damage: (target, card, ctx) => {
         const dmg = Math.floor(target.maxHp * card.valor);
+        const selfDmg = ctx.source ? Math.floor(ctx.source.maxHp * card.valor * 0.5) : 0;
         target.hp -= dmg;
-        if (ctx.rival) ctx.rival.hp -= dmg;
-        return { damage: dmg, log: `Tormenta causa ${dmg} de daño a todos` };
+        if (ctx.source) ctx.source.hp -= selfDmg;
+        return { damage: dmg, log: `Tormenta causa ${dmg} de daño al rival y ${selfDmg} al lanzador` };
       },
       silence: (target, card) => {
         target.status = target.status || {};
@@ -388,9 +389,11 @@ class GameProcessor {
           if (trigger === "on_attack") owner.critBonus = (owner.critBonus || 0) + pasiva.valor;
           break;
         case "damage_reduction":
-          if (trigger === "on_take_damage" && ctx.damage) {
+          if (trigger === "on_take_damage" && ctx.damage !== undefined) {
             const reduction = Math.floor(ctx.damage * pasiva.valor);
+            ctx.damage = Math.max(0, ctx.damage - reduction);
             ctx.damageReduction = (ctx.damageReduction || 0) + reduction;
+            results.push({ log: `${ownerName} reduce ${Math.floor(reduction)} de daño` });
           }
           break;
         case "life_steal":
@@ -558,7 +561,7 @@ class GameProcessor {
       velocidad: pj.velocidad,
       magia: pj.magia,
       suerte: pj.suerte,
-      critBonus: 0,
+      critBonus: jugador.critBonus || 0,
       critClaseMulti: jugador.critClase ? jugador.critClase.multi : 0,
       dodgeBonus: jugador.dodgeBonus || 0,
       ataquePenalty: 0
@@ -834,6 +837,12 @@ class GameProcessor {
               jugador._totemUsed = true;
               logs.push(`${jugador.nombre} revive gracias a ${eq.nombre}`);
             }
+          }
+          if (ef.efecto === 'crit_mult') {
+            jugador.critBonus = (jugador.critBonus || 0) + ef.valor;
+          }
+          if (ef.efecto === 'dodge_bonus') {
+            jugador.dodgeBonus = (jugador.dodgeBonus || 0) + ef.valor;
           }
         }
       }

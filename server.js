@@ -244,6 +244,10 @@ io.on('connection', (socket) => {
         const statsYo = gp.calcularStatsConBuffs(yo);
         const statsRival = gp.calcularStatsConBuffs(rival);
 
+        // Snapshot HP for on_hp_loss triggers
+        const hpAntesYo = yo.hp;
+        const hpAntesRival = rival.hp;
+
         switch (tipo) {
             case 'carta': {
                 const carta = SKILLS_DATA.activas[cartaId];
@@ -312,14 +316,18 @@ io.on('connection', (socket) => {
                     rival.pose = null;
                 }
 
+                // Process on_take_damage BEFORE applying damage so fortaleza etc works
+                const dmgCtx = { damage: danoFinal, target: yo };
+                const pLogDef = gp.processPassives(rival.pasivas, rival, yo, 'on_take_damage', dmgCtx);
+                danoFinal = Math.max(0, dmgCtx.damage);
+                pLogDef.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
+
                 if (rival.status && rival.status.shield > 0) {
                     const absorb = Math.min(rival.status.shield, danoFinal);
                     rival.status.shield -= absorb;
                     danoFinal -= absorb;
                     log += ` [escudo -${absorb}]`;
                 }
-
-                rival.hp -= danoFinal;
 
                 if (yo.danoAHP) {
                     const conv = Math.min(danoFinal, yo.maxHp - yo.hp);
@@ -328,9 +336,8 @@ io.on('connection', (socket) => {
                 }
 
                 const pLog1 = gp.processPassives(yo.pasivas, yo, rival, 'on_hit', { damage: danoFinal, target: rival });
-                const pLog2 = gp.processPassives(rival.pasivas, rival, yo, 'on_take_damage', { damage: danoFinal, target: yo });
                 const pLog3 = gp.processPassives(yo.pasivas, yo, rival, 'on_attack', {});
-                [...pLog1, ...pLog2, ...pLog3].forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
+                [...pLog1, ...pLog3].forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
 
                 gp.procesarEfectosOnHit(yo, rival).forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'ataque' }));
 
@@ -605,6 +612,18 @@ io.on('connection', (socket) => {
             }
         }
 
+        // Trigger on_hp_loss for any player who lost HP
+        if (yo.hp < hpAntesYo) {
+            const perdidaYo = hpAntesYo - Math.max(0, yo.hp);
+            const hl1 = gp.processPassives(yo.pasivas, yo, rival, 'on_hp_loss', { hpLost: perdidaYo });
+            hl1.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
+        }
+        if (rival.hp < hpAntesRival) {
+            const perdidaRi = hpAntesRival - Math.max(0, rival.hp);
+            const hl2 = gp.processPassives(rival.pasivas, rival, yo, 'on_hp_loss', { hpLost: perdidaRi });
+            hl2.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
+        }
+
         partidaFinalizarAccion(partidaId, partida);
     });
 
@@ -691,9 +710,16 @@ io.on('connection', (socket) => {
         const claseRegen = gp.aplicarHPRegenClase(jugTurno);
         if (claseRegen > 0) io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} regenera +${claseRegen} HP (clase)`, tipo: 'curacion' });
 
-        if (partida.turno === 1) {
+        // First-turn class bonuses for whoever is starting their first turn
+        const esPrimerTurnoJ1 = partida.primerTurnoJ1 && jugTurno === partida.jugador1;
+        const esPrimerTurnoJ2 = partida.primerTurnoJ2 && jugTurno === partida.jugador2;
+        if (esPrimerTurnoJ1) {
             gp.aplicarEfectosClase(jugTurno, true).forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'carta' }));
-            gp.aplicarEfectosClase(rivTurno, true);
+            partida.primerTurnoJ1 = false;
+        }
+        if (esPrimerTurnoJ2) {
+            gp.aplicarEfectosClase(jugTurno, true).forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'carta' }));
+            partida.primerTurnoJ2 = false;
         }
 
         jugTurno.critBonus = 0;
@@ -705,13 +731,11 @@ io.on('connection', (socket) => {
         partida.accionesMax = 2 + (jugTurno.extraAction ? 1 : 0);
         jugTurno.extraAction = false;
 
-        if (partida.turno === 1 && jugTurno.critClase) {
+        if (jugTurno.critClase) {
             io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre}: crítico ${jugTurno.critClase.multi * 100}% por ${jugTurno.critClase.duracion} turnos`, tipo: 'carta' });
         }
 
         io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} recupera ${enRegen} energía`, tipo: 'energia' });
-
-        partida.turno++;
         partidaEmitirEstado(partidaId, partida);
     }
 
@@ -969,7 +993,9 @@ io.on('connection', (socket) => {
                     contadores: {}
                 },
                 turnoActual: turnoInicial,
-                turno: 1,
+                turno: 0,
+                primerTurnoJ1: true,
+                primerTurnoJ2: true,
                 accionesUsadas: [],
                 accionesMax: 2,
                 turnoMareado: null,
