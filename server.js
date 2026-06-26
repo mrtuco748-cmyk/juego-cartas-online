@@ -92,7 +92,7 @@ const SKILL_PRICES = {
     }
 };
 
-function getSkillsParaClase(clase, compradas = []) {
+function getSkillsParaClase(clase, compradas = [], equipment = null) {
     const skillsPorClase = {
         Chaman: ["golpe_directo", "curacion_divina", "escudo_arcano", "drenar_vida"],
         Sacerdote: ["curacion_divina", "bendicion", "sello_silencio", "escudo_arcano"],
@@ -115,6 +115,12 @@ function getSkillsParaClase(clase, compradas = []) {
     };
     const baseSkills = skillsPorClase[clase] || ["golpe_directo", "golpe_veloz", "curacion_divina", "escudo_arcano"];
     const todas = [...new Set([...baseSkills, ...compradas])];
+    if (equipment) {
+        const nombresEq = Object.values(equipment).filter(Boolean).map(e => e.nombre);
+        if (nombresEq.includes("Varita Común Nivel 3") && SKILLS_DATA.activas.acrio) {
+            todas.push("acrio");
+        }
+    }
     return todas.map(id => ({ ...SKILLS_DATA.activas[id], id })).filter(Boolean);
 }
 
@@ -155,6 +161,13 @@ async function otorgarXP(cuentaId, personajeId, xp) {
     }
 }
 
+function removerHPBonusItem(jugador, item) {
+    if (item && item.hpBonus) {
+        jugador.maxHp = Math.max(1, jugador.maxHp - item.hpBonus);
+        jugador.hp = Math.min(jugador.hp, jugador.maxHp);
+    }
+}
+
 function shuffleArray(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -164,8 +177,8 @@ function shuffleArray(arr) {
 }
 
 function partidaEmitirEstado(partidaId, partida) {
-    const j1s = getSkillsParaClase(partida.jugador1.personaje.clase, partida.jugador1.skillsCompradas || []);
-    const j2s = getSkillsParaClase(partida.jugador2.personaje.clase, partida.jugador2.skillsCompradas || []);
+    const j1s = getSkillsParaClase(partida.jugador1.personaje.clase, partida.jugador1.skillsCompradas || [], partida.jugador1.equipment);
+    const j2s = getSkillsParaClase(partida.jugador2.personaje.clase, partida.jugador2.skillsCompradas || [], partida.jugador2.equipment);
 
     const j1m = getMazosCliente(partida.jugador1);
     const j2m = getMazosCliente(partida.jugador2);
@@ -235,6 +248,10 @@ io.on('connection', (socket) => {
             case 'carta': {
                 const carta = SKILLS_DATA.activas[cartaId];
                 if (!carta) { socket.emit('errorAccion', 'Carta no encontrada'); break; }
+                if (carta.requiereItem) {
+                    const tieneItem = Object.values(yo.equipment || {}).some(eq => eq && eq.nombre === carta.requiereItem);
+                    if (!tieneItem) { socket.emit('errorAccion', 'Necesitás ' + carta.requiereItem + ' para usar esta carta'); break; }
+                }
 
                 const ctx = { source: yo, rival };
                 const result = gp.executeCard(carta, yo, rival, ctx);
@@ -274,15 +291,14 @@ io.on('connection', (socket) => {
             case 'atacar': {
                 const dado = Math.floor(Math.random() * 6) + 1;
                 let danoBase = Math.max(0, dado + statsYo.fuerza - statsRival.resistencia);
-                let critMulti = gp.calcularCritico(statsYo.velocidad, statsRival.velocidad) + (yo.critBonus || 0);
-                if (yo.critClase) critMulti = Math.max(critMulti, yo.critClase.multi);
+                let critMulti = Math.max(statsYo.critClaseMulti || 0, gp.calcularCritico(statsYo.velocidad, statsRival.velocidad) + (statsYo.critBonus || 0));
                 let danoFinal = Math.floor(danoBase * (1 + critMulti));
                 if (yo.enrageBonus) danoFinal += yo.enrageBonus;
 
                 let log = `${statsYo.nombre} ataca — ${dado}+F:${statsYo.fuerza}-R:${statsRival.resistencia}=${danoBase}`;
 
                 if (rival.pose) {
-                    if (rival.pose.tipo === 'esquivar' && rival.pose.valor > dado) {
+                    if (rival.pose.tipo === 'esquivar' && (rival.pose.valor + (statsRival.dodgeBonus || 0)) > dado) {
                         io.to(partidaId).emit('logBatalla', { msg: `¡${rival.nombre} ESQUIVA!`, tipo: 'pose' });
                         rival.pose = null;
                         return partidaFinalizarAccion(partidaId, partida);
@@ -316,8 +332,17 @@ io.on('connection', (socket) => {
                 const pLog3 = gp.processPassives(yo.pasivas, yo, rival, 'on_attack', {});
                 [...pLog1, ...pLog2, ...pLog3].forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
 
+                gp.procesarEfectosOnHit(yo, rival).forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'ataque' }));
+
                 log += critMulti > 0 ? ` (Crítico x${1+critMulti}) → ${danoFinal}` : ` → ${danoFinal}`;
                 io.to(partidaId).emit('logBatalla', { msg: log, tipo: 'ataque' });
+
+                if (statsYo.ataquePenalty > 0) {
+                    for (let p = 0; p < statsYo.ataquePenalty; p++) {
+                        partida.accionesUsadas.push('ataque_penalizado');
+                    }
+                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} pierde ${statsYo.ataquePenalty} accion(es) extra por el peso del arma`, tipo: 'ataque' });
+                }
                 break;
             }
             case 'descansar': {
@@ -347,9 +372,17 @@ io.on('connection', (socket) => {
                 }
                 if (!carta) { socket.emit('errorAccion', 'No hay cartas en el mazo'); break; }
                 if (carta.tipo === 'cofre') {
-                    const cofre = shuffleArray([...MAZOS.cofres])[0];
+                    const totalProb = MAZOS.cofres.reduce((s, i) => s + i.probabilidad, 0);
+                    let r = Math.random() * totalProb;
+                    let cofre = null;
+                    for (const item of MAZOS.cofres) {
+                        r -= item.probabilidad;
+                        if (r <= 0) { cofre = item; break; }
+                    }
+                    if (cofre) cofre = { ...cofre };
                     if (cofre && gp.puedeAgregarInventario(yo.inventario, cofre)) {
-                        yo.inventario.push({ ...cofre, _id: Date.now().toString() + Math.random() });
+                        cofre._id = Date.now().toString() + Math.random();
+                        yo.inventario.push(cofre);
                         io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} encuentra un cofre con: ${cofre.nombre}`, tipo: 'carta' });
                     } else {
                         io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} encuentra un cofre pero está vacío`, tipo: 'carta' });
@@ -484,38 +517,37 @@ io.on('connection', (socket) => {
                 let slot = slotMap[eqObj.tipo] || null;
                 if (!slot) { socket.emit('errorAccion', 'Este objeto no se puede equipar'); break; }
                 const manos = eqObj.manos || 1;
-                if (slot === 'mano1' && manos === 2) {
-                    if (yo.equipment.mano1 || yo.equipment.mano2) {
-                        if (yo.equipment.mano1 && gp.puedeAgregarInventario(yo.inventario, {})) {
-                            yo.inventario.push({ ...yo.equipment.mano1, _id: Date.now().toString() + Math.random() });
-                        }
-                        if (yo.equipment.mano2 && gp.puedeAgregarInventario(yo.inventario, {})) {
-                            yo.inventario.push({ ...yo.equipment.mano2, _id: Date.now().toString() + Math.random() });
-                        }
-                        yo.equipment.mano1 = null;
-                        yo.equipment.mano2 = null;
+                const repushSlot = (s) => {
+                    const old = yo.equipment[s];
+                    if (old && gp.puedeAgregarInventario(yo.inventario, {})) {
+                        removerHPBonusItem(yo, old);
+                        yo.inventario.push({ ...old, _id: Date.now().toString() + Math.random() });
                     }
+                };
+                if (slot === 'mano1' && manos === 2) {
+                    repushSlot('mano1');
+                    repushSlot('mano2');
+                    yo.equipment.mano1 = null;
+                    yo.equipment.mano2 = null;
                     yo.equipment.mano1 = eqObj;
                     yo.equipment.mano2 = eqObj;
                 } else if (slot === 'mano1') {
                     if (yo.equipment.mano2 && yo.equipment.mano2 === yo.equipment.mano1) {
-                        if (gp.puedeAgregarInventario(yo.inventario, {})) {
-                            yo.inventario.push({ ...yo.equipment.mano1, _id: Date.now().toString() + Math.random() });
-                        }
+                        repushSlot('mano1');
                         yo.equipment.mano1 = null;
                         yo.equipment.mano2 = null;
                     }
-                    if (yo.equipment.mano1) {
-                        yo.inventario.push({ ...yo.equipment.mano1, _id: Date.now().toString() + Math.random() });
-                    }
+                    repushSlot('mano1');
                     yo.equipment.mano1 = eqObj;
                 } else {
-                    if (yo.equipment[slot]) {
-                        yo.inventario.push({ ...yo.equipment[slot], _id: Date.now().toString() + Math.random() });
-                    }
+                    repushSlot(slot);
                     yo.equipment[slot] = eqObj;
                 }
                 yo.inventario.splice(eqIdx, 1);
+                if (eqObj.hpBonus) {
+                    yo.maxHp = (yo.maxHp || 50) + eqObj.hpBonus;
+                    yo.hp = Math.min(yo.hp + eqObj.hpBonus, yo.maxHp);
+                }
                 io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} equipa ${eqObj.nombre}`, tipo: 'carta' });
                 break;
             }
@@ -526,10 +558,12 @@ io.on('connection', (socket) => {
                     if (!yo.equipment.mano1) { socket.emit('errorAccion', 'Nada que desequipar'); break; }
                     if (!gp.puedeAgregarInventario(yo.inventario, {})) { socket.emit('errorAccion', 'Inventario lleno'); break; }
                     if (yo.equipment.mano1 === yo.equipment.mano2) {
+                        removerHPBonusItem(yo, yo.equipment.mano1);
                         yo.inventario.push({ ...yo.equipment.mano1, _id: Date.now().toString() + Math.random() });
                         yo.equipment.mano1 = null;
                         yo.equipment.mano2 = null;
                     } else {
+                        removerHPBonusItem(yo, yo.equipment.mano1);
                         yo.inventario.push({ ...yo.equipment.mano1, _id: Date.now().toString() + Math.random() });
                         yo.equipment.mano1 = null;
                     }
@@ -538,10 +572,12 @@ io.on('connection', (socket) => {
                     if (!yo.equipment.mano2) { socket.emit('errorAccion', 'Nada que desequipar'); break; }
                     if (!gp.puedeAgregarInventario(yo.inventario, {})) { socket.emit('errorAccion', 'Inventario lleno'); break; }
                     if (yo.equipment.mano1 === yo.equipment.mano2) {
+                        removerHPBonusItem(yo, yo.equipment.mano1);
                         yo.inventario.push({ ...yo.equipment.mano1, _id: Date.now().toString() + Math.random() });
                         yo.equipment.mano1 = null;
                         yo.equipment.mano2 = null;
                     } else {
+                        removerHPBonusItem(yo, yo.equipment.mano2);
                         yo.inventario.push({ ...yo.equipment.mano2, _id: Date.now().toString() + Math.random() });
                         yo.equipment.mano2 = null;
                     }
@@ -549,6 +585,7 @@ io.on('connection', (socket) => {
                 } else {
                     if (!yo.equipment[slot]) { socket.emit('errorAccion', 'Nada que desequipar'); break; }
                     if (!gp.puedeAgregarInventario(yo.inventario, {})) { socket.emit('errorAccion', 'Inventario lleno'); break; }
+                    removerHPBonusItem(yo, yo.equipment[slot]);
                     yo.inventario.push({ ...yo.equipment[slot], _id: Date.now().toString() + Math.random() });
                     yo.equipment[slot] = null;
                     io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} se quita ${slot}`, tipo: 'carta' });
@@ -964,8 +1001,8 @@ io.on('connection', (socket) => {
             gp.aplicarCritClase(pRiv);
 
             const esJ1Primero = turnoInicial === jugador1.socketId;
-            const skills1 = getSkillsParaClase(personaje1.clase, comp1);
-            const skills2 = getSkillsParaClase(personaje2.clase, comp2);
+            const skills1 = getSkillsParaClase(personaje1.clase, comp1, partidas[partidaId].jugador1.equipment);
+            const skills2 = getSkillsParaClase(personaje2.clase, comp2, partidas[partidaId].jugador2.equipment);
 
             const emitirRival = (socketId, yoPj, rivalPj, esTurno) => {
                 io.to(socketId).emit('rivalEncontrado', {

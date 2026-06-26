@@ -19,7 +19,8 @@ const SKILLS_DATA = {
     rafaga: { nombre: "Ráfaga", coste: 20, efecto: "damage_percent", valor: 0.15 },
     cataclismo: { nombre: "Cataclismo", coste: 80, efecto: "damage_true", valor: 60 },
     bendicion: { nombre: "Bendición", coste: 35, efecto: "buff_all", valor: 2, duracion: 2 },
-    escarcha: { nombre: "Escarcha", coste: 25, efecto: "debuff", stat: "velocidad", valor: 4, duracion: 2 }
+    escarcha: { nombre: "Escarcha", coste: 25, efecto: "debuff", stat: "velocidad", valor: 4, duracion: 2 },
+    acrio: { nombre: "Acrio", coste: 30, efecto: "damage_true", valor: 15, requiereItem: "Varita Común Nivel 3" }
   },
   pasivas: {
     veneno: { nombre: "Veneno", efecto: "dot", valor: 0.05, trigger: "on_hit" },
@@ -146,17 +147,45 @@ const MAZOS = {
     ] }
   ],
   cofres: [
-    { nombre: "Polvo Mágico", tipo: "consumible", desc: "Brilla con energía arcana", efectos: [{ tipo: "consumir", efecto: "stat_boost", stat: "magia", valor: 3 }] },
-    { nombre: "Gema", tipo: "material", desc: "Gema brillante", valorVenta: 100 },
-    { nombre: "Cuerno", tipo: "arma", desc: "Cuerno de bestia", manos: 1, stats: { dañoDirecto: 8 }, efectos: [{ tipo: "turn_start", efecto: "damage_self", valor: 4 }] },
-    { nombre: "Sombrero de Mago", tipo: "armadura", desc: "Sombrero puntiagudo", stats: { magia: 4 }, efectos: [{ tipo: "turn_start", efecto: "energia", valor: 5 }] },
-    { nombre: "Ojo de Orus", tipo: "accesorio", desc: "Ojo místico", efectos: [{ tipo: "pasivo", efecto: "crit_mult", valor: 0.50 }, { tipo: "pasivo", efecto: "dodge_bonus", valor: 3 }] },
-    { nombre: "Pata de Conejo", tipo: "accesorio", desc: "Pata de conejo de la suerte", stats: { suerte: 7 } },
-    { nombre: "Runa Energética", tipo: "consumible", desc: "Runa pulsante de energía", efectos: [{ tipo: "consumir", efecto: "energia", valor: 20 }, { tipo: "persistente", efecto: "regen_energy", valor: 5, id: "runa_energetica" }] },
-    { nombre: "Venda", tipo: "consumible", desc: "Vendas limpias", efectos: [{ tipo: "consumir", efecto: "cura", valor: 7 }, { tipo: "persistente", efecto: "regen_hp", valor: 2, duracion: 5, id: "venda_regen" }] },
-    { nombre: "1 Moneda", tipo: "moneda", desc: "Moneda de oro antiguo", valorVenta: 1 }
+    { nombre: "Varita Común Nivel 1", probabilidad: 10, tipo: "arma", desc: "Varita básica", manos: 1, stats: {}, efectos: [{ tipo: "turn_start", efecto: "energia", valor: 10 }] },
+    { nombre: "Varita Común Nivel 2", probabilidad: 10, tipo: "arma", desc: "Varita mejorada", manos: 1, stats: { magia: 4 }, efectos: [{ tipo: "turn_start", efecto: "energia", valor: 5 }] },
+    { nombre: "Varita Común Nivel 3", probabilidad: 10, tipo: "arma", desc: "Varita poderosa", manos: 1, stats: { magia: 8 }, efectos: [{ tipo: "turn_start_skip", efecto: "energia", valor: 10, intervalo: 2 }] },
+    { nombre: "Varita de Chamán", probabilidad: 5, tipo: "arma", desc: "Varita chamánica", manos: 1, stats: { magia: 5 }, efectos: [
+      { tipo: "turn_start", efecto: "regen_hp", valor: 4 },
+      { tipo: "turn_start", efecto: "energia", valor: 10 }
+    ] },
+    { nombre: "Varita de Merlín", probabilidad: 3, tipo: "arma", desc: "Varita legendaria", manos: 1, stats: { magia: 8, velocidad: 4, resistencia: 3 } },
+    { nombre: "Pinchobola", probabilidad: 10, tipo: "arma", desc: "Arma punzante", manos: 1, stats: { dañoDirecto: 5, fuerza: 3 } },
+    { nombre: "Mjolnir", probabilidad: 1, tipo: "arma", desc: "Martillo divino", manos: 1, stats: { fuerza: 7, magia: 9, velocidad: 5 }, efectos: [{ tipo: "on_hit", efecto: "bleed", valor: 3, duracion: 2 }] },
+    { nombre: "Armadura de Hierro Nivel 1", probabilidad: 15, tipo: "armadura", desc: "Armadura básica", stats: { resistencia: 4, velocidad: 4 } },
+    { nombre: "Armadura de Hierro Nivel 2", probabilidad: 14, tipo: "armadura", desc: "Armadura reforzada", stats: { resistencia: 6 } },
+    { nombre: "Armadura de Hierro Nivel 3", probabilidad: 10, tipo: "armadura", desc: "Armadura maestra", stats: { resistencia: 5, velocidad: 3 } },
+    { nombre: "Armadura Pesada", probabilidad: 8, tipo: "armadura", desc: "Armadura de titán", stats: { resistencia: 10, velocidad: -5 }, hpBonus: 15 },
+    { nombre: "Espada Nivel 1", probabilidad: 18, tipo: "arma", desc: "Espada básica", manos: 1, stats: { fuerza: 5, velocidad: 1 } },
+    { nombre: "Espada Nivel 2", probabilidad: 15, tipo: "arma", desc: "Espada afilada", manos: 1, stats: { fuerza: 5, velocidad: 1 }, efectos: [{ tipo: "on_hit", efecto: "bleed", valor: 5, duracion: 1 }] },
+    { nombre: "Espada Nivel 3", probabilidad: 10, tipo: "arma", desc: "Espada maestra", manos: 1, stats: { dañoDirecto: 4, velocidad: 1 }, efectos: [{ tipo: "on_hit", efecto: "bleed", valor: 6, duracion: 2 }] },
+    { nombre: "Espada Desafilada", probabilidad: 20, tipo: "arma", desc: "Espada vieja", manos: 1, stats: { dañoDirecto: 2 }, efectos: [{ tipo: "on_hit", efecto: "bleed_permanent", valor: 1 }] },
+    { nombre: "Espada Pesada", probabilidad: 12, tipo: "arma", desc: "Espada de dos manos", manos: 2, stats: { dañoDirecto: 18, velocidad: -5 }, ataquePenalty: 1 },
+    { nombre: "Excalibur", probabilidad: 5, tipo: "arma", desc: "Espada legendaria", manos: 2, stats: { dañoDirecto: 5, velocidad: 2, magia: 4, suerte: 2, resistencia: -2 }, critBonus: 0.25 },
+    { nombre: "Espada de Héroe Rota", probabilidad: 10, tipo: "arma", desc: "Espada de campeón", manos: 2, stats: { dañoDirecto: 4, velocidad: 1, resistencia: 4 }, hpBonus: 10, efectos: [{ tipo: "on_hit", efecto: "bleed", valor: 1, duracion: 2 }] },
+    { nombre: "Espada de Orus", probabilidad: 8, tipo: "arma", desc: "Espada mística", manos: 1, stats: { dañoDirecto: 5 }, critBonus: 1.0, dodgeBonus: 4 }
   ],
-  recetas: []
+  recetas: [
+    { nombre: "Tablón de Madera", requiere: ["Rama", "Rama", "Rama"], resultado: { nombre: "Tablón de Madera", tipo: "material", desc: "Madera procesada" } },
+    { nombre: "Varita Común Nivel 1", requiere: ["Rama", "Polvo Mágico"], resultado: { nombre: "Varita Común Nivel 1", tipo: "arma", manos: 1, stats: {}, efectos: [{ tipo: "turn_start", efecto: "energia", valor: 10 }] } },
+    { nombre: "Varita Común Nivel 2", requiere: ["Rama", "Polvo Mágico"], resultado: { nombre: "Varita Común Nivel 2", tipo: "arma", manos: 1, stats: { magia: 4 }, efectos: [{ tipo: "turn_start", efecto: "energia", valor: 5 }] } },
+    { nombre: "Varita Común Nivel 3", requiere: ["Rama", "Polvo Mágico"], resultado: { nombre: "Varita Común Nivel 3", tipo: "arma", manos: 1, stats: { magia: 8 }, efectos: [{ tipo: "turn_start_skip", efecto: "energia", valor: 10, intervalo: 2 }] } },
+    { nombre: "Varita de Chamán", requiere: ["Runa Energética"], resultado: { nombre: "Varita de Chamán", tipo: "arma", manos: 1, stats: { magia: 5 }, efectos: [{ tipo: "turn_start", efecto: "regen_hp", valor: 4 }, { tipo: "turn_start", efecto: "energia", valor: 10 }] } },
+    { nombre: "Varita de Merlín (v1)", requiere: ["Varita de Chamán", "Runa Energética"], resultado: { nombre: "Varita de Merlín", tipo: "arma", manos: 1, stats: { magia: 8, velocidad: 4, resistencia: 3 } } },
+    { nombre: "Varita de Merlín (v2)", requiere: ["Runa Energética", "Polvo Mágico"], resultado: { nombre: "Varita de Merlín", tipo: "arma", manos: 1, stats: { magia: 8, velocidad: 4, resistencia: 3 } } },
+    { nombre: "Armadura de Hierro Nivel 1", requiere: ["Lingote de Hierro", "Lingote de Hierro", "Lingote de Hierro", "Cuerda", "Rama"], resultado: { nombre: "Armadura de Hierro Nivel 1", tipo: "armadura", stats: { resistencia: 4, velocidad: 4 } } },
+    { nombre: "Armadura de Hierro Nivel 2", requiere: ["Lingote de Hierro", "Lingote de Hierro", "Lingote de Hierro", "Cuerda", "Rama"], resultado: { nombre: "Armadura de Hierro Nivel 2", tipo: "armadura", stats: { resistencia: 6 } } },
+    { nombre: "Armadura de Hierro Nivel 3", requiere: ["Lingote de Hierro", "Lingote de Hierro", "Lingote de Hierro", "Cuerda", "Rama"], resultado: { nombre: "Armadura de Hierro Nivel 3", tipo: "armadura", stats: { resistencia: 5, velocidad: 3 } } },
+    { nombre: "Espada Nivel 1", requiere: ["Rama", "Cuerda", "Lingote de Hierro"], resultado: { nombre: "Espada Nivel 1", tipo: "arma", manos: 1, stats: { fuerza: 5, velocidad: 1 } } },
+    { nombre: "Espada Nivel 2", requiere: ["Rama", "Cuerda", "Lingote de Hierro"], resultado: { nombre: "Espada Nivel 2", tipo: "arma", manos: 1, stats: { fuerza: 5, velocidad: 1 }, efectos: [{ tipo: "on_hit", efecto: "bleed", valor: 5, duracion: 1 }] } },
+    { nombre: "Espada Nivel 3", requiere: ["Rama", "Cuerda", "Lingote de Hierro"], resultado: { nombre: "Espada Nivel 3", tipo: "arma", manos: 1, stats: { dañoDirecto: 4, velocidad: 1 }, efectos: [{ tipo: "on_hit", efecto: "bleed", valor: 6, duracion: 2 }] } },
+    { nombre: "Espada Pesada", requiere: ["Tablón de Madera", "Lingote de Hierro", "Lingote de Hierro", "Lingote de Hierro"], resultado: { nombre: "Espada Pesada", tipo: "arma", manos: 2, stats: { dañoDirecto: 18, velocidad: -5 }, ataquePenalty: 1 } }
+  ]
 };
 
 class GameProcessor {
@@ -480,6 +509,19 @@ class GameProcessor {
     }
     if (jugador.status.shield && jugador.status.shield < 0) jugador.status.shield = 0;
 
+    if (jugador.status.bleed && jugador.status.bleed.turns > 0) {
+      const dmg = jugador.status.bleed.damage;
+      jugador.hp -= dmg;
+      logs.push(`${jugador.nombre} sufre ${dmg} de sangrado (${jugador.status.bleed.turns - 1}t)`);
+      jugador.status.bleed.turns--;
+      if (jugador.status.bleed.turns <= 0) delete jugador.status.bleed;
+    }
+
+    if (jugador.status.bleedPermanent && jugador.status.bleedPermanent > 0) {
+      jugador.hp -= jugador.status.bleedPermanent;
+      logs.push(`${jugador.nombre} sufre ${jugador.status.bleedPermanent} de sangrado permanente`);
+    }
+
     if (jugador.status.inmune) {
       logs.push(`${jugador.nombre} ya no es inmune`);
       jugador.status.inmune = false;
@@ -515,7 +557,11 @@ class GameProcessor {
       resistencia: pj.resistencia,
       velocidad: pj.velocidad,
       magia: pj.magia,
-      suerte: pj.suerte
+      suerte: pj.suerte,
+      critBonus: 0,
+      critClaseMulti: jugador.critClase ? jugador.critClase.multi : 0,
+      dodgeBonus: jugador.dodgeBonus || 0,
+      ataquePenalty: 0
     };
 
     if (jugador.equipment) {
@@ -534,6 +580,10 @@ class GameProcessor {
             if (stats[s] !== undefined) stats[s] += v;
           }
         }
+        if (eq.critBonus) stats.critBonus += eq.critBonus;
+        if (eq.dodgeBonus) stats.dodgeBonus += eq.dodgeBonus;
+        if (eq.ataquePenalty) stats.ataquePenalty += eq.ataquePenalty;
+        if (eq.hpBonus) stats.hpBonus = (stats.hpBonus || 0) + eq.hpBonus;
       }
     }
 
@@ -752,6 +802,21 @@ class GameProcessor {
               jugador.energia = Math.min(100, jugador.energia + ef.valor);
               logs.push(`${jugador.nombre} recupera +${ef.valor} energía de ${eq.nombre}`);
               break;
+            case "regen_hp":
+              jugador.hp = Math.min(jugador.maxHp + (jugador.hpOverflow || 0), jugador.hp + ef.valor);
+              logs.push(`${jugador.nombre} regenera +${ef.valor} HP de ${eq.nombre}`);
+              break;
+          }
+        } else if (ef.tipo === 'turn_start_skip') {
+          jugador.contadores = jugador.contadores || {};
+          const cId = eq.nombre + '_skip';
+          if (!jugador.contadores[cId]) {
+            jugador.contadores[cId] = { valor: 0, intervalo: ef.intervalo || 2, callback: (j, logArr) => {
+              if (ef.efecto === 'energia') {
+                j.energia = Math.min(100, j.energia + ef.valor);
+                logArr.push(`${j.nombre} recupera +${ef.valor} energía de ${eq.nombre}`);
+              }
+            }};
           }
         } else if (ef.tipo === 'cada_6_turnos') {
           jugador.contadores = jugador.contadores || {};
@@ -763,12 +828,6 @@ class GameProcessor {
             }};
           }
         } else if (ef.tipo === 'pasivo') {
-          if (ef.efecto === 'crit_mult') {
-            jugador.critBonus = (jugador.critBonus || 0) + ef.valor;
-          }
-          if (ef.efecto === 'dodge_bonus') {
-            jugador.dodgeBonus = (jugador.dodgeBonus || 0) + ef.valor;
-          }
           if (ef.efecto === 'revive' && !jugador._totemUsed) {
             if (jugador.hp <= 0 && Math.random() < ef.valor) {
               jugador.hp = Math.floor(jugador.maxHp * 0.5);
@@ -776,6 +835,33 @@ class GameProcessor {
               logs.push(`${jugador.nombre} revive gracias a ${eq.nombre}`);
             }
           }
+        }
+      }
+    }
+    return logs;
+  }
+
+  procesarEfectosOnHit(atacante, target) {
+    const logs = [];
+    if (!atacante.equipment) return logs;
+    const equipados = new Set();
+    for (const eq of Object.values(atacante.equipment)) {
+      if (eq) equipados.add(eq);
+    }
+    for (const eq of equipados) {
+      if (!eq.efectos) continue;
+      for (const ef of eq.efectos) {
+        if (ef.tipo !== 'on_hit') continue;
+        target.status = target.status || {};
+        switch (ef.efecto) {
+          case "bleed":
+            target.status.bleed = { damage: ef.valor, turns: ef.duracion };
+            logs.push(`${target.nombre} sangra por ${ef.valor} durante ${ef.duracion} turno(s) (${eq.nombre})`);
+            break;
+          case "bleed_permanent":
+            target.status.bleedPermanent = (target.status.bleedPermanent || 0) + ef.valor;
+            logs.push(`${target.nombre} empieza a sangrar permanentemente por ${ef.valor} (${eq.nombre})`);
+            break;
         }
       }
     }
