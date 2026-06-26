@@ -84,8 +84,9 @@ function renderizarCombate() {
     <div class="battlefield">
       <div class="enemy-character">${rivalPJ.foto ? `<img src="${rivalPJ.foto}">` : '?'}</div>
 
-      <div class="log-scroll" id="logBatalla">
+      <div class="log-scroll">
         <h2>REGISTRO DE COMBATE</h2>
+        <div id="logBatch" style="overflow-y:auto;height:100%;"></div>
       </div>
 
       <div class="turn-message" id="indicadorTurno">
@@ -454,14 +455,29 @@ function colorearNombres(msg) {
   return s;
 }
 
+let logQueue = [];
+let logProcessing = false;
+
 socket.on('logBatalla', (data) => {
-  const log = document.getElementById('logBatalla');
-  if (!log) return;
+  logQueue.push(data);
+  procesarLogQueue();
+});
+
+function procesarLogQueue() {
+  if (logProcessing || logQueue.length === 0) return;
+  logProcessing = true;
+  const data = logQueue.shift();
+  const el = document.getElementById('logBatch');
+  if (!el) { logProcessing = false; return; }
   const msg = typeof data === 'string' ? data : data.msg;
   const estilo = typeof data === 'string' ? 'color:#9a7040;font-size:10px;' : estiloLog(data);
-  log.innerHTML += `<div style="${estilo}">> ${colorearNombres(msg)}</div>`;
-  log.scrollTop = log.scrollHeight;
-});
+  el.innerHTML += `<div style="${estilo}">> ${colorearNombres(msg)}</div>`;
+  el.scrollTop = el.scrollHeight;
+  setTimeout(() => {
+    logProcessing = false;
+    procesarLogQueue();
+  }, 1500);
+}
 
 socket.on('actualizarEstado', (datos) => {
   const yoMio = datos.socketJ1 === socket.id;
@@ -513,10 +529,10 @@ function actualizarCardsSkills() {
 
 socket.on('finPartida', (datos) => {
   const gane = datos.ganador === socket.id;
-  const log = document.getElementById('logBatalla');
-  if (log) {
-    log.innerHTML += `<div style="color:${gane ? '#60d060' : '#c85030'};font-size:13px;text-align:center;margin-top:10px;letter-spacing:2px;">${gane ? 'VICTORIA!' : 'DERROTA'}</div>`;
-    log.scrollTop = log.scrollHeight;
+  const logBatch = document.getElementById('logBatch');
+  if (logBatch) {
+    logBatch.innerHTML += `<div style="color:${gane ? '#60d060' : '#c85030'};font-size:13px;text-align:center;margin-top:10px;letter-spacing:2px;">${gane ? 'VICTORIA!' : 'DERROTA'}</div>`;
+    logBatch.scrollTop = logBatch.scrollHeight;
   }
   esMiTurno = false;
   accionesRestantes = 0;

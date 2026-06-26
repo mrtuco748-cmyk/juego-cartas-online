@@ -624,6 +624,23 @@
                 <button class="main-btn secundario" onclick="irAMenuDesdeSeccion()">← VOLVER</button>
             </div>
 
+            <!-- INVENTARIO -->
+            <div id="pantallaInventario">
+                <div class="panel-titulo">INVENTARIO DE HABILIDADES</div>
+                <div class="tabs">
+                    <div class="tab activo" onclick="cambiarTabInv('activas')">ACTIVAS</div>
+                    <div class="tab" onclick="cambiarTabInv('pasivas')">PASIVAS</div>
+                </div>
+                <div id="tabInvActivas" class="tab-panel activo">
+                    <div class="scroll-panel" id="invListaActivas"></div>
+                </div>
+                <div id="tabInvPasivas" class="tab-panel">
+                    <div class="scroll-panel" id="invListaPasivas"></div>
+                </div>
+                <hr class="divider">
+                <button class="main-btn secundario" onclick="irAMenuDesdeSeccion()">← VOLVER</button>
+            </div>
+
             <!-- ESPERA -->
             <div id="pantallaEspera">
                 <div class="espera-container">
@@ -640,7 +657,7 @@
         <div class="bottom-row">
             <div class="round-btn" id="btnTienda" onclick="cambiarSeccion('tienda')">TIENDA</div>
             <div class="round-btn" id="btnPersonajes" onclick="cambiarSeccion('personajes')">PERSO<br>NAJES<span class="dot-notif" id="dotPersonajes" style="display:none;"></span></div>
-            <div class="round-btn" id="btnEquipamiento" onclick="cambiarSeccion('equipamiento')">EQUI<br>PAMIENTO</div>
+            <div class="round-btn" id="btnInventario" onclick="cambiarSeccion('inventario')">INVEN<br>TARIO</div>
         </div>
     </div>
 </div>
@@ -732,6 +749,78 @@
         };
         const SKILLS_DATA_PASIVAS_EXTRA = SKILL_DATA_LOOKUP_PASIVAS;
 
+        function describirEfecto(skill) {
+            const mapa = {
+                damage_percent: `Causa ${Math.floor(skill.valor * 100)}% del HP máximo como daño`,
+                damage_true: `Causa ${skill.valor} de daño verdadero`,
+                heal_percent: `Cura ${Math.floor(skill.valor * 100)}% del HP máximo`,
+                stun: `Paraliza por ${skill.duracion} turno(s)`,
+                cancel_attack: `Cancela el ataque entrante`,
+                rng_kill: `Probabilidad 1/6 de matar instantáneamente`,
+                shield: `Escudo de ${Math.floor(skill.valor * 100)}% del HP máximo`,
+                buff: `+${skill.valor} ${skill.stat} por ${skill.duracion} turnos`,
+                debuff: `-${skill.valor} ${skill.stat} al rival por ${skill.duracion} turnos`,
+                lifesteal: `Drena ${Math.floor(skill.valor * 100)}% del HP del rival`,
+                double_attack: `Prepara un segundo ataque`,
+                reflect: `Refleja ${skill.valor * 100}% del daño por ${skill.duracion} turnos`,
+                aoe_damage: `Causa ${Math.floor(skill.valor * 100)}% de daño a todos`,
+                silence: `Silencia al rival por ${skill.duracion} turnos`,
+                sacrifice: `Sacrifica ${Math.floor(skill.valor * 100)}% HP para recuperar 40 energía`,
+                summon: `Invoca un aliado con ${Math.floor(skill.valor * 100)}% de tu HP`,
+                buff_all: `+${skill.valor} a todas las stats por ${skill.duracion} turnos`
+            };
+            return mapa[skill.efecto] || skill.efecto;
+        }
+
+        function getSkillsParaClase2(clase, compradas = []) {
+            const mapa = {
+                Chaman: ["golpe_directo", "curacion_divina", "escudo_arcano", "drenar_vida"],
+                Sacerdote: ["curacion_divina", "bendicion", "sello_silencio", "escudo_arcano"],
+                Druida: ["rafaga", "drenar_vida", "escudo_arcano", "escarcha"],
+                Guerrero: ["golpe_directo", "golpe_veloz", "furia_berserker", "explosion_mana"],
+                Paladin: ["golpe_directo", "escudo_arcano", "curacion_divina", "bendicion"],
+                Berserker: ["golpe_directo", "furia_berserker", "golpe_veloz", "sacrificio"],
+                Acorazado: ["escudo_arcano", "cubo_perfecto", "golpe_directo", "reflejo_magico"],
+                Ogro: ["golpe_directo", "golpe_veloz", "tormenta", "sacrificio"],
+                Golem: ["escudo_arcano", "cubo_perfecto", "golpe_directo", "explosion_mana"],
+                Picaro: ["golpe_veloz", "golpe_directo", "drenar_vida", "cubo_perfecto"],
+                Ninja: ["golpe_veloz", "golpe_directo", "drenar_vida", "sello_silencio"],
+                Cazador: ["golpe_directo", "golpe_veloz", "rafaga", "escarcha"],
+                Mago: ["explosion_mana", "tormenta", "escarcha", "drenar_vida"],
+                MagoMaestro: ["explosion_mana", "tormenta", "cataclismo", "sello_silencio"],
+                MagoGuerrero: ["golpe_directo", "explosion_mana", "escudo_arcano", "golpe_veloz"],
+                SemiDios: ["cataclismo", "curacion_divina", "bendicion", "invocacion"],
+                Demonio: ["sacrificio", "maldicion", "drenar_vida", "tormenta"],
+                Titan: ["cataclismo", "golpe_directo", "escudo_arcano", "cubo_perfecto"]
+            };
+            const base = mapa[clase] || ["golpe_directo", "golpe_veloz", "curacion_divina", "escudo_arcano"];
+            return [...new Set([...base, ...compradas])];
+        }
+        function getPasivasClase2(clase, compradas = []) {
+            const mapa = {
+                Chaman: ["regeneracion", "veneno"],
+                Sacerdote: ["regeneracion", "bendito"],
+                Druida: ["regeneracion", "escudo_natural"],
+                Guerrero: ["fortaleza", "vampirismo"],
+                Paladin: ["fortaleza", "bendito"],
+                Berserker: ["furia_interna", "golpe_pesado"],
+                Acorazado: ["fortaleza", "armadura_viva"],
+                Ogro: ["fortaleza", "furia_interna"],
+                Golem: ["fortaleza", "escudo_natural"],
+                Picaro: ["rapidez", "contraataque"],
+                Ninja: ["rapidez", "maestro_critico"],
+                Cazador: ["maestro_critico", "vampirismo"],
+                Mago: ["mana_infinito", "absorcion"],
+                MagoMaestro: ["mana_infinito", "absorcion"],
+                MagoGuerrero: ["concentracion", "vampirismo"],
+                SemiDios: ["bendito", "ultimo_aliento"],
+                Demonio: ["vampirismo", "furia_interna"],
+                Titan: ["fortaleza", "ultimo_aliento"]
+            };
+            const base = mapa[clase] || ["regeneracion", "fortaleza"];
+            return [...new Set([...base, ...compradas])];
+        }
+
         const socket = io('https://juego-cartas-online-production.up.railway.app', {
         transports: ['polling', 'websocket']
     });
@@ -747,7 +836,7 @@
     }
 
     function mostrarSeccionMenu(id) {
-        ['pantallaMenu','pantallaPersonajes','pantallaCreacion','pantallaSeleccionPJ','pantallaEspera','pantallaTienda'].forEach(s => {
+        ['pantallaMenu','pantallaPersonajes','pantallaCreacion','pantallaSeleccionPJ','pantallaEspera','pantallaTienda','pantallaInventario'].forEach(s => {
             document.getElementById(s).style.display = 'none';
         });
         document.getElementById(id).style.display = 'block';
@@ -774,9 +863,10 @@
             document.getElementById('btnTienda').classList.add('activo');
             mostrarSeccionMenu('pantallaTienda');
             cargarTienda();
-        } else if (seccion === 'equipamiento') {
-            document.getElementById('btnEquipamiento').classList.add('activo');
-            mostrarSeccionMenu('pantallaMenu');
+        } else if (seccion === 'inventario') {
+            document.getElementById('btnInventario').classList.add('activo');
+            mostrarSeccionMenu('pantallaInventario');
+            renderizarInventario();
         }
     }
 
@@ -1222,6 +1312,22 @@
                     <div class="carta-stat-item"><span class="carta-stat-label">SUE</span><span class="carta-stat-val">${pj.suerte}</span></div>
                     <div class="carta-stat-item"><span class="carta-stat-label">NIV</span><span class="carta-stat-val">${pj.nivel || 1}</span></div>
                 </div>
+                ${(() => {
+                    const skillIds = getSkillsParaClase2(pj.clase, pj.skillsCompradas || []);
+                    const pasivaIds = getPasivasClase2(pj.clase, pj.pasivasCompradas || []);
+                    let skillsHtml = '';
+                    skillsHtml += '<hr class="divider"><div style="color:#9a7040;font-size:9px;letter-spacing:2px;margin-bottom:6px;">HABILIDADES ACTIVAS</div>';
+                    skillIds.forEach(id => {
+                        const s = SKILL_DATA_LOOKUP[id];
+                        if (s) skillsHtml += `<div style="color:#d4a060;font-size:9px;margin-bottom:2px;">• ${s.nombre} <span style="color:#6a4018;font-size:8px;">(Coste: ${s.coste || '—'}E)</span></div><div style="color:#6a4018;font-size:7px;margin-left:12px;margin-bottom:4px;">${describirEfecto(s)}</div>`;
+                    });
+                    skillsHtml += '<hr class="divider"><div style="color:#9a7040;font-size:9px;letter-spacing:2px;margin-bottom:6px;">HABILIDADES PASIVAS</div>';
+                    pasivaIds.forEach(id => {
+                        const p = SKILL_DATA_LOOKUP_PASIVAS[id];
+                        if (p) skillsHtml += `<div style="color:#d4a060;font-size:9px;margin-bottom:2px;">• ${p.nombre}</div><div style="color:#6a4018;font-size:7px;margin-left:12px;margin-bottom:4px;">${p.desc || ''}</div>`;
+                    });
+                    return skillsHtml;
+                })()}
                 <div class="carta-xp-bar">
                     <div class="carta-bar-label"><span>XP</span><span>${pj.experiencia || 0}/${pj.nivel || 1}</span></div>
                     <div class="carta-bar-bg"><div class="carta-bar-fill" style="width:${xpPct}%"></div></div>
@@ -1234,6 +1340,79 @@
 
     function cerrarCartaPersonaje() {
         document.getElementById('popupCarta').classList.remove('visible');
+    }
+
+    function mostrarInfoSkill(id, tipo) {
+        const data = tipo === 'activa' ? SKILL_DATA_LOOKUP[id] : SKILL_DATA_LOOKUP_PASIVAS[id];
+        if (!data) return;
+        const esActiva = tipo === 'activa';
+        document.getElementById('cartaContenido').innerHTML = `
+            <div style="text-align:center;">
+                <div style="color:#d4a060;font-size:14px;letter-spacing:2px;font-weight:700;margin-bottom:8px;">${data.nombre}</div>
+                <div style="color:#6a4018;font-size:9px;letter-spacing:1px;margin-bottom:12px;">${esActiva ? 'HABILIDAD ACTIVA' : 'HABILIDAD PASIVA'}</div>
+                <div style="color:#9a7040;font-size:9px;text-align:left;margin-bottom:8px;padding:8px;background:rgba(0,0,0,0.3);border-radius:4px;">
+                    ${esActiva ? '<b>Coste:</b> ' + data.coste + ' energía' : '<b>Activación:</b> ' + (data.trigger || 'por turno')}
+                    ${esActiva ? '<br><b>Efecto:</b> ' + describirEfecto(data) : '<br><b>Efecto:</b> ' + (data.desc || '')}
+                </div>
+                <button class="main-btn secundario" onclick="cerrarCartaPersonaje()" style="margin-top:8px;font-size:10px;">CERRAR</button>
+            </div>`;
+        document.getElementById('popupCarta').classList.add('visible');
+    }
+
+    function cambiarTabInv(tab) {
+        document.querySelectorAll('#pantallaInventario .tab').forEach(t => t.classList.remove('activo'));
+        document.querySelectorAll('#pantallaInventario .tab-panel').forEach(p => p.classList.remove('activo'));
+        if (tab === 'activas') {
+            document.querySelectorAll('#pantallaInventario .tab')[0].classList.add('activo');
+            document.getElementById('tabInvActivas').classList.add('activo');
+        } else {
+            document.querySelectorAll('#pantallaInventario .tab')[1].classList.add('activo');
+            document.getElementById('tabInvPasivas').classList.add('activo');
+        }
+    }
+
+    function renderizarInventario() {
+        if (!cuentaActual || !pjSeleccionado) {
+            const lista = cuentaActual ? cuentaActual.personajes : [];
+            let html = '<div class="scroll-panel" style="max-height:150px;">';
+            lista.forEach((pj, i) => {
+                const pts = pj.puntosStats || 0;
+                html += `<div class="pj-card ${pts > 0 ? 'tiene-puntos' : ''}" onclick="pjSeleccionado=cuentaActual.personajes[${i}];renderizarInventario();">
+                    <div class="pj-avatar">${pj.foto ? '<img src="'+pj.foto+'">' : pj.nombre[0].toUpperCase()}</div>
+                    <div class="pj-info"><div class="pj-nombre">${pj.nombre}</div><div class="pj-clase">${pj.clase}</div></div>
+                </div>`;
+            });
+            html += '</div>';
+            document.getElementById('invListaActivas').innerHTML = html;
+            document.getElementById('invListaPasivas').innerHTML = '';
+            document.getElementById('pantallaInventario').querySelector('.panel-titulo').textContent = 'SELECCIONA UN PERSONAJE';
+            return;
+        }
+        
+        document.getElementById('pantallaInventario').querySelector('.panel-titulo').textContent = 'INVENTARIO DE ' + pjSeleccionado.nombre.toUpperCase();
+        
+        const skillIds = getSkillsParaClase2(pjSeleccionado.clase, pjSeleccionado.skillsCompradas || []);
+        const pasivaIds = getPasivasClase2(pjSeleccionado.clase, pjSeleccionado.pasivasCompradas || []);
+        
+        let htmlActivas = '';
+        skillIds.forEach(id => {
+            const s = SKILL_DATA_LOOKUP[id];
+            if (s) htmlActivas += `<div onclick="mostrarInfoSkill('${id}', 'activa')" style="background:rgba(0,0,0,0.4);border:1px solid #3a2008;border-radius:4px;padding:8px 10px;margin-bottom:4px;cursor:pointer;">
+                <div style="color:#d4a060;font-size:10px;">${s.nombre} <span style="color:#6a4018;font-size:8px;">(Coste: ${s.coste}E)</span></div>
+                <div style="color:#6a4018;font-size:8px;margin-top:2px;">${describirEfecto(s)}</div>
+            </div>`;
+        });
+        document.getElementById('invListaActivas').innerHTML = htmlActivas || '<div class="vacio-msg">Sin habilidades activas</div>';
+        
+        let htmlPasivas = '';
+        pasivaIds.forEach(id => {
+            const p = SKILL_DATA_LOOKUP_PASIVAS[id];
+            if (p) htmlPasivas += `<div onclick="mostrarInfoSkill('${id}', 'pasiva')" style="background:rgba(0,0,0,0.4);border:1px solid #3a2008;border-radius:4px;padding:8px 10px;margin-bottom:4px;cursor:pointer;">
+                <div style="color:#d4a060;font-size:10px;">${p.nombre}</div>
+                <div style="color:#6a4018;font-size:8px;margin-top:2px;">${p.desc || ''}</div>
+            </div>`;
+        });
+        document.getElementById('invListaPasivas').innerHTML = htmlPasivas || '<div class="vacio-msg">Sin habilidades pasivas</div>';
     }
 
     // ── CONTADOR DE STATS ──
@@ -1326,14 +1505,14 @@
             const esDeClase = getSkillsDeClase(pj.clase).includes(s.id);
             if (esDeClase) return '';
             return `
-                <div style="background:rgba(0,0,0,0.4);border:1px solid #3a2008;border-radius:4px;padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+                <div onclick="mostrarInfoSkill('${s.id}', 'activa')" style="background:rgba(0,0,0,0.4);border:1px solid #3a2008;border-radius:4px;padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
                     <div>
                         <div style="color:#d4a060;font-size:10px;letter-spacing:1px;">${s.nombre}</div>
                         <div style="color:#6a4018;font-size:8px;">${s.efecto.replace(/_/g,' ')} · EN ${s.coste || 0}</div>
                     </div>
                     <div>
                         ${yaTiene ? '<span style="color:#60d060;font-size:9px;">ADQUIRIDA</span>' :
-                        `<button onclick="comprarSkill('${pj._id}','activa','${s.id}')" style="font-family:'Cinzel',serif;font-size:9px;padding:4px 10px;background:linear-gradient(180deg,#c85030,#7a2010);color:#fff;border:none;border-radius:3px;cursor:pointer;">${s.precio}</button>`}
+                        `<button onclick="event.stopPropagation();comprarSkill('${pj._id}','activa','${s.id}')" style="font-family:'Cinzel',serif;font-size:9px;padding:4px 10px;background:linear-gradient(180deg,#c85030,#7a2010);color:#fff;border:none;border-radius:3px;cursor:pointer;">${s.precio}</button>`}
                     </div>
                 </div>
             `;
@@ -1344,14 +1523,14 @@
             const esDeClase = getPasivasDeClase(pj.clase).includes(s.id);
             if (esDeClase) return '';
             return `
-                <div style="background:rgba(0,0,0,0.4);border:1px solid #3a2008;border-radius:4px;padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+                <div onclick="mostrarInfoSkill('${s.id}', 'pasiva')" style="background:rgba(0,0,0,0.4);border:1px solid #3a2008;border-radius:4px;padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
                     <div>
                         <div style="color:#d4a060;font-size:10px;letter-spacing:1px;">${s.nombre}</div>
                         <div style="color:#6a4018;font-size:8px;">${s.efecto.replace(/_/g,' ')} · ${s.desc || ''}</div>
                     </div>
                     <div>
                         ${yaTiene ? '<span style="color:#60d060;font-size:9px;">ADQUIRIDA</span>' :
-                        `<button onclick="comprarSkill('${pj._id}','pasiva','${s.id}')" style="font-family:'Cinzel',serif;font-size:9px;padding:4px 10px;background:linear-gradient(180deg,#c85030,#7a2010);color:#fff;border:none;border-radius:3px;cursor:pointer;">${s.precio}</button>`}
+                        `<button onclick="event.stopPropagation();comprarSkill('${pj._id}','pasiva','${s.id}')" style="font-family:'Cinzel',serif;font-size:9px;padding:4px 10px;background:linear-gradient(180deg,#c85030,#7a2010);color:#fff;border:none;border-radius:3px;cursor:pointer;">${s.precio}</button>`}
                     </div>
                 </div>
             `;
