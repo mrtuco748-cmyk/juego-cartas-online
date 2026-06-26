@@ -57,11 +57,67 @@ function mostrarPantallaCombate() {
   document.getElementById('pantallaCombate').classList.add('activa');
 }
 
+const CLASS_MODS = {
+  Chaman: { fuerza: 2, resistencia: 2, velocidad: 4, magia: 3, suerte: 0 },
+  Sacerdote: { fuerza: 1, resistencia: 3, velocidad: 0, magia: 5, suerte: 0 },
+  Druida: { fuerza: 3, resistencia: 2, velocidad: 1, magia: 4, suerte: 0 },
+  Guerrero: { fuerza: 4, resistencia: 3, velocidad: 3, magia: -3, suerte: 0 },
+  Paladin: { fuerza: 4, resistencia: 5, velocidad: 1, magia: -3, suerte: 0 },
+  Berserker: { fuerza: 5, resistencia: 5, velocidad: -5, magia: -6, suerte: 0 },
+  Acorazado: { fuerza: -1, resistencia: 10, velocidad: -5, magia: 0, suerte: 0 },
+  Ogro: { fuerza: 3, resistencia: 6, velocidad: 1, magia: -7, suerte: 0 },
+  Golem: { fuerza: 2, resistencia: 7, velocidad: -3, magia: -4, suerte: 0 },
+  Picaro: { fuerza: -2, resistencia: 3, velocidad: 6, magia: -2, suerte: 5 },
+  Ninja: { fuerza: -4, resistencia: -1, velocidad: 8, magia: -5, suerte: 2 },
+  Cazador: { fuerza: -3, resistencia: 2, velocidad: 7, magia: 0, suerte: 0 },
+  Mago: { fuerza: 0, resistencia: 0, velocidad: 4, magia: 5, suerte: 0 },
+  MagoMaestro: { fuerza: -3, resistencia: -3, velocidad: -3, magia: 10, suerte: 0 },
+  MagoGuerrero: { fuerza: 3, resistencia: 3, velocidad: -3, magia: 5, suerte: 0 },
+  SemiDios: { fuerza: 5, resistencia: 2, velocidad: 2, magia: 2, suerte: 2 },
+  Demonio: { fuerza: 3, resistencia: 3, velocidad: 3, magia: 3, suerte: 3 },
+  Titan: { fuerza: 4, resistencia: 3, velocidad: 0, magia: 3, suerte: 0 }
+};
+
+function calcularStatsConBuffsCliente(pj) {
+  const cm = CLASS_MODS[pj.clase] || {};
+  const STATS = ['fuerza','resistencia','velocidad','magia','suerte'];
+  const base = {}, claseMod = {}, equipMod = {}, buffMod = {}, total = {};
+  for (const s of STATS) {
+    const serverStat = pj[s] || 0;
+    const cMod = cm[s] || 0;
+    const originalBase = serverStat - cMod;
+    let eMod = 0;
+    if (pj.equipment) {
+      for (const eq of Object.values(pj.equipment)) {
+        if (!eq) continue;
+        if (eq.stat === s) eMod += eq.valor || 0;
+        if (eq.stats && typeof eq.stats[s] === 'number') eMod += eq.stats[s];
+        if (eq.penalidad && typeof eq.penalidad[s] === 'number') eMod += eq.penalidad[s];
+      }
+    }
+    let bMod = 0;
+    if (pj.status) {
+      if (pj.status.buffs && pj.status.buffs[s]) bMod += pj.status.buffs[s].valor;
+      if (pj.status.debuffs && pj.status.debuffs[s]) bMod -= pj.status.debuffs[s].valor;
+    }
+    base[s] = originalBase;
+    claseMod[s] = cMod;
+    equipMod[s] = eMod;
+    buffMod[s] = bMod;
+    total[s] = originalBase + cMod + eMod + bMod;
+  }
+  return { total, base, claseMod, equipMod, buffMod };
+}
+
+let prevMiHP = 0, prevRivalHP = 0;
+
 function renderizarCombate() {
   const rivalHPct = Math.max(0, Math.round((rivalPJ.hp || 0) / (rivalPJ.maxHp || 40) * 100));
   const miHPct = Math.max(0, Math.round((miPJ.hp || 0) / (miPJ.maxHp || 40) * 100));
   const rivalEnPct = Math.max(0, Math.round((rivalPJ.energia || 0) / 100 * 100));
   const miEnPct = Math.max(0, Math.round((miPJ.energia || 0) / 100 * 100));
+  prevMiHP = miPJ.hp || 0;
+  prevRivalHP = rivalPJ.hp || 0;
 
   const statusBadge = (pj) => {
     if (!pj.status) return '';
@@ -73,8 +129,18 @@ function renderizarCombate() {
     return parts.length ? `<div class="sheet-status">${parts.join(' ')}</div>` : '';
   };
 
-  const sheetHTML = (pj, prefix) => `
-    <div class="character-bio ${prefix === 'pj' ? 'left-bio' : 'right-bio'}">
+  const statLine = (label, stat, c) => {
+    const parts = [];
+    if (c.claseMod[stat]) parts.push(`<span style="color:#a08060;">${c.claseMod[stat] > 0 ? '+' : ''}${c.claseMod[stat]}cl</span>`);
+    if (c.equipMod[stat]) parts.push(`<span style="color:#60d060;">${c.equipMod[stat] > 0 ? '+' : ''}${c.equipMod[stat]}eq</span>`);
+    if (c.buffMod[stat]) parts.push(`<span style="color:${c.buffMod[stat] > 0 ? '#60d060' : '#ff6040'};">${c.buffMod[stat] > 0 ? '+' : ''}${c.buffMod[stat]}buf</span>`);
+    const modStr = parts.length ? ` <span style="font-size:8px;">${parts.join(' ')}</span>` : '';
+    return `<div>${label} ${c.total[stat]}${modStr}</div>`;
+  };
+
+  const sheetHTML = (pj, prefix) => {
+    const c = calcularStatsConBuffsCliente(pj);
+    return `<div class="character-bio ${prefix === 'pj' ? 'left-bio' : 'right-bio'}">
       <div class="char-portrait">${pj.foto ? `<img src="${pj.foto}">` : '<span style="font-size:24px;color:#3a2008;">?</span>'}</div>
       <div class="sheet">
         ${statusBadge(pj)}
@@ -87,12 +153,15 @@ function renderizarCombate() {
         </div>
         <div class="bar"><div class="energy-fill" id="${prefix}EnergyFill" style="width:${prefix === 'pj' ? miEnPct : rivalEnPct}%"></div></div>
         <div class="stats-grid">
-          <div>F ${pj.fuerza}</div><div>R ${pj.resistencia}</div>
-          <div>V ${pj.velocidad}</div><div>M ${pj.magia}</div>
-          <div>S ${pj.suerte}</div>
+          ${statLine('F', 'fuerza', c)}
+          ${statLine('R', 'resistencia', c)}
+          ${statLine('V', 'velocidad', c)}
+          ${statLine('M', 'magia', c)}
+          ${statLine('S', 'suerte', c)}
         </div>
       </div>
     </div>`;
+  };
 
   const totalCards = misSkills.length;
   const angleStep = totalCards > 1 ? Math.min(10, 50 / totalCards) : 0;
@@ -491,6 +560,15 @@ function actualizarIndicadorTurno() {
     document.querySelectorAll('.right-bio, .enemy-character').forEach(el2 => { if (el2) el2.classList.add('tu-turno'); });
   }
 }
+function agitarPersonaje(selector, intensidad) {
+  const el = document.querySelector(selector);
+  if (!el) return;
+  el.classList.remove('shake-heavy', 'shake-light');
+  void el.offsetWidth;
+  el.classList.add(intensidad > 0.15 ? 'shake-heavy' : 'shake-light');
+  setTimeout(() => el.classList.remove('shake-heavy', 'shake-light'), 600);
+}
+
 function actualizarHP() {
   const el1 = document.getElementById('rivalHP'), el2 = document.getElementById('pjHP');
   const f1 = document.getElementById('rivalHPFill'), f2 = document.getElementById('pjHPFill');
@@ -506,6 +584,13 @@ function actualizarHP() {
   if (f2) f2.style.width = Math.max(0, Math.round((miPJ.hp || 0) / (miPJ.maxHp || 40) * 100)) + '%';
   if (rivalEnFill) rivalEnFill.style.width = Math.max(0, Math.round((rivalPJ.energia || 0) / 100 * 100)) + '%';
   if (miEnFill) miEnFill.style.width = Math.max(0, Math.round((miPJ.energia || 0) / 100 * 100)) + '%';
+
+  const miPerdida = prevMiHP - (miPJ.hp || 0);
+  const rivalPerdida = prevRivalHP - (rivalPJ.hp || 0);
+  if (miPerdida > 0) agitarPersonaje('.player-character', miPerdida / (miPJ.maxHp || 40));
+  if (rivalPerdida > 0) agitarPersonaje('.enemy-character', rivalPerdida / (rivalPJ.maxHp || 40));
+  prevMiHP = miPJ.hp || 0;
+  prevRivalHP = rivalPJ.hp || 0;
 }
 
 function estiloLog(data) {
@@ -552,8 +637,21 @@ function procesarLogQueue() {
   if (!el) { logProcessing = false; return; }
   const msg = typeof data === 'string' ? data : data.msg;
   const estilo = typeof data === 'string' ? 'color:#9a7040;font-size:10px;' : estiloLog(data);
-  el.innerHTML += `<div style="${estilo}">> ${colorearNombres(msg)}</div>`;
+  el.innerHTML += `<div class="logEntryAnim" style="${estilo}">> ${colorearNombres(msg)}</div>`;
   el.scrollTop = el.scrollHeight;
+
+  if (/esquiv|evadi|dodge|parr|bloque/i.test(msg)) {
+    const esYo = miPJ && msg.includes(miPJ.nombre);
+    const sel = esYo ? '.player-character' : '.enemy-character';
+    const elChar = document.querySelector(sel);
+    if (elChar) {
+      elChar.classList.remove('dodge-anim');
+      void elChar.offsetWidth;
+      elChar.classList.add('dodge-anim');
+      setTimeout(() => elChar.classList.remove('dodge-anim'), 500);
+    }
+  }
+
   setTimeout(() => {
     logProcessing = false;
     procesarLogQueue();
