@@ -42,24 +42,20 @@ class UICard extends HTMLElement {
 
     let gradient = 'linear-gradient(135deg, #2c3e50, #000)';
     let borderColor = '#c8a050';
-    let icon = '🃏';
 
     if (type === 'skill') {
       gradient = 'linear-gradient(135deg, #1a0e08, #2a1a0c)';
       borderColor = '#c85030';
-      icon = '⚡';
     } else if (type === 'passive') {
       gradient = 'linear-gradient(135deg, #0a1a0e, #1a2a1c)';
       borderColor = '#50c850';
-      icon = '♻';
     } else if (type === 'hechizo') {
       gradient = 'linear-gradient(135deg, #0e0a1a, #1c0e2a)';
       borderColor = '#a060d0';
-      icon = '✨';
     }
 
     const costeHtml = data.coste !== undefined
-      ? `<div class="card-cost">⚡ ${data.coste}</div>` : '';
+      ? `<div class="card-cost">${data.coste} EN</div>` : '';
 
     const descHtml = data.desc
       ? `<div class="card-desc">${data.desc}</div>`
@@ -103,12 +99,6 @@ class UICard extends HTMLElement {
           background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.05) 0%, transparent 70%);
           pointer-events: none;
         }
-        .card-icon {
-          font-size: 28px;
-          text-align: center;
-          margin: 4px 0 2px;
-          flex-shrink: 0;
-        }
         .card-name {
           color: #d4a060;
           font-size: 10px;
@@ -118,6 +108,7 @@ class UICard extends HTMLElement {
           font-family: 'Cinzel', Georgia, serif;
           line-height: 1.2;
           flex-shrink: 0;
+          margin-top: 8px;
         }
         .card-cost {
           color: #60b0d0;
@@ -150,7 +141,6 @@ class UICard extends HTMLElement {
         }
       </style>
       <div class="card">
-        <div class="card-icon">${data.icono || icon}</div>
         <div class="card-name">${data.nombre || '???'}</div>
         ${costeHtml}
         ${descHtml}

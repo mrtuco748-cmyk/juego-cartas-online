@@ -11,28 +11,28 @@ let inventarioVisible = false;
 let modoAccion = null;
 
 const PASIVAS_POR_CLASE = {
-  Chaman: { nombre: 'Espíritu Natural', desc: 'Recupera 2 HP por turno.', icono: '🌿' },
-  Sacerdote: { nombre: 'Fe Inquebrantable', desc: 'Las curaciones tienen +20% efecto.', icono: '✨' },
-  Druida: { nombre: 'Piel de Corteza', desc: '+2 resistencia permanente.', icono: '🌳' },
-  Guerrero: { nombre: 'Corazón de Hierro', desc: 'Recibe 10% menos daño.', icono: '🛡️' },
-  Paladin: { nombre: 'Escudo Sagrado', desc: '+3 resistencia contra magia.', icono: '⚔️' },
-  Berserker: { nombre: 'Furia de Batalla', desc: '+2 fuerza por cada 10% HP perdido.', icono: '🔥' },
-  Acorazado: { nombre: 'Muro Viviente', desc: 'Los parrys tienen +3 de valor.', icono: '🏰' },
-  Ogro: { nombre: 'Golpe Brutal', desc: 'Los ataques ignoran 2 de resistencia.', icono: '💪' },
-  Golem: { nombre: 'Pétreo', desc: 'Reduce todo daño en 2.', icono: '🪨' },
-  Picaro: { nombre: 'Sombra Esquiva', desc: '+3 velocidad al esquivar.', icono: '🌑' },
-  Ninja: { nombre: 'Sigilo', desc: 'Primer ataque cada combate es crítico.', icono: '🥷' },
-  Cazador: { nombre: 'Ojo de Águila', desc: '+10% probabilidad de crítico.', icono: '🦅' },
-  Mago: { nombre: 'Sabiduría Arcana', desc: 'Los hechizos cuestan 1 menos de energía.', icono: '📜' },
-  MagoMaestro: { nombre: 'Concentración', desc: 'Recupera 3 energía por turno.', icono: '🔮' },
-  MagoGuerrero: { nombre: 'Canalización Marcial', desc: 'Los ataques físicos gastan 50% energía.', icono: '⚡' },
-  SemiDios: { nombre: 'Aura Divina', desc: '+1 a todas las stats.', icono: '👼' },
-  Demonio: { nombre: 'Presencia Infernal', desc: 'El rival pierde 1 energía por turno.', icono: '👿' },
-  Titan: { nombre: 'Coloso', desc: '+5 HP máximo.', icono: '🗿' }
+  Chaman: { nombre: 'Espiritu Natural', desc: 'Recupera 2 HP por turno.', icono: '' },
+  Sacerdote: { nombre: 'Fe Inquebrantable', desc: 'Las curaciones tienen +20% efecto.', icono: '' },
+  Druida: { nombre: 'Piel de Corteza', desc: '+2 resistencia permanente.', icono: '' },
+  Guerrero: { nombre: 'Corazon de Hierro', desc: 'Recibe 10% menos dano.', icono: '' },
+  Paladin: { nombre: 'Escudo Sagrado', desc: '+3 resistencia contra magia.', icono: '' },
+  Berserker: { nombre: 'Furia de Batalla', desc: '+2 fuerza por cada 10% HP perdido.', icono: '' },
+  Acorazado: { nombre: 'Muro Viviente', desc: 'Los parrys tienen +3 de valor.', icono: '' },
+  Ogro: { nombre: 'Golpe Brutal', desc: 'Los ataques ignoran 2 de resistencia.', icono: '' },
+  Golem: { nombre: 'Petreo', desc: 'Reduce todo dano en 2.', icono: '' },
+  Picaro: { nombre: 'Sombra Esquiva', desc: '+3 velocidad al esquivar.', icono: '' },
+  Ninja: { nombre: 'Sigilo', desc: 'Primer ataque cada combate es critico.', icono: '' },
+  Cazador: { nombre: 'Ojo de Aguila', desc: '+10% probabilidad de critico.', icono: '' },
+  Mago: { nombre: 'Sabiduria Arcana', desc: 'Los hechizos cuestan 1 menos de energia.', icono: '' },
+  MagoMaestro: { nombre: 'Concentracion', desc: 'Recupera 3 energia por turno.', icono: '' },
+  MagoGuerrero: { nombre: 'Canalizacion Marcial', desc: 'Los ataques fisicos gastan 50% energia.', icono: '' },
+  SemiDios: { nombre: 'Aura Divina', desc: '+1 a todas las stats.', icono: '' },
+  Demonio: { nombre: 'Presencia Infernal', desc: 'El rival pierde 1 energia por turno.', icono: '' },
+  Titan: { nombre: 'Coloso', desc: '+5 HP maximo.', icono: '' }
 };
 
 function obtenerPasiva(clase) {
-  return PASIVAS_POR_CLASE[clase] || { nombre: 'Instinto', desc: '+1 resistencia en apuros.', icono: '⚔' };
+  return PASIVAS_POR_CLASE[clase] || { nombre: 'Instinto', desc: '+1 resistencia en apuros.', icono: '' };
 }
 
 socket.on('rivalEncontrado', (data) => {
@@ -65,10 +65,10 @@ function renderizarCombate() {
   const statusBadge = (pj) => {
     if (!pj.status) return '';
     const parts = [];
-    if (pj.status.frozen && pj.status.frozen > 0) parts.push(`🧊${pj.status.frozen}t`);
-    if (pj.status.silenced && pj.status.silenced > 0) parts.push(`🔇${pj.status.silenced}t`);
-    if (pj.status.shield && pj.status.shield > 0) parts.push(`🛡️${pj.status.shield}`);
-    if (pj.status.inmune) parts.push(`✨INMUNE`);
+    if (pj.status.frozen && pj.status.frozen > 0) parts.push(`[CONGELADO ${pj.status.frozen}t]`);
+    if (pj.status.silenced && pj.status.silenced > 0) parts.push(`[SILENCIADO ${pj.status.silenced}t]`);
+    if (pj.status.shield && pj.status.shield > 0) parts.push(`[ESCUDO ${pj.status.shield}]`);
+    if (pj.status.inmune) parts.push(`[INMUNE]`);
     return parts.length ? `<div class="sheet-status">${parts.join(' ')}</div>` : '';
   };
 
@@ -82,29 +82,29 @@ function renderizarCombate() {
     </div>
 
     <div class="battlefield">
-      <div class="enemy-character">${rivalPJ.foto ? `<img src="${rivalPJ.foto}">` : '☠'}</div>
+      <div class="enemy-character">${rivalPJ.foto ? `<img src="${rivalPJ.foto}">` : '?'}</div>
 
       <div class="log-scroll" id="logBatalla">
-        <h2>✦ REGISTRO DE COMBATE ✦</h2>
+        <h2>REGISTRO DE COMBATE</h2>
       </div>
 
       <div class="turn-message" id="indicadorTurno">
-        ${esMiTurno ? `⚔ TU TURNO (${accionesRestantes}/2)` : '⏳ RIVAL'}
+        ${esMiTurno ? `TU TURNO (${accionesRestantes}/2)` : 'RIVAL'}
       </div>
 
-      <div class="player-character">${miPJ.foto ? `<img src="${miPJ.foto}">` : '🛡'}</div>
+      <div class="player-character">${miPJ.foto ? `<img src="${miPJ.foto}">` : '?'}</div>
 
       <div class="sheet enemy-sheet">
         ${statusBadge(rivalPJ)}
         <h2>${rivalPJ.nombre}</h2>
         <h4>${rivalPJ.clase} · Nv.${rivalPJ.nivel || 1}</h4>
         <div class="bar"><div class="hp-fill" id="rivalHPFill" style="width:${rivalHPct}%"></div></div>
-        <div style="font-size:11px;display:flex;justify-content:space-between;margin-bottom:4px;"><span>❤️ <span id="rivalHP">${rivalPJ.hp || 0}</span>/${rivalPJ.maxHp || 40}</span><span>🔷 ${rivalPJ.energia || 0}/100</span></div>
+        <div style="font-size:11px;display:flex;justify-content:space-between;margin-bottom:4px;"><span>HP <span id="rivalHP">${rivalPJ.hp || 0}</span>/${rivalPJ.maxHp || 40}</span><span>EN ${rivalPJ.energia || 0}/100</span></div>
         <div class="bar"><div class="energy-fill" style="width:${rivalEnPct}%"></div></div>
         <div class="stats-grid">
-          <div>⚔ ${rivalPJ.fuerza}</div><div>🛡 ${rivalPJ.resistencia}</div>
-          <div>💨 ${rivalPJ.velocidad}</div><div>✨ ${rivalPJ.magia}</div>
-          <div>🍀 ${rivalPJ.suerte}</div>
+          <div>F ${rivalPJ.fuerza}</div><div>R ${rivalPJ.resistencia}</div>
+          <div>V ${rivalPJ.velocidad}</div><div>M ${rivalPJ.magia}</div>
+          <div>S ${rivalPJ.suerte}</div>
         </div>
       </div>
 
@@ -113,12 +113,12 @@ function renderizarCombate() {
         <h2>${miPJ.nombre}</h2>
         <h4>${miPJ.clase} · Nv.${miPJ.nivel || 1}</h4>
         <div class="bar"><div class="hp-fill" id="pjHPFill" style="width:${miHPct}%"></div></div>
-        <div style="font-size:11px;display:flex;justify-content:space-between;margin-bottom:4px;"><span>❤️ <span id="pjHP">${miPJ.hp || 0}</span>/${miPJ.maxHp || 40}</span><span>🔷 <span id="pjEnergia">${miPJ.energia || 0}</span>/100</span></div>
+        <div style="font-size:11px;display:flex;justify-content:space-between;margin-bottom:4px;"><span>HP <span id="pjHP">${miPJ.hp || 0}</span>/${miPJ.maxHp || 40}</span><span>EN <span id="pjEnergia">${miPJ.energia || 0}</span>/100</span></div>
         <div class="bar"><div class="energy-fill" style="width:${miEnPct}%"></div></div>
         <div class="stats-grid">
-          <div>⚔ ${miPJ.fuerza}</div><div>🛡 ${miPJ.resistencia}</div>
-          <div>💨 ${miPJ.velocidad}</div><div>✨ ${miPJ.magia}</div>
-          <div>🍀 ${miPJ.suerte}</div>
+          <div>F ${miPJ.fuerza}</div><div>R ${miPJ.resistencia}</div>
+          <div>V ${miPJ.velocidad}</div><div>M ${miPJ.magia}</div>
+          <div>S ${miPJ.suerte}</div>
         </div>
       </div>
 
@@ -131,23 +131,23 @@ function renderizarCombate() {
           return `<div class="slot-card ${cls}" style="transform:rotate(${angle}deg) translateY(${ty}px);z-index:${zIdx}" onclick="seleccionarCarta(${i})" id="skillCard-${i}">
             <div class="card-name">${skill.nombre}</div>
             <div class="card-desc">${SKILL_DATA_LOOKUP[skill.id] ? SKILL_DATA_LOOKUP[skill.id].efecto.replace(/_/g,' ') : ''}</div>
-            <div class="card-cost">${skill.coste}⚡</div>
+            <div class="card-cost">${skill.coste} EN</div>
           </div>`;
         }).join('')}
       </div>
 
-      <button class="btn-inventory" onclick="toggleInventario()">🎒 INVENTARIO</button>
+      <button class="btn-inventory" onclick="toggleInventario()">INVENTARIO</button>
 
       <div class="actions">
-        <button class="btn-atk" onclick="enviarAccion('atacar')">⚔ ATACAR</button>
-        <button class="btn-rest" onclick="enviarAccion('descansar')">💤 DESCANSAR</button>
-        <button class="btn-pose" onclick="enviarAccion('pose')">🛡 POSE</button>
-        <button class="btn-extra" onclick="mostrarAccionesExtra()">✨ EXTRA</button>
+        <button class="btn-atk" onclick="enviarAccion('atacar')">ATACAR</button>
+        <button class="btn-rest" onclick="enviarAccion('descansar')">DESCANSAR</button>
+        <button class="btn-pose" onclick="enviarAccion('pose')">POSE</button>
+        <button class="btn-extra" onclick="mostrarAccionesExtra()">EXTRA</button>
       </div>
     </div>
 
     <div id="cartaSeleccionInfo" style="display:none;position:fixed;bottom:200px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.85);border:2px solid #8b6430;border-radius:10px;padding:8px 16px;color:#f3ca6b;font-weight:bold;z-index:50;white-space:nowrap;">
-      📜 <span id="cartaSeleccionadaNombre">—</span>
+      <span id="cartaSeleccionadaNombre">—</span>
       <button onclick="usarCartaSeleccionada()" style="margin-left:10px;padding:6px 16px;border:none;border-radius:6px;background:#ff2859;color:white;font-weight:bold;cursor:pointer;">USAR</button>
       <button onclick="cancelarSeleccionCarta()" style="margin-left:6px;padding:6px 12px;border:none;border-radius:6px;background:#555;color:white;cursor:pointer;">X</button>
     </div>
@@ -158,11 +158,11 @@ function renderizarCombate() {
     <div class="radial-overlay" id="radialOverlay">
       <div class="radial-container">
         <button class="central-btn" onclick="cerrarRadial()">CERRAR</button>
-        <button class="radial-btn" id="btnAtakar" onclick="enviarAccion('atacar');cerrarRadial()"><span class="icon">⚔</span>ATACAR</button>
-        <button class="radial-btn" id="btnDescansar" onclick="enviarAccion('descansar');cerrarRadial()"><span class="icon">💤</span>DESCANSAR</button>
-        <button class="radial-btn" id="btnPose" onclick="enviarAccion('pose');cerrarRadial()"><span class="icon">🛡</span>POSE</button>
-        <button class="radial-btn" id="btnCarta" onclick="usarCartaSeleccionada();cerrarRadial()"><span class="icon">🃏</span>CARTA</button>
-        <button class="radial-btn" id="btnExtra2" onclick="cerrarRadial();mostrarAccionesExtra()"><span class="icon">✨</span>EXTRA</button>
+        <button class="radial-btn" id="btnAtakar" onclick="enviarAccion('atacar');cerrarRadial()">ATACAR</button>
+        <button class="radial-btn" id="btnDescansar" onclick="enviarAccion('descansar');cerrarRadial()">DESCANSAR</button>
+        <button class="radial-btn" id="btnPose" onclick="enviarAccion('pose');cerrarRadial()">POSE</button>
+        <button class="radial-btn" id="btnCarta" onclick="usarCartaSeleccionada();cerrarRadial()">CARTA</button>
+        <button class="radial-btn" id="btnExtra2" onclick="cerrarRadial();mostrarAccionesExtra()">EXTRA</button>
       </div>
     </div>
   `;
@@ -182,18 +182,18 @@ function mostrarAccionesExtra() {
   const panel = document.getElementById('panelAccionesExtra');
   if (!panel) return;
   const acciones = [
-    { id: 'investigar', label: '🔍 Investigar', desc: 'Buscar objetos' },
-    { id: 'crear', label: '🔨 Crear', desc: 'Fabricar con materiales' },
-    { id: 'negociar', label: '🤝 Negociar', desc: 'Intercambiar objetos' },
-    { id: 'robar', label: '👤 Robar', desc: 'Robar al rival' },
-    { id: 'lanzar', label: '🎯 Lanzar', desc: 'Tirar un objeto' },
-    { id: 'reforzar', label: '🔧 Reforzar', desc: 'Mejorar arma equipada' },
-    { id: 'recibir', label: '✋ Recibir', desc: 'Atrapar objeto' },
-    { id: 'desviar', label: '↩ Desviar', desc: 'Redirigir objeto' }
+    { id: 'investigar', label: 'Investigar', desc: 'Buscar objetos' },
+    { id: 'crear', label: 'Crear', desc: 'Fabricar con materiales' },
+    { id: 'negociar', label: 'Negociar', desc: 'Intercambiar objetos' },
+    { id: 'robar', label: 'Robar', desc: 'Robar al rival' },
+    { id: 'lanzar', label: 'Lanzar', desc: 'Tirar un objeto' },
+    { id: 'reforzar', label: 'Reforzar', desc: 'Mejorar arma equipada' },
+    { id: 'recibir', label: 'Recibir', desc: 'Atrapar objeto' },
+    { id: 'desviar', label: 'Desviar', desc: 'Redirigir objeto' }
   ];
   panel.style.display = 'block';
   panel.innerHTML = `
-    <div style="text-align:center;font-weight:bold;margin-bottom:8px;color:#ffd86b;">✦ ACCIONES AVANZADAS ✦</div>
+    <div style="text-align:center;font-weight:bold;margin-bottom:8px;color:#ffd86b;">ACCIONES AVANZADAS</div>
     <div class="actions-extra-grid">
       ${acciones.map(a => `
         <button onclick="ejecutarAccionExtra('${a.id}')">${a.label}</button>
@@ -249,7 +249,7 @@ function mostrarMenuCreacion() {
   const panel = document.getElementById('panelAccionesExtra');
   panel.style.display = 'block';
   panel.innerHTML = `
-    <div style="color:#9a7040;font-size:9px;letter-spacing:2px;text-align:center;margin-bottom:6px;">✦ CREAR OBJETO ✦</div>
+    <div style="color:#9a7040;font-size:9px;letter-spacing:2px;text-align:center;margin-bottom:6px;">CREAR OBJETO</div>
     <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
       ${misRecetas.map(r => `
         <button onclick="enviarAccion('crear', null, { receta: '${r.nombre}' })" style="font-family:'Cinzel',serif;font-size:8px;padding:4px 8px;background:rgba(0,0,0,0.4);border:1px solid #4a3010;color:#d4a060;border-radius:4px;cursor:pointer;">
@@ -269,7 +269,7 @@ function mostrarMenuNegociacion() {
   const panel = document.getElementById('panelAccionesExtra');
   panel.style.display = 'block';
   panel.innerHTML = `
-    <div style="color:#9a7040;font-size:9px;letter-spacing:2px;text-align:center;margin-bottom:6px;">✦ NEGOCIAR ✦</div>
+    <div style="color:#9a7040;font-size:9px;letter-spacing:2px;text-align:center;margin-bottom:6px;">NEGOCIAR</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
       <div>
         <div style="color:#d4a060;font-size:8px;text-align:center;">TUS OBJETOS</div>
@@ -280,7 +280,7 @@ function mostrarMenuNegociacion() {
         ${invRival.map((o, i) => `<div style="color:#9a7040;font-size:8px;padding:2px 4px;cursor:pointer;border:1px solid #2a1808;margin:2px;border-radius:2px;" onclick="seleccionarNegPides(${i})" id="negPides-${i}">${o.nombre}</div>`).join('')}
       </div>
     </div>
-    <div style="text-align:center;margin:6px 0;color:#6a4018;font-size:9px;" id="negStatus">Seleccioná qué dar y qué pedir</div>
+    <div style="text-align:center;margin:6px 0;color:#6a4018;font-size:9px;" id="negStatus">Selecciona que dar y que pedir</div>
     <button onclick="confirmarNegociacion()" style="font-family:'Cinzel',serif;font-size:9px;padding:4px 16px;background:linear-gradient(180deg,#c85030,#7a2010);color:#fff;border:none;border-radius:4px;cursor:pointer;display:block;margin:0 auto;">CONFIRMAR TRUEQUE</button>
     <button onclick="document.getElementById('panelAccionesExtra').style.display='none'" style="display:block;margin:6px auto 0;font-family:'Cinzel',serif;font-size:8px;padding:3px 12px;background:transparent;border:1px solid #3a2008;color:#6a4018;border-radius:3px;cursor:pointer;">CANCELAR</button>
   `;
@@ -307,7 +307,7 @@ function actualizarNegStatus() {
   const invR = rivalPJ.inventario || [];
   const o = window._negOferta !== null ? inv[window._negOferta] : null;
   const p = window._negPides !== null ? invR[window._negPides] : null;
-  s.textContent = o && p ? `${o.nombre} ↔ ${p.nombre}` : 'Seleccioná qué dar y qué pedir';
+  s.textContent = o && p ? `${o.nombre} ↔ ${p.nombre}` : 'Selecciona que dar y que pedir';
   s.style.color = o && p ? '#d4a060' : '#6a4018';
 }
 function confirmarNegociacion() {
@@ -315,7 +315,7 @@ function confirmarNegociacion() {
   const invR = rivalPJ.inventario || [];
   const oIdx = window._negOferta;
   const pIdx = window._negPides;
-  if (oIdx === null || pIdx === null || !inv[oIdx] || !invR[pIdx]) { alert('Seleccioná ambos objetos'); return; }
+  if (oIdx === null || pIdx === null || !inv[oIdx] || !invR[pIdx]) { alert('Selecciona ambos objetos'); return; }
   enviarAccion('negociar', null, { oferta: inv[oIdx]._id, pides: invR[pIdx]._id });
   document.getElementById('panelAccionesExtra').style.display = 'none';
 }
@@ -323,14 +323,14 @@ function confirmarNegociacion() {
 function mostrarMenuLanzar() {
   const inv = miPJ.inventario || [];
   const lanzables = inv.filter(o => o.tipo === 'material' || o.tipo === 'arma');
-  if (lanzables.length === 0) { alert('No tenés objetos lanzables'); return; }
+  if (lanzables.length === 0) { alert('No tenes objetos lanzables'); return; }
   const panel = document.getElementById('panelAccionesExtra');
   panel.style.display = 'block';
   panel.innerHTML = `
-    <div style="color:#9a7040;font-size:9px;letter-spacing:2px;text-align:center;margin-bottom:6px;">✦ LANZAR OBJETO ✦</div>
+    <div style="color:#9a7040;font-size:9px;letter-spacing:2px;text-align:center;margin-bottom:6px;">LANZAR OBJETO</div>
     ${lanzables.map((o, i) => {
       const realIdx = inv.indexOf(o);
-      return `<button onclick="enviarAccion('lanzar', null, { objIdx: ${realIdx} });document.getElementById('panelAccionesExtra').style.display='none';" style="display:block;width:100%;text-align:left;font-family:'Cinzel',serif;font-size:9px;padding:5px 8px;background:rgba(0,0,0,0.4);border:1px solid #4a3010;color:#d4a060;border-radius:4px;cursor:pointer;margin:2px 0;">🎯 ${o.nombre} (peso:${o.peso||0} filo:${o.filo||0})</button>`;
+      return `<button onclick="enviarAccion('lanzar', null, { objIdx: ${realIdx} });document.getElementById('panelAccionesExtra').style.display='none';" style="display:block;width:100%;text-align:left;font-family:'Cinzel',serif;font-size:9px;padding:5px 8px;background:rgba(0,0,0,0.4);border:1px solid #4a3010;color:#d4a060;border-radius:4px;cursor:pointer;margin:2px 0;">${o.nombre} (peso:${o.peso||0} filo:${o.filo||0})</button>`;
     }).join('')}
     <button onclick="document.getElementById('panelAccionesExtra').style.display='none'" style="display:block;margin:6px auto 0;font-family:'Cinzel',serif;font-size:8px;padding:3px 12px;background:transparent;border:1px solid #3a2008;color:#6a4018;border-radius:3px;cursor:pointer;">CANCELAR</button>
   `;
@@ -345,11 +345,11 @@ function toggleInventario() {
   const inv = miPJ.inventario || [];
   const eq = miPJ.equipment || { arma: null, armadura: null, accesorio: null };
   panel.innerHTML = `
-    <div style="color:#9a7040;font-size:9px;letter-spacing:2px;text-align:center;margin-bottom:4px;">✦ INVENTARIO (${inv.filter(o => !o._equipado).length}/5) ✦</div>
+    <div style="color:#9a7040;font-size:9px;letter-spacing:2px;text-align:center;margin-bottom:4px;">INVENTARIO (${inv.filter(o => !o._equipado).length}/5)</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:4px;">
-      <div style="font-size:8px;color:#6a4018;">⚔️ Arma: ${eq.arma ? eq.arma.nombre : '—'}</div>
-      <div style="font-size:8px;color:#6a4018;">🛡️ Armadura: ${eq.armadura ? eq.armadura.nombre : '—'}</div>
-      <div style="font-size:8px;color:#6a4018;">💍 Accesorio: ${eq.accesorio ? eq.accesorio.nombre : '—'}</div>
+      <div style="font-size:8px;color:#6a4018;">Arma: ${eq.arma ? eq.arma.nombre : '—'}</div>
+      <div style="font-size:8px;color:#6a4018;">Armadura: ${eq.armadura ? eq.armadura.nombre : '—'}</div>
+      <div style="font-size:8px;color:#6a4018;">Accesorio: ${eq.accesorio ? eq.accesorio.nombre : '—'}</div>
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
       ${inv.map((o, i) => `
@@ -413,7 +413,7 @@ function enviarAccion(tipo, cartaId, accionData) {
 function actualizarIndicadorTurno() {
   const el = document.getElementById('indicadorTurno');
   if (!el) return;
-  el.textContent = esMiTurno ? `⚔ TU TURNO (${accionesRestantes}/2)` : '⏳ RIVAL';
+  el.textContent = esMiTurno ? `TU TURNO (${accionesRestantes}/2)` : 'RIVAL';
 }
 function actualizarHP() {
   const el1 = document.getElementById('rivalHP'), el2 = document.getElementById('pjHP');
@@ -459,7 +459,7 @@ socket.on('logBatalla', (data) => {
   if (!log) return;
   const msg = typeof data === 'string' ? data : data.msg;
   const estilo = typeof data === 'string' ? 'color:#9a7040;font-size:10px;' : estiloLog(data);
-  log.innerHTML += `<div style="${estilo}">▸ ${colorearNombres(msg)}</div>`;
+  log.innerHTML += `<div style="${estilo}">> ${colorearNombres(msg)}</div>`;
   log.scrollTop = log.scrollHeight;
 });
 
@@ -504,7 +504,7 @@ function actualizarCardsSkills() {
     return `<div class="slot-card ${cls}" style="transform:rotate(${angle}deg) translateY(${ty}px);z-index:${zIdx}" onclick="seleccionarCarta(${i})" id="skillCard-${i}">
       <div class="card-name">${skill.nombre}</div>
       <div class="card-desc">${SKILL_DATA_LOOKUP[skill.id] ? SKILL_DATA_LOOKUP[skill.id].efecto.replace(/_/g,' ') : ''}</div>
-      <div class="card-cost">${skill.coste}⚡</div>
+      <div class="card-cost">${skill.coste} EN</div>
     </div>`;
   }).join('');
 }
@@ -513,7 +513,7 @@ socket.on('finPartida', (datos) => {
   const gane = datos.ganador === socket.id;
   const log = document.getElementById('logBatalla');
   if (log) {
-    log.innerHTML += `<div style="color:${gane ? '#60d060' : '#c85030'};font-size:13px;text-align:center;margin-top:10px;letter-spacing:2px;">${gane ? '🏆 ¡VICTORIA!' : '💀 DERROTA'}</div>`;
+    log.innerHTML += `<div style="color:${gane ? '#60d060' : '#c85030'};font-size:13px;text-align:center;margin-top:10px;letter-spacing:2px;">${gane ? 'VICTORIA!' : 'DERROTA'}</div>`;
     log.scrollTop = log.scrollHeight;
   }
   esMiTurno = false;
@@ -531,10 +531,9 @@ function mostrarPantallaFinPartida(gane) {
   overlay.style.cssText = 'position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);';
   overlay.innerHTML = `
     <div style="width:300px;padding:30px 20px;background:radial-gradient(ellipse at center top,#1a0e08 0%,#0a0604 100%);border:3px solid ${gane ? '#c85030' : '#4a3010'};border-radius:8px;text-align:center;">
-      <div style="font-size:42px;margin-bottom:10px;">${gane ? '🏆' : '💀'}</div>
       <div style="font-size:22px;letter-spacing:4px;color:${gane ? '#60d060' : '#c85030'};margin-bottom:6px;font-family:'Cinzel',serif;font-weight:700;">${gane ? 'VICTORIA' : 'DERROTA'}</div>
       <div style="color:#6a4018;font-size:10px;letter-spacing:2px;margin-bottom:20px;">${gane ? '+1 XP' : '+0.5 XP'}</div>
-      <button onclick="volverAlMenuDesdeCombate()" style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;letter-spacing:3px;color:#fffbe8;cursor:pointer;border:none;padding:11px 30px;background:linear-gradient(180deg,#c85030 0%,#7a2010 40%,#8a2515 60%,#c04020 100%);clip-path:polygon(12px 0%,calc(100% - 12px) 0%,100% 50%,calc(100% - 12px) 100%,12px 100%,0% 50%);">VOLVER AL MENÚ</button>
+      <button onclick="volverAlMenuDesdeCombate()" style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;letter-spacing:3px;color:#fffbe8;cursor:pointer;border:none;padding:11px 30px;background:linear-gradient(180deg,#c85030 0%,#7a2010 40%,#8a2515 60%,#c04020 100%);clip-path:polygon(12px 0%,calc(100% - 12px) 0%,100% 50%,calc(100% - 12px) 100%,12px 100%,0% 50%);">VOLVER AL MENU</button>
     </div>
   `;
   document.body.appendChild(overlay);

@@ -14,8 +14,8 @@ const bcrypt = require('bcryptjs');
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://mrtSpill:p3Lr9hWAkM9iTtq5@ac-tlf2b3l-shard-00-00.mwaqd74.mongodb.net:27017,ac-tlf2b3l-shard-00-01.mwaqd74.mongodb.net:27017,ac-tlf2b3l-shard-00-02.mwaqd74.mongodb.net:27017/loop?ssl=true&replicaSet=atlas-10e4ba-shard-0&authSource=admin&retryWrites=true&w=majority';
 
 mongoose.connect(MONGO_URI)
-    .then(() => console.log('✅ Conectado a MongoDB Atlas'))
-    .catch(err => console.error('❌ Error MongoDB:', err.message));
+    .then(() => console.log('Conectado a MongoDB Atlas'))
+    .catch(err => console.error('Error MongoDB:', err.message));
 
 const personajeSchema = new mongoose.Schema({
     nombre: String, clase: String,
@@ -51,10 +51,10 @@ app.get('/socket.io/socket.io.js', (req, res) => {
 app.get('/dev-activar', async (req, res) => {
     const key = req.query.key;
     const user = req.query.user;
-    if (key !== 'L00pDev2024Secret!') { return res.status(403).send('❌ Clave incorrecta'); }
+    if (key !== 'L00pDev2024Secret!') { return res.status(403).send('Clave incorrecta'); }
     try {
         const cuenta = await Cuenta.findOne({ nombre: user });
-        if (!cuenta) return res.status(404).send('❌ Usuario no encontrado');
+        if (!cuenta) return res.status(404).send('Usuario no encontrado');
         cuenta.dev = true;
         for (const pj of cuenta.personajes) {
             if (pj.nivel > 1 && (!pj.puntosStats || pj.puntosStats === 0)) {
@@ -62,9 +62,9 @@ app.get('/dev-activar', async (req, res) => {
             }
         }
         await cuenta.save();
-        res.send(`✅ Usuario "${user}" activado como dev. Personajes actualizados.`);
+        res.send(`Usuario "${user}" activado como dev. Personajes actualizados.`);
     } catch (err) {
-        res.status(500).send('❌ Error: ' + err.message);
+        res.status(500).send('Error: ' + err.message);
     }
 });
 
@@ -172,7 +172,7 @@ function partidaEmitirEstado(partidaId, partida) {
 }
 
 io.on('connection', (socket) => {
-    console.log('🔌 Cliente conectado:', socket.id);
+    console.log('Cliente conectado:', socket.id);
 
     socket.on('ejecutarAccion', async ({ partidaId, tipo, atacante, defensor, cartaId, accionData }) => {
         const partida = partidas[partidaId];
@@ -520,7 +520,7 @@ io.on('connection', (socket) => {
             if (vivos.length >= 1) {
                 const ganador = vivos[0];
                 const perdedor = muertos[0];
-                io.to(partidaId).emit('logBatalla', { msg: `💀 ${perdedor.nombre} ha caído. ¡${ganador.nombre} gana!`, tipo: 'muerte' });
+                io.to(partidaId).emit('logBatalla', { msg: `${perdedor.nombre} ha caído. ${ganador.nombre} gana!`, tipo: 'muerte' });
                 partidaEmitirEstado(partidaId, partida);
 
                 const gSocket = ganador.socketId;
@@ -562,10 +562,10 @@ io.on('connection', (socket) => {
         if (partida.turnoMareado) {
             partida.turnoActual = partida.turnoMareado === partida.jugador1.socketId ? partida.jugador2.socketId : partida.jugador1.socketId;
             partida.turnoMareado = null;
-            io.to(partidaId).emit('logBatalla', { msg: `⏭ Turno saltado por mareo`, tipo: 'marea' });
+            io.to(partidaId).emit('logBatalla', { msg: `Turno saltado por mareo`, tipo: 'marea' });
         } else if (yo.status && yo.status.frozen > 0) {
             partida.turnoActual = rival.socketId;
-            io.to(partidaId).emit('logBatalla', { msg: `⏭ ${yo.nombre} salta turno por parálisis`, tipo: 'status' });
+            io.to(partidaId).emit('logBatalla', { msg: `${yo.nombre} salta turno por paralisis`, tipo: 'status' });
         } else {
             partida.turnoActual = rival.socketId;
         }
@@ -796,7 +796,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('buscarPartida', ({ cuenta_id, personaje }) => {
-        console.log('🔍 Buscando partida para:', personaje.nombre);
+        console.log('Buscando partida para:', personaje.nombre);
         colaEspera = colaEspera.filter(j => j.socketId !== socket.id);
         colaEspera.push({ socketId: socket.id, cuenta_id, personaje });
         socket.emit('esperandoRival');
@@ -856,7 +856,7 @@ io.on('connection', (socket) => {
                 accionCancelada: false
             };
 
-            console.log(`⚔️ ${personaje1.nombre} vs ${personaje2.nombre}`);
+            console.log(`${personaje1.nombre} vs ${personaje2.nombre}`);
 
             const sJ1 = io.sockets.sockets.get(jugador1.socketId);
             const sJ2 = io.sockets.sockets.get(jugador2.socketId);
@@ -940,7 +940,7 @@ io.on('connection', (socket) => {
             }
         }
         colaEspera = colaEspera.filter(j => j.socketId !== socket.id);
-        console.log('❌ Desconectado:', socket.id);
+        console.log('Desconectado:', socket.id);
     });
 });
 
