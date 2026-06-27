@@ -738,20 +738,25 @@ function popCentro(texto, color, tamano, sombra) {
   setTimeout(() => p.remove(), 1300);
 }
 
+const popCounters = {};
 function popPersonaje(texto, color, selector) {
   const el = document.querySelector(selector);
   if (!el) return;
   const r = el.getBoundingClientRect();
+  popCounters[selector] = (popCounters[selector] || 0) + 1;
+  const idx = popCounters[selector];
+  const offsetX = (idx % 2 === 0 ? 1 : -1) * Math.ceil(idx / 2) * 45;
+  const offsetY = (idx - 1) * 22;
   const p = document.createElement('div');
   p.className = 'pop-char';
-  p.style.left = (r.left + r.width / 2) + 'px';
-  p.style.top = r.top + 'px';
+  p.style.left = (r.left + r.width / 2 + offsetX) + 'px';
+  p.style.top = (r.top + offsetY) + 'px';
   p.style.color = color;
   p.style.fontSize = 'clamp(20px,3.5vw,36px)';
   p.style.textShadow = '0 0 16px currentColor';
   p.innerHTML = texto;
   document.body.appendChild(p);
-  setTimeout(() => p.remove(), 1100);
+  setTimeout(() => { p.remove(); popCounters[selector]--; if (popCounters[selector] <= 0) delete popCounters[selector]; }, 1100);
 }
 
 function personajeSelector(msg) {
