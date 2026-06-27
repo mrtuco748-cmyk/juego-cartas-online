@@ -263,10 +263,12 @@
 
         /* ── COMBATE ── */
         #pantallaCombate {
-            height:100vh; min-height:100vh;
-            background:radial-gradient(ellipse at 50% 30%, #1a1210 0%, #080606 100%);
-            color:#e8d8c8; flex-direction:column;
-            width:100%; position:relative;
+            height: 100vh; height: 100dvh;
+            background: radial-gradient(ellipse at 50% 30%, #1a1210 0%, #080606 100%);
+            color: #e8d8c8; display: flex; flex-direction: column;
+            width: 100%; position: fixed;
+            top: 0; left: 0; z-index: 50;
+            overflow: hidden;
         }
         #pantallaCombate.activa { align-items:stretch; justify-content:flex-start; }
         #pantallaCombate::before {
@@ -322,14 +324,7 @@
         /* ── CHARACTER BIOS ── */
         .character-bio { display:flex; flex-direction:column; align-items:center; transition:transform 0.4s ease; }
         .character-bio.tu-turno { transform:scale(1.03); }
-        .char-portrait {
-            width:42px; height:42px; border-radius:8px;
-            border:2px solid #6a4a28; background:#120a06;
-            overflow:hidden; display:flex; align-items:center;
-            justify-content:center; margin-bottom:3px; flex-shrink:0;
-        }
-        .char-portrait img { width:100%; height:100%; object-fit:cover; }
-        .portrait-placeholder { font-size:16px; color:#3a2010; }
+        .char-portrait { display: none !important; }
 
         .sheet {
             width:100%; padding:7px 9px;
@@ -351,7 +346,7 @@
 
         /* ── LOG SCROLL ── */
         .log-scroll {
-            flex:1; min-height:55px;
+            flex:1; min-height:0; max-height:100%;
             background:linear-gradient(180deg,#1a1610 0%,#12100a 100%);
             border:1px solid #4a3a20; border-radius:8px;
             padding:8px 12px; overflow-y:auto;
@@ -482,7 +477,7 @@
 
             .battlefield {
                 grid-template-columns:1fr 1fr;
-                grid-template-rows:auto 1fr auto auto;
+                grid-template-rows:auto minmax(0,1fr) auto auto;
                 gap:5px; padding:5px;
             }
             .col-left  { grid-column:1; grid-row:1; }
