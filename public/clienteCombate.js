@@ -135,7 +135,6 @@ function renderizarCombate() {
   const sheetHTML = (pj, prefix) => {
     const c = calcularStatsConBuffsCliente(pj);
     return `<div class="character-bio">
-      <div class="char-portrait">${pj.foto ? `<img src="${pj.foto}">` : '<span class="portrait-placeholder">?</span>'}</div>
       <div class="sheet">
         ${statusBadge(pj)}
         <h2>${pj.nombre}</h2>
