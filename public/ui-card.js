@@ -68,7 +68,7 @@ class UICard extends HTMLElement {
         :host {
           display: inline-block;
           cursor: ${disabled ? 'not-allowed' : 'pointer'};
-          opacity: ${disabled ? '0.5' : '1'};
+          filter: ${disabled ? 'brightness(0.4) saturate(0.3)' : 'none'};
           transition: transform 0.3s, box-shadow 0.3s;
         }
         :host(:hover) {

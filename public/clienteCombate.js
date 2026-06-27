@@ -915,7 +915,7 @@ function agregarLog(data) {
         p.style.fontSize = 'clamp(22px,4vw,40px)';
         p.style.textShadow = '0 0 20px rgba(60,200,80,0.8),0 0 40px rgba(60,200,80,0.4)';
         p.style.animation = 'healFloat 1s ease-out forwards';
-        p.innerHTML = '+' + parseInt(nums[1]);
+        p.innerHTML = '+' + parseInt(nums[1]) + 'HP';
         document.body.appendChild(p);
         setTimeout(() => p.remove(), 1100);
       }
