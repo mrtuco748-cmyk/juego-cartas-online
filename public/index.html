@@ -376,21 +376,51 @@
         .fortuna-overlay {
             position: fixed; inset: 0; z-index: 400;
             display: flex; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.7); animation: fortunaFadeIn 0.3s ease;
+            background: rgba(0,0,0,0.75); animation: fortunaFadeIn 0.4s ease;
             cursor: pointer;
         }
         .fortuna-box {
-            background: linear-gradient(135deg,#1a0e08,#0e0804);
-            border: 2px solid #d4a060; border-radius: 12px;
-            padding: 24px 28px; max-width: 340px; text-align: center;
-            box-shadow: 0 0 40px rgba(200,140,60,0.3);
-            animation: fortunaPop 0.4s ease;
+            background: linear-gradient(180deg,#1c1008 0%,#0e0804 40%,#120804 100%);
+            border: 2px solid #8a6a38; border-radius: 0;
+            padding: 28px 32px; max-width: 360px; text-align: center;
+            box-shadow:
+                0 0 0 1px #3a2810,
+                inset 0 0 40px rgba(120,80,30,0.08),
+                0 0 60px rgba(180,120,40,0.15);
+            animation: fortunaPop 0.5s ease;
+            position: relative;
         }
-        .fortuna-cat { font-size: clamp(32px,8vw,56px); margin-bottom: 8px; }
-        .fortuna-title { font-size: clamp(14px,3vw,20px); color: #e0b060; font-weight: 700; letter-spacing: 2px; margin-bottom: 10px; text-shadow: 0 0 20px rgba(200,140,60,0.4); }
-        .fortuna-desc { font-size: clamp(10px,1.8vw,13px); color: #b89870; line-height: 1.5; }
+        .fortuna-box::before {
+            content: ''; position: absolute; inset: 3px;
+            border: 1px solid #3a2810; pointer-events: none;
+        }
+        .fortuna-box::after {
+            content: '❧'; position: absolute;
+            top: -6px; left: 50%; transform: translateX(-50%);
+            color: #5a3a18; font-size: 16px; background: #120804;
+            padding: 0 10px;
+        }
+        .fortuna-cat {
+            font-family: 'Cinzel', serif; font-size: 9px;
+            letter-spacing: 4px; text-transform: uppercase;
+            color: #5a3a18; margin-bottom: 6px;
+        }
+        .fortuna-title {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(15px,3vw,22px); color: #d4a060;
+            font-weight: 700; letter-spacing: 3px; margin-bottom: 12px;
+            text-shadow: 0 0 30px rgba(180,120,40,0.3);
+        }
+        .fortuna-desc {
+            font-size: clamp(10px,1.8vw,13px); color: #a08060;
+            line-height: 1.6; font-style: italic;
+        }
+        .fortuna-divider {
+            width: 60%; height: 1px; margin: 0 auto 12px;
+            background: linear-gradient(90deg,transparent,#5a3a18,transparent);
+        }
         @keyframes fortunaFadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes fortunaPop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes fortunaPop { from { transform: scale(0.6) rotateX(10deg); opacity: 0; } to { transform: scale(1) rotateX(0); opacity: 1; } }
 
         .pop-desc {
             position: fixed; z-index: 300; top: 50%; left: 50%;

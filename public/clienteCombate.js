@@ -1114,9 +1114,11 @@ function mostrarFortuna(data) {
   if (old) old.remove();
   const div = document.createElement('div');
   div.className = 'fortuna-overlay';
+  const catLabel = data.categoria || '';
   div.innerHTML = `<div class="fortuna-box">
-    <div class="fortuna-cat">${data.categoria}</div>
+    <div class="fortuna-cat">${catLabel}</div>
     <div class="fortuna-title">${data.nombre}</div>
+    <div class="fortuna-divider"></div>
     <div class="fortuna-desc">${data.desc}</div>
   </div>`;
   document.body.appendChild(div);
