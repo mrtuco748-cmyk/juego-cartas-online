@@ -884,7 +884,7 @@
                         <div class="stat-item"><span class="stat-label">Magia</span><input class="stat-input" type="number" id="magia" value="0" min="0"></div>
                         <div class="stat-item"><span class="stat-label">Suerte</span><input class="stat-input" type="number" id="suerte" value="0" min="0"></div>
                     </div>
-                    <div style="color:#9a7040; font-size:9px; text-align:right; letter-spacing:1px; margin-top:2px;">Total: <span id="totalStats">0</span>/20 · Mín 2 c/u</div>
+                    <div style="color:#9a7040; font-size:9px; text-align:right; letter-spacing:1px; margin-top:2px;">Total: <span id="totalStats">0</span>/20 · Mín 3 c/u</div>
                     <hr class="divider">
                     <div class="campo">
                         <label>Clase</label>
@@ -2100,8 +2100,8 @@
             document.getElementById('errorPersonaje').textContent = 'Los puntos deben sumar 20.';
             return;
         }
-        if (f < 2 || r < 2 || v < 2 || m < 2 || s < 2) {
-            document.getElementById('errorPersonaje').textContent = 'Cada estadística debe tener al menos 2 puntos.';
+        if (f < 3 || r < 3 || v < 3 || m < 3 || s < 3) {
+            document.getElementById('errorPersonaje').textContent = 'Cada estadística debe tener al menos 3 puntos.';
             return;
         }
         const activas = window._skillPickerSeleccion || [];
