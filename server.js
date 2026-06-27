@@ -234,8 +234,10 @@ io.on('connection', (socket) => {
         }
 
         if (!partida.esPractica && partida.turnoActual !== socket.id) {
-            socket.emit('errorAccion', 'No es tu turno.');
-            return;
+            if (tipo !== 'carta') {
+                socket.emit('errorAccion', 'No es tu turno.');
+                return;
+            }
         }
 
         if (yo.status && yo.status.frozen > 0) {
@@ -249,12 +251,14 @@ io.on('connection', (socket) => {
         }
 
         const accionesMax = partida.accionesMax || 2;
-        if (partida.accionesUsadas.length >= accionesMax) {
-            socket.emit('errorAccion', 'No te quedan acciones.');
-            return;
+        const esFueraDeTurno = partida.turnoActual !== socket.id;
+        if (tipo !== 'carta' || !esFueraDeTurno) {
+            if (partida.accionesUsadas.length >= accionesMax) {
+                socket.emit('errorAccion', 'No te quedan acciones.');
+                return;
+            }
+            partida.accionesUsadas.push(tipo);
         }
-
-        partida.accionesUsadas.push(tipo);
 
         const statsYo = gp.calcularStatsConBuffs(yo);
         const statsRival = gp.calcularStatsConBuffs(rival);

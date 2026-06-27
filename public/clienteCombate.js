@@ -579,8 +579,10 @@ function usarCartaRival(idx) {
 function enviarAccion(tipo, cartaId, accionData, comoRival) {
   if (!partidaActualId) return;
   if (esPractica && !esMiTurno) comoRival = true;
-  if (!esPractica && (!esMiTurno || accionesRestantes <= 0)) return;
-  if (esPractica && !comoRival && (!esMiTurno || accionesRestantes <= 0)) return;
+  if (tipo !== 'carta') {
+    if (!esPractica && (!esMiTurno || accionesRestantes <= 0)) return;
+    if (esPractica && !comoRival && (!esMiTurno || accionesRestantes <= 0)) return;
+  }
   socket.emit('ejecutarAccion', {
     partidaId: partidaActualId,
     tipo,
