@@ -14,10 +14,10 @@ const SKILLS_DATA = {
     reflejo_magico: { nombre: "Reflejo Mágico", coste: 40, efecto: "reflect", valor: 0.50, duracion: 2 },
     tormenta: { nombre: "Tormenta", coste: 45, efecto: "aoe_damage", valor: 0.20 },
     sello_silencio: { nombre: "Sello de Silencio", coste: 30, efecto: "silence", duracion: 2 },
-    sacrificio: { nombre: "Sacrificio", coste: 10, efecto: "sacrifice", valor: 0.35 },
+    sacrificio: { nombre: "Sacrificio", coste: 15, efecto: "sacrifice", valor: 0.45 },
     invocacion: { nombre: "Invocación Menor", coste: 55, efecto: "summon", valor: 0.25 },
     rafaga: { nombre: "Ráfaga", coste: 20, efecto: "damage_percent", valor: 0.15 },
-    cataclismo: { nombre: "Cataclismo", coste: 80, efecto: "damage_true", valor: 60 },
+    cataclismo: { nombre: "Cataclismo", coste: 80, efecto: "damage_true", valor: 20 },
     bendicion: { nombre: "Bendición", coste: 35, efecto: "buff_all", valor: 2, duracion: 2 },
     escarcha: { nombre: "Escarcha", coste: 25, efecto: "debuff", stat: "velocidad", valor: 4, duracion: 2 },
     acrio: { nombre: "Acrio", coste: 30, efecto: "damage_true", valor: 15, requiereItem: "Varita Común Nivel 3" }
