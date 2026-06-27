@@ -1,6 +1,6 @@
 let diceRenderer, diceScene, diceCam, diceMesh, ptLight;
 let diceReady = false, diceRolling = false, diceQueue = [];
-let diceOverlay = null;
+let diceOverlay = null, diceBackdrop = null;
 
 const S = {
   vy: 0, vx: 0, vz: 0, posY: 3, angVX: 0, angVY: 0, angVZ: 0,
@@ -40,41 +40,50 @@ function makeFace(n) {
 
 function initDice() {
   if (diceReady) return;
-  const s = Math.min(window.innerWidth, 500);
+
+  diceBackdrop = document.createElement('div');
+  diceBackdrop.style.cssText =
+    'position:fixed;z-index:245;top:0;left:0;width:100%;height:100%;' +
+    'pointer-events:none;display:none;' +
+    'background:rgba(0,0,0,0.55);' +
+    'backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);';
+  document.body.appendChild(diceBackdrop);
+
+  const s = Math.min(window.innerWidth, 460);
   diceRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   diceRenderer.setSize(s, s);
-  diceRenderer.shadowMap.enabled = true;
-  diceRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  diceRenderer.setClearColor(0x000000, 0);
   diceRenderer.domElement.style.cssText =
-    'position:fixed;z-index:250;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:none;';
+    'position:fixed;z-index:250;top:50%;left:50%;transform:translate(-50%,-50%);' +
+    'pointer-events:none;display:none;';
   document.body.appendChild(diceRenderer.domElement);
 
-  diceCam = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-  diceCam.position.set(0, 2.5, 9);
-  diceCam.lookAt(0, 1.2, 0);
+  diceCam = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+  diceCam.position.set(0, 2.5, 8.5);
+  diceCam.lookAt(0, 0.9, 0);
 
   diceScene = new THREE.Scene();
   diceScene.background = null;
 
-  diceScene.add(new THREE.AmbientLight(0xffeedd, 1.2));
-  ptLight = new THREE.PointLight(0xff8800, 4.0, 25);
-  ptLight.position.set(2, 7, 4); ptLight.castShadow = true;
-  diceScene.add(ptLight);
-  const fill = new THREE.DirectionalLight(0x4488ff, 0.6);
-  fill.position.set(-3, 5, -2);
-  diceScene.add(fill);
+  const amb = new THREE.AmbientLight(0x404060, 1.0);
+  diceScene.add(amb);
 
-  const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(7, 7),
-    new THREE.MeshLambertMaterial({ color: 0x2a1e0e, transparent: true, opacity: 0.12 })
-  );
-  floor.rotation.x = -Math.PI/2; floor.position.y = -0.3;
-  floor.receiveShadow = true;
-  diceScene.add(floor);
+  const key = new THREE.DirectionalLight(0xccddff, 1.8);
+  key.position.set(3, 8, 5);
+  diceScene.add(key);
+
+  const rim = new THREE.DirectionalLight(0xff8844, 1.2);
+  rim.position.set(-4, 2, -3);
+  diceScene.add(rim);
+
+  const fill = new THREE.DirectionalLight(0xaabbff, 0.5);
+  fill.position.set(-2, 1, 6);
+  diceScene.add(fill);
 
   const mats = FACES.map(n => new THREE.MeshLambertMaterial({ map: makeFace(n) }));
   diceMesh = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.3, 1.3), mats);
-  diceMesh.castShadow = true; diceMesh.visible = false;
+  diceMesh.castShadow = false;
+  diceMesh.visible = false;
   diceScene.add(diceMesh);
 
   diceReady = true;
@@ -97,8 +106,8 @@ function showResult(n) {
   const el = document.createElement('div');
   el.style.cssText =
     `position:fixed;z-index:260;top:50%;left:50%;transform:translate(-50%,-50%);
-     font-size:clamp(70px,18vw,140px);font-weight:900;color:#fff;
-     text-shadow:0 0 30px rgba(255,200,50,0.8),0 0 60px rgba(255,150,0,0.5);
+     font-size:clamp(72px,19vw,150px);font-weight:900;color:#fff;
+     text-shadow:0 0 30px rgba(200,220,255,0.7),0 0 60px rgba(150,180,255,0.4);
      font-family:'Georgia',serif;pointer-events:none;
      animation:resultPop 0.35s ease-out;`;
   el.textContent = n;
@@ -106,28 +115,37 @@ function showResult(n) {
   diceOverlay = el;
 }
 
+function showDiceUI() {
+  if (diceBackdrop) diceBackdrop.style.display = 'block';
+  diceRenderer.domElement.style.display = 'block';
+}
+
+function hideDiceUI() {
+  if (diceBackdrop) diceBackdrop.style.display = 'none';
+  diceRenderer.domElement.style.display = 'none';
+}
+
 function startRoll(serverVal, resolve) {
   S.phase='falling'; S.resolve=resolve; S.serverVal=serverVal;
   S.settleFrames=0; S.resultShown=false;
-  S.vx=(Math.random()-0.5)*0.12;
-  S.vy=-(0.3+Math.random()*0.7);
-  S.vz=(Math.random()-0.5)*0.12;
-  S.posY=3+Math.random()*1.2;
-  S.angVX=(Math.random()-0.5)*0.8;
-  S.angVY=(Math.random()-0.5)*0.8;
+  S.vx=(Math.random()-0.5)*0.15;
+  S.vy=-(0.4+Math.random()*0.8);
+  S.vz=(Math.random()-0.5)*0.15;
+  S.posY=2.5+Math.random()*0.8;
+  S.angVX=(Math.random()-0.5)*0.9;
+  S.angVY=(Math.random()-0.5)*0.9;
   S.angVZ=(Math.random()-0.5)*0.6;
-  diceMesh.position.set((Math.random()-0.5)*2, S.posY, (Math.random()-0.5)*1.2);
+  diceMesh.position.set((Math.random()-0.5)*1.8, S.posY, (Math.random()-0.5)*1.0);
   diceMesh.rotation.set(Math.random()*Math.PI*2, Math.random()*Math.PI*2, Math.random()*Math.PI*2);
   diceMesh.visible=true;
-  diceRenderer.domElement.style.display='block';
+  showDiceUI();
 }
 
 function tick() {
   requestAnimationFrame(tick);
-  ptLight.intensity=3.5+Math.sin(performance.now()*0.02)*0.4;
 
   if(S.phase==='falling'){
-    S.vy+=-0.045;
+    S.vy+=-0.04;
     S.posY+=S.vy;
     diceMesh.position.x+=S.vx; diceMesh.position.y=S.posY; diceMesh.position.z+=S.vz;
     diceMesh.rotation.x+=S.angVX; diceMesh.rotation.y+=S.angVY; diceMesh.rotation.z+=S.angVZ;
@@ -160,7 +178,7 @@ function tick() {
       S.phase='idle'; S.resolve=null;
       setTimeout(()=>{
         diceMesh.visible=false;
-        diceRenderer.domElement.style.display='none';
+        hideDiceUI();
         if(overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
         if(diceOverlay === overlay) diceOverlay = null;
         diceRolling=false;
