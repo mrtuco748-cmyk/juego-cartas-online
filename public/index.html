@@ -1450,7 +1450,7 @@
                        (s.velocidad - original.velocidad) +
                        (s.magia - original.magia) +
                        (s.suerte - original.suerte);
-        if (usados > 5) { document.getElementById('errorStats').textContent = 'Máximo 5 puntos por vez.'; return; }
+        if (usados > 3) { document.getElementById('errorStats').textContent = 'Máximo 3 puntos por vez.'; return; }
         const cid = cuentaActual.id || cuentaActual._id;
         if (!cid) { document.getElementById('errorStats').textContent = 'Error: cuenta no identificada.'; return; }
         if (!s.id) { document.getElementById('errorStats').textContent = 'Error: personaje no identificado.'; return; }
