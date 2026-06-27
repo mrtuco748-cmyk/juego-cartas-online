@@ -377,8 +377,9 @@ class GameProcessor {
           }
           break;
         case "revive":
-          if (trigger === "on_death" && owner.hp <= 0) {
+          if (trigger === "on_death" && owner.hp <= 0 && !owner._revived) {
             owner.hp = Math.floor(owner.maxHp * pasiva.valor);
+            owner._revived = true;
             results.push({ log: `${ownerName} revive con ${owner.hp} HP` });
           }
           break;

@@ -326,6 +326,9 @@ io.on('connection', (socket) => {
                     const tieneItem = Object.values(yo.equipment || {}).some(eq => eq && eq.nombre === carta.requiereItem);
                     if (!tieneItem) { socket.emit('errorAccion', 'Necesitás ' + carta.requiereItem + ' para usar esta carta'); break; }
                 }
+                if (yo.energia < carta.coste) {
+                    socket.emit('errorAccion', `Energía insuficiente (${yo.energia}/${carta.coste})`); break;
+                }
 
                 const ctx = { source: yo, rival };
                 const result = gp.executeCard(carta, yo, rival, ctx);
