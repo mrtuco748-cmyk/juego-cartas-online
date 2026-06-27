@@ -970,6 +970,26 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('actualizarFotoPJ', async ({ cuenta_id, personaje_id, foto }) => {
+        try {
+            const cuenta = await Cuenta.findById(cuenta_id);
+            if (!cuenta) { socket.emit('errorPersonaje', 'Cuenta no encontrada.'); return; }
+            const pj = cuenta.personajes.id(personaje_id);
+            if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
+            pj.foto = foto || '';
+            await cuenta.save();
+            socket.emit('loadoutGuardado', {
+                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
+                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
+                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
+                inventarioSkills: cuenta.inventarioSkills || [],
+                inventarioPasivas: cuenta.inventarioPasivas || []
+            });
+        } catch (err) {
+            socket.emit('errorPersonaje', 'Error al actualizar foto.');
+        }
+    });
+
     socket.on('asignarStats', async ({ cuenta_id, personaje_id, stats }) => {
         try {
             const cuenta = await Cuenta.findById(cuenta_id);

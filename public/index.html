@@ -1206,7 +1206,7 @@
                 if (!d) return '';
                 return `<div class="skill-picker-item" data-id="${id}" onclick="toggleSkillPick(this)">
                     <div class="sp-nombre">${d.nombre}</div>
-                    <div class="sp-coste">${d.coste}E</div>
+                    <div class="sp-coste">${d.coste}E <span class="sp-info" onclick="event.stopPropagation();mostrarInfoSkill('${id}','activa')" style="cursor:pointer;color:#9a7040;margin-left:4px;font-size:10px;">ⓘ</span></div>
                 </div>`;
             }).join('');
             sp.style.display = 'block';
@@ -1743,7 +1743,10 @@
 
         document.getElementById('cartaContenido').innerHTML = `
             <div class="carta-container">
-                <div class="carta-img">${avatar}</div>
+                <div class="carta-img" onclick="editarFotoPJ('${pj._id}',${index})" style="cursor:pointer;position:relative;">
+                    ${avatar}
+                    <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);color:#d4a060;font-size:7px;text-align:center;padding:2px;letter-spacing:1px;">EDITAR</div>
+                </div>
                 <div class="carta-nombre">${pj.nombre}</div>
                 <div class="carta-clase">${pj.clase} · Lv.${pj.nivel || 1}</div>
                 <div class="carta-hp">
@@ -1797,6 +1800,15 @@
 
     function cerrarCartaPersonaje() {
         document.getElementById('popupCarta').classList.remove('visible');
+    }
+
+    function editarFotoPJ(personajeId, index) {
+        const pj = cuentaActual.personajes[index];
+        const actual = pj.foto || '';
+        const url = prompt('URL de la foto del personaje:', actual);
+        if (url === null) return;
+        const cid = cuentaActual.id || cuentaActual._id;
+        socket.emit('actualizarFotoPJ', { cuenta_id: cid, personaje_id: personajeId, foto: url.trim() });
     }
 
     function mostrarInfoSkill(id, tipo) {
