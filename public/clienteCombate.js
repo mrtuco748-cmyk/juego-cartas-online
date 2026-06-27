@@ -567,10 +567,8 @@ function seleccionarCarta(idx) {
   document.querySelectorAll('.carta-slot').forEach(c => c.classList.remove('selected'));
   const el = document.getElementById(`skillCard-${idx}`);
   if (el) el.classList.add('selected');
-  if (!window._vistoArrastra) {
-    window._vistoArrastra = true;
+  if (!localStorage.getItem('loop_vistoArrastra')) {
     document.getElementById('cartaSeleccionInfo').style.display = 'block';
-    _timeoutDeselect = setTimeout(() => cancelarSeleccionCarta(), 8000);
   }
 }
 
@@ -585,6 +583,7 @@ function usarCartaSeleccionada() {
   if (cartaSeleccionada === null) return;
   const skill = misSkills[cartaSeleccionada];
   enviarAccion('carta', skill.id || skill.nombre);
+  localStorage.setItem('loop_vistoArrastra', '1');
   cancelarSeleccionCarta();
 }
 
@@ -631,6 +630,9 @@ function onCardTouchEnd(e) {
       const skill = misSkills[draggedCardIdx];
       if (skill && skill.coste <= (miPJ.energia || 0)) {
         enviarAccion('carta', skill.id || skill.nombre);
+        localStorage.setItem('loop_vistoArrastra', '1');
+        const info = document.getElementById('cartaSeleccionInfo');
+        if (info) info.style.display = 'none';
       }
       draggedCardIdx = null;
     }
@@ -670,6 +672,7 @@ function usarCartaDrag() {
   if (!skill || skill.coste > (miPJ.energia || 0)) return;
   enviarAccion('carta', skill.id || skill.nombre);
   draggedCardIdx = null;
+  localStorage.setItem('loop_vistoArrastra', '1');
   const info = document.getElementById('cartaSeleccionInfo');
   if (info) info.style.display = 'none';
   document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
