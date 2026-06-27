@@ -550,18 +550,23 @@ function toggleInventario() {
   `;
 }
 
+let _timeoutDeselect = null;
+
 function seleccionarCarta(idx) {
   const skill = misSkills[idx];
   if (!skill || skill.coste > (miPJ.energia || 0)) return;
+  if (_timeoutDeselect) { clearTimeout(_timeoutDeselect); _timeoutDeselect = null; }
   cartaSeleccionada = idx;
   document.querySelectorAll('.carta-slot').forEach(c => c.classList.remove('selected'));
   const el = document.getElementById(`skillCard-${idx}`);
   if (el) el.classList.add('selected');
   document.getElementById('cartaSeleccionadaNombre').textContent = skill.nombre;
   document.getElementById('cartaSeleccionInfo').style.display = 'block';
+  _timeoutDeselect = setTimeout(() => cancelarSeleccionCarta(), 8000);
 }
 
 function cancelarSeleccionCarta() {
+  if (_timeoutDeselect) { clearTimeout(_timeoutDeselect); _timeoutDeselect = null; }
   cartaSeleccionada = null;
   document.querySelectorAll('.carta-slot').forEach(c => c.classList.remove('selected'));
   document.getElementById('cartaSeleccionInfo').style.display = 'none';
@@ -586,21 +591,12 @@ function onCardTouchStart(e, idx) {
   const skill = misSkills[idx];
   if (!skill || skill.coste > (miPJ.energia || 0)) return;
   draggedCardIdx = idx;
-  const touch = e.touches[0];
-  touchClone = document.createElement('div');
-  touchClone.textContent = skill.nombre;
-  touchClone.style.cssText = 'position:fixed;padding:6px 12px;background:#d2b574;border:2px solid #8b6d3f;border-radius:8px;color:#222;font-size:12px;font-weight:bold;z-index:1000;pointer-events:none;';
-  touchClone.style.left = (touch.clientX - 40) + 'px';
-  touchClone.style.top = (touch.clientY - 20) + 'px';
-  document.body.appendChild(touchClone);
+  seleccionarCarta(idx);
 }
 
 function onCardTouchMove(e) {
   if (!touchClone) return;
   e.preventDefault();
-  const touch = e.touches[0];
-  touchClone.style.left = (touch.clientX - 40) + 'px';
-  touchClone.style.top = (touch.clientY - 20) + 'px';
 }
 
 function onCardTouchEnd(e) {
