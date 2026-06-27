@@ -707,20 +707,13 @@ function colorearNombres(msg) {
 
 let logQueue = [];
 let logProcessing = false;
+let logInstantMode = false;
+let instantTimer = null;
+let ultimoTurno;
 
-socket.on('logBatalla', (data) => {
-  logQueue.push(data);
-  procesarLogQueue();
-});
-
-function procesarLogQueue() {
-  if (logProcessing || logQueue.length === 0) return;
-  logProcessing = true;
-  const data = logQueue.shift();
+function agregarLog(msg, estilo) {
   const el = document.getElementById('logBatch');
-  if (!el) { logProcessing = false; return; }
-  const msg = typeof data === 'string' ? data : data.msg;
-  const estilo = typeof data === 'string' ? 'color:#9a7040;font-size:10px;' : estiloLog(data);
+  if (!el) return;
   el.innerHTML += `<div class="logEntryAnim" style="${estilo}">> ${colorearNombres(msg)}</div>`;
   el.scrollTop = el.scrollHeight;
 
@@ -735,11 +728,50 @@ function procesarLogQueue() {
       setTimeout(() => elChar.classList.remove('dodge-anim-l', 'dodge-anim-r'), 500);
     }
   }
+}
+
+function forzarLogsPendientes() {
+  logProcessing = false;
+  while (logQueue.length > 0) {
+    const data = logQueue.shift();
+    const msg = typeof data === 'string' ? data : data.msg;
+    const estilo = typeof data === 'string' ? 'color:#9a7040;font-size:10px;' : estiloLog(data);
+    agregarLog(msg, estilo);
+  }
+}
+
+function agregarLineaTurno() {
+  const el = document.getElementById('logBatch');
+  if (!el) return;
+  el.innerHTML += `<div style="color:#4a3a1a;font-size:9px;text-align:center;letter-spacing:4px;margin:2px 0;">— — — — —</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+socket.on('logBatalla', (data) => {
+  if (logInstantMode) {
+    const msg = typeof data === 'string' ? data : data.msg;
+    const estilo = typeof data === 'string' ? 'color:#9a7040;font-size:10px;' : estiloLog(data);
+    agregarLog(msg, estilo);
+    clearTimeout(instantTimer);
+    instantTimer = setTimeout(() => { logInstantMode = false; }, 1500);
+    return;
+  }
+  logQueue.push(data);
+  procesarLogQueue();
+});
+
+function procesarLogQueue() {
+  if (logProcessing || logQueue.length === 0) return;
+  logProcessing = true;
+  const data = logQueue.shift();
+  const msg = typeof data === 'string' ? data : data.msg;
+  const estilo = typeof data === 'string' ? 'color:#9a7040;font-size:10px;' : estiloLog(data);
+  agregarLog(msg, estilo);
 
   setTimeout(() => {
     logProcessing = false;
     procesarLogQueue();
-  }, 1500);
+  }, 1200);
 }
 
 socket.on('actualizarEstado', (datos) => {
@@ -757,7 +789,16 @@ socket.on('actualizarEstado', (datos) => {
   miPJ.status = miStatus;
   rivalPJ.status = rivalStatus;
   accionesRestantes = datos.accionesRestantes || 0;
-  esMiTurno = datos.turnoActual === socket.id;
+  const nuevoEsMiTurno = datos.turnoActual === socket.id;
+  const cambioTurno = ultimoTurno !== undefined && esMiTurno !== nuevoEsMiTurno;
+  ultimoTurno = nuevoEsMiTurno;
+  esMiTurno = nuevoEsMiTurno;
+
+  if (cambioTurno) {
+    forzarLogsPendientes();
+    agregarLineaTurno();
+    logInstantMode = true;
+  }
 
   if (datos.j1skills) misSkills = yoMio ? datos.j1skills : datos.j2skills;
   if (datos.pasivasJ1) misPasivas = yoMio ? datos.pasivasJ1 : datos.pasivasJ2;
