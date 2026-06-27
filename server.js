@@ -252,6 +252,8 @@ function partidaEmitirEstado(partidaId, partida) {
         extraActionJ2: partida.jugador2.extraAction || false,
         objetosRecibidosJ1: partida.jugador1.objetosRecibidos || [],
         objetosRecibidosJ2: partida.jugador2.objetosRecibidos || [],
+        summonJ1: partida.jugador1.summon || null,
+        summonJ2: partida.jugador2.summon || null,
         ...(j1m.inventario ? {
             inventarioJ1: j1m.inventario,
             inventarioJ2: j2m.inventario,
@@ -292,7 +294,7 @@ io.on('connection', (socket) => {
             return;
         }
 
-        if (yo.status && yo.status.silenced > 0 && tipo !== 'atacar' && tipo !== 'descansar') {
+        if (yo.status && yo.status.silenced > 0 && tipo !== 'atacar' && tipo !== 'descansar' && tipo !== 'summon_attack') {
             socket.emit('errorAccion', 'Estás silenciado.');
             return;
         }
@@ -340,6 +342,11 @@ io.on('connection', (socket) => {
 
                 if (result.diceRoll) io.to(partidaId).emit('diceRoll', { valor: result.diceRoll });
                 if (result.log) io.to(partidaId).emit('logBatalla', { msg: result.log, tipo: 'carta' });
+
+                if (result.summon) {
+                    yo.summon = result.summon;
+                    io.to(partidaId).emit('logBatalla', { msg: `${result.summon.nombre} aparece en el campo de batalla`, tipo: 'carta' });
+                }
 
                 const castCtx = { damage: result.damage || 0 };
                 const spellLogs = gp.processPassives(yo.pasivas, yo, rival, 'on_cast', castCtx);
@@ -702,6 +709,23 @@ io.on('connection', (socket) => {
                 yo.inventario.splice(usarIdx, 1);
                 break;
             }
+            case 'summon_attack': {
+                if (!yo.summon || yo.summon.hp <= 0) { socket.emit('errorAccion', 'No tenés invocación activa'); break; }
+                const statsYoSum = gp.calcularStatsConBuffs(yo);
+                const statsRivSum = gp.calcularStatsConBuffs(rival);
+                const dadoSum = Math.floor(Math.random() * 6) + 1;
+                io.to(partidaId).emit('diceRoll', { valor: dadoSum });
+                const statSum = yo.summon.stats || { fuerza: 3, resistencia: 2, velocidad: 2, magia: 1 };
+                let danoSum = Math.max(0, dadoSum + statSum.fuerza - statsRivSum.resistencia);
+                if (rival.status && rival.status.shield > 0) {
+                    const absorb = Math.min(rival.status.shield, danoSum);
+                    rival.status.shield -= absorb;
+                    danoSum -= absorb;
+                }
+                rival.hp -= danoSum;
+                io.to(partidaId).emit('logBatalla', { msg: `${yo.summon.nombre} ataca causando ${danoSum} daño`, tipo: 'ataque' });
+                break;
+            }
         }
 
         // Trigger on_hp_loss for any player who lost HP
@@ -723,6 +747,7 @@ io.on('connection', (socket) => {
         const ambos = [partida.jugador1, partida.jugador2];
         for (const j of ambos) {
             if (j.hp <= 0) {
+                j.summon = null;
                 const reviveLogs = gp.processPassives(j.pasivas, j, null, 'on_death', {});
                 reviveLogs.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
             }
@@ -1171,7 +1196,7 @@ io.on('connection', (socket) => {
                     maxHp: maxHP1, hp: maxHP1, energia: 0,
                     pose: null, status: {}, pasivas: pasivas1,
                     extraAction: false, critBonus: 0, enrageBonus: 0,
-                    summonHp: 0, inventario: [],
+                    summon: null, inventario: [],
                     equipment: { mano1: null, mano2: null, armadura: null, accesorio: null },
                     objetosRecibidos: [],
                     skillsCompradas: comp1,
@@ -1186,7 +1211,7 @@ io.on('connection', (socket) => {
                     maxHp: maxHP2, hp: maxHP2, energia: 0,
                     pose: null, status: {}, pasivas: pasivas2,
                     extraAction: false, critBonus: 0, enrageBonus: 0,
-                    summonHp: 0, inventario: [],
+                    summon: null, inventario: [],
                     equipment: { mano1: null, mano2: null, armadura: null, accesorio: null },
                     objetosRecibidos: [],
                     skillsCompradas: comp2,
@@ -1333,7 +1358,7 @@ io.on('connection', (socket) => {
                 nombre: pj.nombre, maxHp: maxHPJ, hp: maxHPJ, energia: 0,
                 pose: null, status: {}, pasivas: pas1,
                 extraAction: false, critBonus: 0, enrageBonus: 0,
-                summonHp: 0, inventario: [],
+                summon: null, inventario: [],
                 equipment: { mano1: null, mano2: null, armadura: null, accesorio: null },
                 objetosRecibidos: [], skillsCompradas: comp1,
                 pasivasCompradas: pComp1, persistentEffects: [], contadores: {}
@@ -1344,7 +1369,7 @@ io.on('connection', (socket) => {
                 nombre: botPj.nombre, maxHp: maxHPB, hp: maxHPB, energia: 0,
                 pose: null, status: {}, pasivas: pas2,
                 extraAction: false, critBonus: 0, enrageBonus: 0,
-                summonHp: 0, inventario: [],
+                summon: null, inventario: [],
                 equipment: { mano1: null, mano2: null, armadura: null, accesorio: null },
                 objetosRecibidos: [], skillsCompradas: comp2,
                 pasivasCompradas: pComp2, persistentEffects: [], contadores: {}

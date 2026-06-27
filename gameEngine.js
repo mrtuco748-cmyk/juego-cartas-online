@@ -278,8 +278,19 @@ class GameProcessor {
         return { log: `${ctx.source.nombre} sacrifica ${hpCost} HP y recupera 35 energía` };
       },
       summon: (target, card, ctx) => {
-        ctx.summonHp = Math.floor(ctx.source.maxHp * card.valor);
-        return { log: `${ctx.source.nombre} invoca un aliado con ${ctx.summonHp} HP` };
+        const hp = Math.floor(ctx.source.maxHp * card.valor);
+        const fuenteStats = ctx.source.statsFinales || { fuerza: 3, resistencia: 2, velocidad: 2, magia: 1, suerte: 0 };
+        ctx.summon = {
+          nombre: card.nombre,
+          hp, maxHp: hp,
+          stats: {
+            fuerza: Math.max(1, Math.floor(fuenteStats.fuerza * 0.6)),
+            resistencia: Math.max(1, Math.floor(fuenteStats.resistencia * 0.6)),
+            velocidad: Math.max(1, Math.floor(fuenteStats.velocidad * 0.6)),
+            magia: Math.max(1, Math.floor(fuenteStats.magia * 0.6))
+          }
+        };
+        return { log: `${ctx.source.nombre} invoca a ${card.nombre} con ${hp} HP` };
       },
       buff_all: (target, card, ctx) => {
         const src = ctx.source;
@@ -310,13 +321,14 @@ class GameProcessor {
       return { success: false, reason: `Efecto desconocido: ${card.efecto}` };
     }
 
+    ctx.source.statsFinales = this.calcularStatsConBuffs(ctx.source);
     const result = effectFn(target, card, ctx);
 
     return {
       success: true,
       cancelAttack: ctx.cancelAttack,
       doubleAttack: ctx.doubleAttack,
-      summonHp: ctx.summonHp || 0,
+      summon: ctx.summon || null,
       ...result
     };
   }

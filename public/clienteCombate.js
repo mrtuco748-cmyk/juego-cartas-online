@@ -326,6 +326,8 @@ function renderizarCombate() {
     </div>
   `;
 
+  actualizarSummons();
+  actualizarEfectosVisuales();
   actualizarIndicadorTurno();
 }
 
@@ -750,11 +752,6 @@ function actualizarHP() {
 }
 
 function actualizarEscudoVisual() {
-  const pjEl = document.querySelector('.player-character');
-  const rivEl = document.querySelector('.enemy-character');
-  [pjEl, rivEl].forEach(el => { if (el) el.classList.remove('shield-active'); });
-  if (miPJ.status && miPJ.status.shield > 0 && pjEl) pjEl.classList.add('shield-active');
-  if (rivalPJ.status && rivalPJ.status.shield > 0 && rivEl) rivEl.classList.add('shield-active');
   ['.col-left .sheet-status', '.col-right .sheet-status'].forEach(sel => {
     const el = document.querySelector(sel);
     if (!el) return;
@@ -872,6 +869,49 @@ function popPersonaje(texto, color, selector) {
   p.innerHTML = texto;
   document.body.appendChild(p);
   setTimeout(() => { p.remove(); popCounters[selector]--; if (popCounters[selector] <= 0) delete popCounters[selector]; }, 1100);
+}
+
+function actualizarSummons() {
+  ['.col-left', '.col-right'].forEach(side => {
+    const container = document.querySelector(side);
+    if (!container) return;
+    const existente = container.querySelector('.summon-card');
+    if (existente) existente.remove();
+    const pj = side === '.col-left' ? miPJ : rivalPJ;
+    const summon = pj && pj.summon;
+    if (!summon || summon.hp <= 0) return;
+    const esMio = side === '.col-left';
+    const controloEsteSummon = esPractica || esMio;
+    const esTurnoDeEsteSide = esPractica ? true : (esMio ? esMiTurno : !esMiTurno);
+    const card = document.createElement('div');
+    card.className = 'summon-card';
+    const hpPct = Math.max(0, Math.round(summon.hp / summon.maxHp * 100));
+    card.innerHTML = `
+      <div class="summon-name">${summon.nombre}</div>
+      <div class="summon-hp-bar"><div class="summon-hp-fill" style="width:${hpPct}%"></div></div>
+      <div class="summon-stats">F:${summon.stats.fuerza} R:${summon.stats.resistencia} V:${summon.stats.velocidad} M:${summon.stats.magia}</div>
+      ${controloEsteSummon && esTurnoDeEsteSide ? `<button class="summon-atk-btn" onclick="enviarAccion('summon_attack', null, null, ${!esMio})">ATACAR</button>` : ''}
+    `;
+    const sheet = container.querySelector('.character-bio');
+    if (sheet) sheet.parentNode.insertBefore(card, sheet.nextSibling);
+  });
+}
+
+function actualizarEfectosVisuales() {
+  ['.player-character', '.enemy-character'].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    const pj = sel === '.player-character' ? miPJ : rivalPJ;
+    if (!pj) return;
+    const status = pj.status || {};
+    el.classList.remove('effect-frozen', 'effect-silenced', 'effect-inmune', 'effect-buffed', 'effect-debuffed', 'effect-shield');
+    if (status.shield > 0) el.classList.add('effect-shield');
+    if (status.frozen > 0) el.classList.add('effect-frozen');
+    if (status.silenced > 0) el.classList.add('effect-silenced');
+    if (status.inmune) el.classList.add('effect-inmune');
+    if (status.buffs && Object.keys(status.buffs).length > 0) el.classList.add('effect-buffed');
+    if (status.debuffs && Object.keys(status.debuffs).length > 0) el.classList.add('effect-debuffed');
+  });
 }
 
 function personajeSelector(msg) {
@@ -1160,6 +1200,8 @@ socket.on('actualizarEstado', (datos) => {
   if (datos.j1skills) misSkills = yoMio ? datos.j1skills : datos.j2skills;
   if (datos.inventarioJ1) miPJ.inventario = yoMio ? datos.inventarioJ1 : datos.inventarioJ2;
   if (datos.equipmentJ1) miPJ.equipment = yoMio ? datos.equipmentJ1 : datos.equipmentJ2;
+  miPJ.summon = yoMio ? (datos.summonJ1 || null) : (datos.summonJ2 || null);
+  rivalPJ.summon = yoMio ? (datos.summonJ2 || null) : (datos.summonJ1 || null);
   miPJ.objetosRecibidos = yoMio ? (datos.objetosRecibidosJ1 || []) : (datos.objetosRecibidosJ2 || []);
   rivalPJ.objetosRecibidos = yoMio ? (datos.objetosRecibidosJ2 || []) : (datos.objetosRecibidosJ1 || []);
 
@@ -1175,6 +1217,8 @@ socket.on('actualizarEstado', (datos) => {
   actualizarIndicadorTurno();
   actualizarEscudoVisual();
   actualizarCardBack();
+  actualizarSummons();
+  actualizarEfectosVisuales();
 });
 
 function actualizarCardsSkills() {
