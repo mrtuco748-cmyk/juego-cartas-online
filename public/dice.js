@@ -1,4 +1,4 @@
-let diceRenderer, diceScene, diceCam, diceMesh, ptLight;
+let diceRenderer, diceScene, diceCam, diceMesh, diceFloor;
 let diceReady = false, diceRolling = false, diceQueue = [];
 let diceOverlay = null, diceBackdrop = null;
 
@@ -13,6 +13,8 @@ const FN = [
   new THREE.Vector3(0,1,0), new THREE.Vector3(0,-1,0),
   new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,-1),
 ];
+const FLOOR_TILT = -0.2;
+const FLOOR_Y = -0.25;
 
 function makeFace(n) {
   const s=256, rd=30;
@@ -38,6 +40,19 @@ function makeFace(n) {
   return new THREE.CanvasTexture(c);
 }
 
+function makeFloorTex() {
+  const s=512;
+  const c=document.createElement('canvas');
+  c.width=c.height=s;
+  const ctx=c.getContext('2d');
+  const g=ctx.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
+  g.addColorStop(0,'rgba(60,50,70,0.25)');
+  g.addColorStop(0.5,'rgba(40,35,50,0.12)');
+  g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g;ctx.fillRect(0,0,s,s);
+  return new THREE.CanvasTexture(c);
+}
+
 function initDice() {
   if (diceReady) return;
 
@@ -45,11 +60,11 @@ function initDice() {
   diceBackdrop.style.cssText =
     'position:fixed;z-index:245;top:0;left:0;width:100%;height:100%;' +
     'pointer-events:none;display:none;' +
-    'background:rgba(0,0,0,0.55);' +
-    'backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);';
+    'background:rgba(0,0,0,0.5);' +
+    'backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);';
   document.body.appendChild(diceBackdrop);
 
-  const s = Math.min(window.innerWidth, 460);
+  const s = Math.min(window.innerWidth, 400);
   diceRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   diceRenderer.setSize(s, s);
   diceRenderer.setClearColor(0x000000, 0);
@@ -58,30 +73,36 @@ function initDice() {
     'pointer-events:none;display:none;';
   document.body.appendChild(diceRenderer.domElement);
 
-  diceCam = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-  diceCam.position.set(0, 2.5, 8.5);
-  diceCam.lookAt(0, 0.9, 0);
+  diceCam = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
+  diceCam.position.set(0, 3.2, 8);
+  diceCam.lookAt(0, 0.6, 0);
 
   diceScene = new THREE.Scene();
   diceScene.background = null;
 
-  const amb = new THREE.AmbientLight(0x404060, 1.0);
+  const amb = new THREE.AmbientLight(0x8888bb, 0.8);
   diceScene.add(amb);
-
-  const key = new THREE.DirectionalLight(0xccddff, 1.8);
-  key.position.set(3, 8, 5);
+  const key = new THREE.DirectionalLight(0xeeeeff, 1.5);
+  key.position.set(4, 8, 5);
   diceScene.add(key);
-
-  const rim = new THREE.DirectionalLight(0xff8844, 1.2);
-  rim.position.set(-4, 2, -3);
+  const rim = new THREE.DirectionalLight(0xff8844, 1.0);
+  rim.position.set(-5, 2, -4);
   diceScene.add(rim);
-
-  const fill = new THREE.DirectionalLight(0xaabbff, 0.5);
-  fill.position.set(-2, 1, 6);
+  const fill = new THREE.DirectionalLight(0xaabbff, 0.4);
+  fill.position.set(-2, 1, 7);
   diceScene.add(fill);
 
+  diceFloor = new THREE.Mesh(
+    new THREE.CircleGeometry(3, 32),
+    new THREE.MeshLambertMaterial({ map: makeFloorTex(), transparent: true, side: THREE.DoubleSide })
+  );
+  diceFloor.rotation.x = -Math.PI/2 + FLOOR_TILT;
+  diceFloor.position.set(0, FLOOR_Y, 0.3);
+  diceFloor.receiveShadow = false;
+  diceScene.add(diceFloor);
+
   const mats = FACES.map(n => new THREE.MeshLambertMaterial({ map: makeFace(n) }));
-  diceMesh = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.3, 1.3), mats);
+  diceMesh = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.95, 0.95), mats);
   diceMesh.castShadow = false;
   diceMesh.visible = false;
   diceScene.add(diceMesh);
@@ -106,7 +127,7 @@ function showResult(n) {
   const el = document.createElement('div');
   el.style.cssText =
     `position:fixed;z-index:260;top:50%;left:50%;transform:translate(-50%,-50%);
-     font-size:clamp(72px,19vw,150px);font-weight:900;color:#fff;
+     font-size:clamp(68px,18vw,140px);font-weight:900;color:#fff;
      text-shadow:0 0 30px rgba(200,220,255,0.7),0 0 60px rgba(150,180,255,0.4);
      font-family:'Georgia',serif;pointer-events:none;
      animation:resultPop 0.35s ease-out;`;
@@ -117,25 +138,25 @@ function showResult(n) {
 
 function showDiceUI() {
   if (diceBackdrop) diceBackdrop.style.display = 'block';
-  diceRenderer.domElement.style.display = 'block';
+  if (diceRenderer) diceRenderer.domElement.style.display = 'block';
 }
 
 function hideDiceUI() {
   if (diceBackdrop) diceBackdrop.style.display = 'none';
-  diceRenderer.domElement.style.display = 'none';
+  if (diceRenderer) diceRenderer.domElement.style.display = 'none';
 }
 
 function startRoll(serverVal, resolve) {
   S.phase='falling'; S.resolve=resolve; S.serverVal=serverVal;
   S.settleFrames=0; S.resultShown=false;
-  S.vx=(Math.random()-0.5)*0.15;
-  S.vy=-(0.4+Math.random()*0.8);
-  S.vz=(Math.random()-0.5)*0.15;
-  S.posY=2.5+Math.random()*0.8;
-  S.angVX=(Math.random()-0.5)*0.9;
-  S.angVY=(Math.random()-0.5)*0.9;
-  S.angVZ=(Math.random()-0.5)*0.6;
-  diceMesh.position.set((Math.random()-0.5)*1.8, S.posY, (Math.random()-0.5)*1.0);
+  S.vx=(Math.random()-0.5)*0.18;
+  S.vy=-(0.3+Math.random()*0.6);
+  S.vz=(Math.random()-0.5)*0.12 + 0.15;
+  S.posY=2.8+Math.random()*0.6;
+  S.angVX=(Math.random()-0.5)*1.0;
+  S.angVY=(Math.random()-0.5)*1.0;
+  S.angVZ=(Math.random()-0.5)*0.7;
+  diceMesh.position.set((Math.random()-0.5)*1.5, S.posY, (Math.random()-0.5)*0.8);
   diceMesh.rotation.set(Math.random()*Math.PI*2, Math.random()*Math.PI*2, Math.random()*Math.PI*2);
   diceMesh.visible=true;
   showDiceUI();
@@ -145,22 +166,24 @@ function tick() {
   requestAnimationFrame(tick);
 
   if(S.phase==='falling'){
-    S.vy+=-0.04;
+    S.vy+=-0.045;
+    S.vz+=FLOOR_TILT*0.12;
     S.posY+=S.vy;
     diceMesh.position.x+=S.vx; diceMesh.position.y=S.posY; diceMesh.position.z+=S.vz;
     diceMesh.rotation.x+=S.angVX; diceMesh.rotation.y+=S.angVY; diceMesh.rotation.z+=S.angVZ;
     S.vx*=0.995; S.vz*=0.995;
 
-    if(S.posY<=-0.2){
-      S.posY=-0.2; diceMesh.position.y=-0.2;
-      S.vx*=0.6; S.vz*=0.6;
-      if(Math.abs(S.vy)>0.06){
-        S.vy=-S.vy*0.2;
-        S.angVX*=0.85; S.angVY*=0.85; S.angVZ*=0.85;
+    if(S.posY<=FLOOR_Y+0.05){
+      S.posY=FLOOR_Y+0.05; diceMesh.position.y=FLOOR_Y+0.05;
+      S.vx*=0.5; S.vz*=0.5;
+      if(Math.abs(S.vy)>0.05){
+        S.vy=-S.vy*0.15;
+        S.angVX*=0.8; S.angVY*=0.8; S.angVZ*=0.8;
       }else{
         S.vy=0;
-        S.angVX*=0.5; S.angVY*=0.5; S.angVZ*=0.5;
+        S.angVX*=0.4; S.angVY*=0.4; S.angVZ*=0.4;
         if(Math.abs(S.angVX)<0.002&&Math.abs(S.angVY)<0.002&&Math.abs(S.angVZ)<0.002){
+          diceMesh.rotation.x+=FLOOR_TILT*0.5;
           S.phase='settled'; S.settleFrames=0;
         }
       }
