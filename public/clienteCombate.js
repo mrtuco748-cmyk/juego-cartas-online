@@ -61,7 +61,10 @@ socket.on('rivalEncontrado', (data) => {
 function mostrarPantallaCombate() {
   document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
   document.getElementById('pantallaCombate').classList.add('activa');
-  if (typeof AudioManager !== 'undefined') AudioManager.startBattle();
+  if (typeof AudioManager !== 'undefined') {
+    AudioManager.startBattle();
+    AudioManager.playSFX('open');
+  }
 }
 
 const CLASS_MODS = {
@@ -572,6 +575,7 @@ function seleccionarCarta(idx) {
   if (!localStorage.getItem('loop_vistoArrastra')) {
     document.getElementById('cartaSeleccionInfo').style.display = 'block';
   }
+  if (typeof AudioManager !== 'undefined') AudioManager.playSFX('select');
 }
 
 function cancelarSeleccionCarta() {
@@ -579,11 +583,13 @@ function cancelarSeleccionCarta() {
   cartaSeleccionada = null;
   document.querySelectorAll('.carta-slot').forEach(c => c.classList.remove('selected'));
   document.getElementById('cartaSeleccionInfo').style.display = 'none';
+  if (typeof AudioManager !== 'undefined') AudioManager.playSFX('close');
 }
 
 function usarCartaSeleccionada() {
   if (cartaSeleccionada === null) return;
   const skill = misSkills[cartaSeleccionada];
+  if (typeof AudioManager !== 'undefined') AudioManager.playSFX('spell');
   enviarAccion('carta', skill.id || skill.nombre);
   localStorage.setItem('loop_vistoArrastra', '1');
   cancelarSeleccionCarta();
@@ -672,6 +678,7 @@ function usarCartaDrag() {
   if (draggedCardIdx === null) return;
   const skill = misSkills[draggedCardIdx];
   if (!skill || skill.coste > (miPJ.energia || 0)) return;
+  if (typeof AudioManager !== 'undefined') AudioManager.playSFX('spell');
   enviarAccion('carta', skill.id || skill.nombre);
   draggedCardIdx = null;
   localStorage.setItem('loop_vistoArrastra', '1');
@@ -692,6 +699,12 @@ function enviarAccion(tipo, cartaId, accionData, comoRival) {
   if (tipo !== 'carta') {
     if (!esPractica && (!esMiTurno || accionesRestantes <= 0)) return;
     if (esPractica && !comoRival && (!esMiTurno || accionesRestantes <= 0)) return;
+  }
+  if (typeof AudioManager !== 'undefined') {
+    if (tipo === 'atacar') AudioManager.playSFX('attack');
+    else if (tipo === 'descansar') AudioManager.playSFX('select');
+    else if (tipo === 'pose') AudioManager.playSFX('select');
+    else if (tipo === 'carta') AudioManager.playSFX('spell');
   }
   socket.emit('ejecutarAccion', {
     partidaId: partidaActualId,
@@ -1018,6 +1031,7 @@ function agregarLog(data) {
 
   /* ─── ATAQUE (daño) ─── */
   if (tipo === 'ataque') {
+    if (typeof AudioManager !== 'undefined') AudioManager.playSFX('attack');
     const nums = msg.match(/(\d+)\s*$/) || msg.match(/(\d+)(?:\s*daño)?\s*$/);
     if (nums) {
       mostrarDañoFlotante(parseInt(nums[1]), /crític|CRÍTIC/i.test(msg));
@@ -1025,11 +1039,13 @@ function agregarLog(data) {
     if (/escudo/i.test(msg)) {
       const m = msg.match(/-(\d+)/);
       if (m) popCentro('🛡 -' + m[1], '#40b0ff', 'clamp(22px,4vw,38px)', '0 0 20px rgba(40,150,255,0.7)');
+      if (typeof AudioManager !== 'undefined') AudioManager.playSFX('click');
     }
   }
 
   /* ─── CURACIÓN ─── */
   if (tipo === 'curacion') {
+    if (typeof AudioManager !== 'undefined') AudioManager.playSFX('heal');
     const nums = msg.match(/\+?(\d+)\s*HP/) || msg.match(/cura\s*(\d+)\s*HP/);
     if (nums) {
       const sel = personajeSelector(msg);
@@ -1054,11 +1070,15 @@ function agregarLog(data) {
   /* ─── ENERGÍA ─── */
   if (/energía|energia/i.test(msg)) {
     const m = msg.match(/(?:recupera|recibe|gana|\+)?\s*(\d+)\s*energ/i);
-    if (m) popPersonaje('+' + m[1] + 'E', '#40a0f0', personajeSelector(msg));
+    if (m) {
+      popPersonaje('+' + m[1] + 'E', '#40a0f0', personajeSelector(msg));
+      if (typeof AudioManager !== 'undefined') AudioManager.playSFX('coin');
+    }
   }
 
   /* ─── POSE / DODGE / PARRY ─── */
   if (/esquiv|evadi|dodge|parr|bloque/i.test(msg)) {
+    if (typeof AudioManager !== 'undefined') AudioManager.playSFX('select');
     const sel = personajeSelector(msg);
     const elChar = document.querySelector(sel);
     if (elChar) {
@@ -1075,31 +1095,36 @@ function agregarLog(data) {
   }
 
   /* ─── CARTAS / SKILLS ─── */
-  if (tipo === 'carta' && /recibe.*daño|de.*daño|drena/i.test(msg)) {
-    const m = msg.match(/(\d+)\s*de\s*daño|\+?(\d+)\s*daño/i);
-    if (m) popCentro('⚡ ' + (m[1] || m[2] || '?'), '#e08040', 'clamp(24px,4vw,40px)');
-  }
-  if (tipo === 'carta' && /paralizado|aturdido/i.test(msg)) {
-    popCentro('❄ PARALIZADO', '#60c0ff', 'clamp(26px,4.5vw,44px)', '0 0 30px rgba(60,180,255,0.7)');
-  }
-  if (tipo === 'carta' && /silenciado/i.test(msg)) {
-    popCentro('🔇 SILENCIADO', '#888', 'clamp(26px,4.5vw,44px)', '0 0 20px rgba(100,100,100,0.7)');
-  }
-  if (tipo === 'carta' && /escudo\s*(de|de )?(\d+)/i.test(msg)) {
-    const m = msg.match(/(\d+)/);
-    if (m) popPersonaje('🛡 +' + m[1], '#40b0ff', personajeSelector(msg));
-  }
-  if (tipo === 'carta' && (/\bgana\s*\+/i.test(msg) || /\bgana\s*\+\d+/i.test(msg))) {
-    const m = msg.match(/\+(\d+)\s*([a-záéíóú]+)/i);
-    if (m) popPersonaje('↑ ' + m[1] + ' ' + m[2], '#60e880', personajeSelector(msg));
-  }
-  if (tipo === 'carta' && /pierde\s*\d+/i.test(msg)) {
-    const m = msg.match(/pierde\s*(\d+)\s*([a-záéíóú]+)/i);
-    if (m) popPersonaje('↓ ' + m[1] + ' ' + (m[2] || ''), '#ff6040', personajeSelector(msg));
+  if (tipo === 'carta') {
+    if (typeof AudioManager !== 'undefined') AudioManager.playSFX('spell');
+    if (/recibe.*daño|de.*daño|drena/i.test(msg)) {
+      const m = msg.match(/(\d+)\s*de\s*daño|\+?(\d+)\s*daño/i);
+      if (m) popCentro('⚡ ' + (m[1] || m[2] || '?'), '#e08040', 'clamp(24px,4vw,40px)');
+      if (typeof AudioManager !== 'undefined') AudioManager.playSFX('hit');
+    }
+    if (/paralizado|aturdido/i.test(msg)) {
+      popCentro('❄ PARALIZADO', '#60c0ff', 'clamp(26px,4.5vw,44px)', '0 0 30px rgba(60,180,255,0.7)');
+    }
+    if (/silenciado/i.test(msg)) {
+      popCentro('🔇 SILENCIADO', '#888', 'clamp(26px,4.5vw,44px)', '0 0 20px rgba(100,100,100,0.7)');
+    }
+    if (/escudo\s*(de|de )?(\d+)/i.test(msg)) {
+      const m = msg.match(/(\d+)/);
+      if (m) popPersonaje('🛡 +' + m[1], '#40b0ff', personajeSelector(msg));
+    }
+    if (/\bgana\s*\+/i.test(msg) || /\bgana\s*\+\d+/i.test(msg)) {
+      const m = msg.match(/\+(\d+)\s*([a-záéíóú]+)/i);
+      if (m) popPersonaje('↑ ' + m[1] + ' ' + m[2], '#60e880', personajeSelector(msg));
+    }
+    if (/pierde\s*\d+/i.test(msg)) {
+      const m = msg.match(/pierde\s*(\d+)\s*([a-záéíóú]+)/i);
+      if (m) popPersonaje('↓ ' + m[1] + ' ' + (m[2] || ''), '#ff6040', personajeSelector(msg));
+    }
   }
 
   /* ─── PASIVAS ─── */
   if (tipo === 'pasiva') {
+    if (typeof AudioManager !== 'undefined') AudioManager.playSFX('spell', 0.6);
     if (/daño por veneno/i.test(msg)) {
       const m = msg.match(/(\d+)\s*de\s*daño/);
       if (m) popPersonaje('☠ ' + m[1], '#b040c0', personajeSelector(msg));
@@ -1169,6 +1194,7 @@ function agregarLog(data) {
 
   /* ─── STATUS ─── */
   if (tipo === 'status') {
+    if (typeof AudioManager !== 'undefined') AudioManager.playSFX('spell', 0.5);
     if (/paralizado|aturdido|frozen/i.test(msg)) {
       popCentro('❄ PARALIZADO', '#60c0ff', 'clamp(26px,4.5vw,44px)', '0 0 30px rgba(60,180,255,0.7)');
     }
@@ -1185,12 +1211,15 @@ function agregarLog(data) {
   if (tipo === 'muerte') {
     if (/empate|empate/i.test(msg)) {
       popCentro('¡EMPATE!', '#ffcc00', 'clamp(40px,7vw,64px)', '0 0 40px rgba(255,200,0,0.9)');
+      if (typeof AudioManager !== 'undefined') AudioManager.playSFX('victory');
     } else {
       const ganador = msg.match(/(.+?)\s*gana/);
       if (ganador) {
         popCentro('VICTORIA', '#ffcc00', 'clamp(40px,7vw,64px)', '0 0 40px rgba(255,200,0,0.9)');
+        if (typeof AudioManager !== 'undefined') AudioManager.playSFX('victory');
       } else {
         popCentro('DERROTA', '#ff3030', 'clamp(36px,6vw,60px)', '0 0 40px rgba(255,0,0,0.8)');
+        if (typeof AudioManager !== 'undefined') AudioManager.playSFX('defeat');
       }
     }
   }
@@ -1227,6 +1256,7 @@ socket.on('diceRoll', (data) => {
 });
 
 socket.on('fortunaCard', (data) => {
+  if (typeof AudioManager !== 'undefined') AudioManager.playSFX('fortune');
   mostrarFortuna(data);
 });
 
@@ -1363,6 +1393,11 @@ socket.on('finPartida', (datos) => {
     let msg = esPractica ? 'ENTRENAMIENTO TERMINADO' : (empate ? 'EMPATE!' : (gane ? 'VICTORIA!' : 'DERROTA'));
     logBatch.innerHTML += `<div style="color:#e0b060;font-size:13px;text-align:center;margin-top:10px;letter-spacing:2px;">${msg}</div>`;
     logBatch.scrollTop = logBatch.scrollHeight;
+  }
+  if (typeof AudioManager !== 'undefined') {
+    if (empate) AudioManager.playSFX('victory');
+    else if (gane) AudioManager.playSFX('victory');
+    else AudioManager.playSFX('defeat');
   }
   esMiTurno = false;
   accionesRestantes = 0;

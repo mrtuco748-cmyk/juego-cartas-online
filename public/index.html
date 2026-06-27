@@ -1321,16 +1321,18 @@
         document.getElementById(id).style.display = 'block';
     }
 
-    function irAAuth() { mostrarPantalla('auth'); }
+    function irAAuth() { AudioManager.playSFX('click'); mostrarPantalla('auth'); }
     function cerrarSesion() { cuentaActual = null; pjSeleccionado = null; localStorage.removeItem(STORAGE_KEY); mostrarPantalla('auth'); }
 
     function irAMenuDesdeSeccion() {
+        AudioManager.playSFX('click');
         mostrarSeccionMenu('pantallaMenu');
         document.querySelectorAll('.round-btn').forEach(b => b.classList.remove('activo'));
         seccionActual = 'menu';
     }
 
     function cambiarSeccion(seccion) {
+        AudioManager.playSFX('click');
         seccionActual = seccion;
         document.querySelectorAll('.round-btn').forEach(b => b.classList.remove('activo'));
 
@@ -1350,11 +1352,13 @@
     }
 
     function irAPersonajes() {
+        AudioManager.playSFX('click');
         renderizarPersonajes();
         mostrarSeccionMenu('pantallaPersonajes');
     }
 
     function irACrearPJ() {
+        AudioManager.playSFX('click');
         mostrarSeccionMenu('pantallaCreacion');
         document.getElementById('formPersonaje').reset();
         document.getElementById('skillPicker').style.display = 'none';
@@ -1364,6 +1368,7 @@
     }
 
     function irASeleccionPJ() {
+        AudioManager.playSFX('click');
         pjSeleccionado = null;
         if (!cuentaActual || cuentaActual.personajes.length === 0) {
             mostrarSeccionMenu('pantallaSeleccionPJ');
@@ -1375,12 +1380,14 @@
     }
 
     function iniciarPractica() {
+        AudioManager.playSFX('click');
         modoPractica = true;
         irASeleccionPJ();
     }
 
     // ── TABS AUTH ──
     function cambiarTab(tab) {
+        AudioManager.playSFX('click');
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('activo'));
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('activo'));
         if (tab === 'login') {
@@ -2324,6 +2331,25 @@
 
     const AudioManager = {
         _menuAudio: null, _battleAudio: null, active: null, vol: 0.1, _muted: false,
+        _sfxMap: {
+            click: ['click.wav','click2.wav','click3.wav'],
+            select: ['snap.wav','snap1.wav','snap2.wav'],
+            open: ['appear-online.wav'],
+            close: ['cut.wav'],
+            buy: ['item_gem_01.ogg'],
+            message: ['message.wav'],
+            error: ['dustbin.wav'],
+            attack: ['blade_01.ogg','blade_02.ogg','blade_03.ogg'],
+            hit: ['creature_hurt_01.ogg','creature_hurt_02.ogg'],
+            death: ['creature_die_01.ogg'],
+            spell: ['spell_01.ogg','spell_02.ogg'],
+            fire: ['spell_fire_01.ogg','spell_fire_02.ogg'],
+            heal: ['spell_01.ogg'],
+            coin: ['item_gem_01.ogg'],
+            fortune: ['appear-online.wav'],
+            victory: ['spell_fire_01.ogg'],
+            defeat: ['creature_die_01.ogg'],
+        },
         _fade(audio, targetVol, dur, done) {
             if (!audio) { if (done) done(); return; }
             const start = audio.volume, diff = targetVol - start, steps = Math.max(1, Math.floor((dur || 0.5) * 20));
@@ -2334,6 +2360,14 @@
                 audio.volume = start + diff * (i / steps);
             }, 50);
         },
+        playSFX(name, volMul) {
+            if (this._muted) return;
+            const files = this._sfxMap[name] || [name];
+            const file = files[Math.floor(Math.random() * files.length)];
+            const a = new Audio('audio/' + file);
+            a.volume = this.vol * (volMul || 1);
+            a.play().catch(() => {});
+        },
         startMenu() {
             if (this._muted) return;
             if (this.active === 'menu') return;
@@ -2342,7 +2376,7 @@
             this._menuAudio = new Audio('audio/menu.mp3');
             this._menuAudio.loop = true;
             this._menuAudio.volume = 0;
-            this._menuAudio.play();
+            this._menuAudio.play().catch(() => { if (this._menuAudio) { this._menuAudio.src = ''; this._menuAudio = null; } this.active = null; });
             this._fade(this._menuAudio, this.vol, 1);
         },
         startBattle() {
@@ -2353,7 +2387,7 @@
             this._battleAudio = new Audio('audio/battle.mp3');
             this._battleAudio.loop = true;
             this._battleAudio.volume = 0;
-            this._battleAudio.play();
+            this._battleAudio.play().catch(() => { if (this._battleAudio) { this._battleAudio.src = ''; this._battleAudio = null; } this.active = null; });
             this._fade(this._battleAudio, this.vol * 1.2, 0.8);
         },
         stop(dur) {
@@ -2362,11 +2396,20 @@
             this.active = null;
         },
         toggle() {
-            if (this._muted) { this._muted = false; const b = document.getElementById('btnMute'); if (b) b.textContent = '♫'; document.querySelector('.pantalla.activa')?.id === 'pantallaCombate' ? this.startBattle() : this.startMenu(); }
+            if (this._muted) { this._muted = false; const b = document.getElementById('btnMute'); if (b) b.textContent = '♫'; document.querySelector('.pantalla.activa')?.id === 'pantallaCombate' ? this.startBattle() : this.startMenu(); this.playSFX('select'); }
             else { this._muted = true; this.stop(0.3); const b = document.getElementById('btnMute'); if (b) b.textContent = '♪'; }
         }
     };
-    document.addEventListener('click', () => { if (!AudioManager.active && !AudioManager._muted) AudioManager.startMenu(); }, { once: true });
+    AudioManager.startMenu();
+    document.addEventListener('click', () => { if (!AudioManager.active && !AudioManager._muted) { AudioManager.startMenu(); } }, { once: true });
+    document.body.addEventListener('click', function(e) {
+        if (document.getElementById('pantallaCombate')?.classList.contains('activa')) return;
+        if (e.target.closest('#btnMute') || e.target.closest('.btn-mute')) return;
+        if (e.target.closest('.popup-bg')) return;
+        if (e.target.closest('button') || e.target.closest('[onclick]')) {
+            AudioManager.playSFX('click');
+        }
+    });
 
     function mostrarPantalla(id) {
         document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
