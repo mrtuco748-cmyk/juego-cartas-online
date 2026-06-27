@@ -93,24 +93,33 @@ function calcularStatsConBuffsCliente(pj) {
     const serverStat = pj[s] || 0;
     const classMod = classMods[s] || 0;
     const baseStat = serverStat - classMod;
-    let eMod = 0;
+    const mods = [];
+    mods.push({ val: baseStat, label: 'base' });
+    if (classMod) mods.push({ val: classMod, label: pj.clase });
     if (pj.equipment) {
       for (const eq of Object.values(pj.equipment)) {
         if (!eq) continue;
-        if (eq.stat === s) eMod += eq.valor || 0;
-        if (eq.stats && typeof eq.stats[s] === 'number') eMod += eq.stats[s];
-        if (eq.penalidad && typeof eq.penalidad[s] === 'number') eMod += eq.penalidad[s];
+        const nom = eq.nombre || 'equipo';
+        let v = 0;
+        if (eq.stat === s) v += eq.valor || 0;
+        if (eq.stats && typeof eq.stats[s] === 'number') v += eq.stats[s];
+        if (eq.penalidad && typeof eq.penalidad[s] === 'number') v += eq.penalidad[s];
+        if (v) mods.push({ val: v, label: nom });
       }
     }
-    let bMod = 0;
     if (pj.status) {
-      if (pj.status.buffs && pj.status.buffs[s]) bMod += pj.status.buffs[s].valor;
-      if (pj.status.debuffs && pj.status.debuffs[s]) bMod -= pj.status.debuffs[s].valor;
+      if (pj.status.buffs && pj.status.buffs[s]) {
+        mods.push({ val: pj.status.buffs[s].valor, label: pj.status.buffs[s].fuente || 'buff' });
+      }
+      if (pj.status.debuffs && pj.status.debuffs[s]) {
+        mods.push({ val: -pj.status.debuffs[s].valor, label: pj.status.debuffs[s].fuente || 'debuff' });
+      }
     }
-    permanent[s] = serverStat + eMod;
+    const bMod = mods.filter(m => m.label !== 'base').reduce((sum, m) => sum + m.val, 0);
+    permanent[s] = baseStat + bMod;
     buffMod[s] = bMod;
-    total[s] = serverStat + eMod + bMod;
-    breakdown[s] = { base: baseStat, class: classMod, equip: eMod, buff: bMod };
+    total[s] = baseStat + bMod;
+    breakdown[s] = mods;
   }
   return { total, permanent, buffMod, breakdown };
 }
@@ -136,28 +145,24 @@ function renderizarCombate() {
     return `<div class="sheet-status">${parts.join(' ')}</div>`;
   };
 
-  const statLine = (label, stat, c) => {
-    const brk = c.breakdown && c.breakdown[stat];
-    if (!brk) {
-      const base = c.permanent[stat];
-      const b = c.buffMod[stat];
-      if (b > 0) return `<div>${label} ${base} <span class="mod-pos">+${b}</span></div>`;
-      if (b < 0) return `<div>${label} ${base} <span class="mod-neg">${b}</span></div>`;
-      return `<div>${label} ${base}</div>`;
+  const statLine = (label, stat, c, clase) => {
+    const mods = c.breakdown && c.breakdown[stat];
+    if (!mods || mods.length === 0) {
+      return `<div>${label} 0</div>`;
     }
-    const fmt = (v, cls) => {
-      if (v === 0) return '';
-      return `<span class="${cls}">${v > 0 ? '+' : ''}${v}</span>`;
+    const total = mods.reduce((s, m) => s + m.val, 0);
+    const modClass = (m) => {
+      if (m.label === 'base') return '';
+      if (m.label === clase) return 'mod-clase';
+      if (m.label === 'buff' || !CLASS_MODS[m.label]) return 'mod-buff';
+      return 'mod-equip';
     };
-    const total = brk.base + brk.class + brk.equip + brk.buff;
-    let detail = `${brk.base}`;
-    const cp = fmt(brk.class, 'mod-class');
-    const ep = fmt(brk.equip, 'mod-equip');
-    const bp = fmt(brk.buff, 'mod-buff');
-    if (cp) detail += cp;
-    if (ep) detail += ep;
-    if (bp) detail += bp;
-    return `<div class="stat-breakdown" title="${label}: base ${brk.base}, clase ${brk.class}, equipo ${brk.equip}, buff ${brk.buff}">${label} <span class="stat-total">${total}</span> <span class="stat-detail">${detail}</span></div>`;
+    const parts = mods.map(m => {
+      if (m.label === 'base') return `${m.val}`;
+      const signo = m.val > 0 ? '+' : '';
+      return `<span class="${modClass(m)}">${signo}${m.val}(${m.label})</span>`;
+    });
+    return `<div class="stat-breakdown">${label} <span class="stat-total">${total}</span> ${parts.join(' ')}</div>`;
   };
 
   const sheetHTML = (pj, prefix) => {
@@ -174,11 +179,11 @@ function renderizarCombate() {
         </div>
         <div class="bar"><div class="energy-fill" id="${prefix}EnergyFill" style="width:${prefix === 'pj' ? miEnPct : rivalEnPct}%"></div></div>
         <div class="stats-grid">
-          ${statLine('F', 'fuerza', c)}
-          ${statLine('R', 'resistencia', c)}
-          ${statLine('V', 'velocidad', c)}
-          ${statLine('M', 'magia', c)}
-          ${statLine('S', 'suerte', c)}
+          ${statLine('F', 'fuerza', c, pj.clase)}
+          ${statLine('R', 'resistencia', c, pj.clase)}
+          ${statLine('V', 'velocidad', c, pj.clase)}
+          ${statLine('M', 'magia', c, pj.clase)}
+          ${statLine('S', 'suerte', c, pj.clase)}
         </div>
       </div>
     </div>`;

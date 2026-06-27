@@ -233,14 +233,14 @@ class GameProcessor {
         const src = ctx.source;
         src.status = src.status || {};
         src.status.buffs = src.status.buffs || {};
-        src.status.buffs[card.stat] = { valor: card.valor, restante: card.duracion };
+        src.status.buffs[card.stat] = { valor: card.valor, restante: card.duracion, fuente: card.nombre };
         const statNom = { fuerza: "FUE", resistencia: "RES", velocidad: "VEL", magia: "MAG", suerte: "SUE" }[card.stat] || card.stat;
         return { log: `${src.nombre} gana +${card.valor} ${statNom} por ${card.duracion} turnos` };
       },
       debuff: (target, card) => {
         target.status = target.status || {};
         target.status.debuffs = target.status.debuffs || {};
-        target.status.debuffs[card.stat] = { valor: card.valor, restante: card.duracion };
+        target.status.debuffs[card.stat] = { valor: card.valor, restante: card.duracion, fuente: card.nombre };
         const statNom = { fuerza: "FUE", resistencia: "RES", velocidad: "VEL", magia: "MAG", suerte: "SUE" }[card.stat] || card.stat;
         return { log: `${target.nombre} pierde ${card.valor} ${statNom} por ${card.duracion} turnos` };
       },
@@ -287,7 +287,7 @@ class GameProcessor {
         src.status = src.status || {};
         src.status.buffs = src.status.buffs || {};
         stats.forEach(s => {
-          src.status.buffs[s] = { valor: card.valor, restante: card.duracion };
+          src.status.buffs[s] = { valor: card.valor, restante: card.duracion, fuente: card.nombre };
         });
         return { log: `${src.nombre} recibe +${card.valor} a todas las stats por ${card.duracion} turnos` };
       }
