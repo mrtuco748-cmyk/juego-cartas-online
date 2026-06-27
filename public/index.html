@@ -270,291 +270,274 @@
             top: 0; left: 0; z-index: 50;
             overflow: hidden;
         }
-        #pantallaCombate.activa { align-items:stretch; justify-content:flex-start; }
+        #pantallaCombate.activa { align-items: stretch; justify-content: flex-start; }
         #pantallaCombate::before {
-            content:''; position:absolute; inset:0;
-            background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px);
-            pointer-events:none; z-index:0;
+            content: ''; position: absolute; inset: 0;
+            background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px);
+            pointer-events: none; z-index: 0;
         }
 
         .topbar {
-            height:48px; display:flex; align-items:center;
-            padding:0 20px; background:rgba(0,0,0,0.4);
-            border-bottom:1px solid #5a4020; flex-shrink:0; position:relative; z-index:1;
+            height: 44px; display: flex; align-items: center;
+            padding: 0 16px; background: rgba(0,0,0,0.5);
+            border-bottom: 1px solid #5a4020; flex-shrink: 0;
+            position: relative; z-index: 1;
         }
         .orb {
-            width:30px; height:30px; border-radius:50%;
-            background:radial-gradient(circle at 35% 35%, #ffeecc, #c89000 60%, #8a6000);
-            box-shadow:0 0 8px rgba(200,150,0,0.4), 0 0 20px rgba(200,150,0,0.2);
+            width: 28px; height: 28px; border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #ffeecc, #c89000 60%, #8a6000);
+            box-shadow: 0 0 8px rgba(200,150,0,0.4), 0 0 20px rgba(200,150,0,0.2);
         }
 
-        /* ── BATTLEFIELD GRID ── */
         .battlefield {
-            flex:1; display:grid; position:relative; z-index:1;
-            grid-template-columns:minmax(130px,170px) 1fr minmax(130px,170px);
-            grid-template-rows:1fr auto auto;
-            gap:6px; padding:6px;
-            overflow-y:auto; min-height:0;
+            flex: 1; display: grid; position: relative; z-index: 1;
+            grid-template-columns: 200px 1fr 200px;
+            grid-template-rows: 1fr auto auto;
+            gap: 8px; padding: 8px;
+            overflow: hidden; min-height: 0;
         }
-        .col-left  { grid-column:1; grid-row:1; display:flex; flex-direction:column; gap:5px; }
-        .col-mid   { grid-column:2; grid-row:1; display:flex; flex-direction:column; gap:5px; min-height:0; }
-        .col-right { grid-column:3; grid-row:1; display:flex; flex-direction:column; gap:5px; }
-        .cards-row { grid-column:1/-1; grid-row:2; display:flex; justify-content:center; overflow:visible; }
+        .col-left  { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; gap: 6px; }
+        .col-mid   { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+        .col-right { grid-column: 3; grid-row: 1; display: flex; flex-direction: column; gap: 6px; }
+        .cards-row { grid-column: 1/-1; grid-row: 2; display: flex; justify-content: center; overflow: visible; }
         .actions-row {
-            grid-column:1/-1; grid-row:3; display:flex;
-            align-items:center; justify-content:space-between; gap:6px;
+            grid-column: 1/-1; grid-row: 3;
+            display: flex; align-items: center; justify-content: space-between; gap: 6px;
         }
 
-        /* ── CHARACTERS ── */
         .enemy-character, .player-character {
-            width:100%; height:clamp(80px, 13vh, 150px);
-            border-radius:10px; border:1px solid rgba(200,160,100,0.12);
-            background:linear-gradient(135deg,rgba(40,30,20,0.5),rgba(20,14,10,0.5));
-            display:flex; align-items:center; justify-content:center;
-            font-size:40px; color:#5a4a3a; overflow:hidden;
-            transition:transform 0.5s ease;
+            width: 100%; height: clamp(80px, 14vh, 160px);
+            border-radius: 10px; border: 1px solid rgba(200,160,100,0.15);
+            background: linear-gradient(135deg,rgba(40,30,20,0.5),rgba(20,14,10,0.5));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 40px; color: #5a4a3a; overflow: hidden;
+            transition: transform 0.5s ease; flex-shrink: 0;
         }
         .enemy-character img, .player-character img {
-            width:100%; height:100%; object-fit:cover;
-            filter:brightness(0.5) contrast(1.2);
+            width: 100%; height: 100%; object-fit: cover;
+            filter: brightness(0.6) contrast(1.2);
         }
-        .player-character.tu-turno { transform:translateX(12px) scale(1.03); }
-        .enemy-character.tu-turno  { transform:translateX(-12px) scale(1.03); }
+        .player-character.tu-turno { transform: translateX(8px) scale(1.02); }
+        .enemy-character.tu-turno  { transform: translateX(-8px) scale(1.02); }
 
-        /* ── CHARACTER BIOS ── */
-        .character-bio { display:flex; flex-direction:column; align-items:center; transition:transform 0.4s ease; }
-        .character-bio.tu-turno { transform:scale(1.03); }
+        .character-bio { display: flex; flex-direction: column; align-items: center; transition: transform 0.4s ease; }
+        .character-bio.tu-turno { transform: scale(1.02); }
+
+        /* Elimina la foto duplicada */
         .char-portrait { display: none !important; }
 
         .sheet {
-            width:100%; padding:7px 9px;
-            background:linear-gradient(145deg,#14100c,#1a1410);
-            border:1px solid #5a3a20; border-radius:8px;
+            width: 100%; padding: 8px 10px;
+            background: linear-gradient(145deg,#14100c,#1a1410);
+            border: 1px solid #5a3a20; border-radius: 8px;
         }
-        .sheet h2 { color:#e0b870; font-size:11px; margin:1px 0; letter-spacing:1px; }
-        .sheet h4 { color:#b0a090; margin-bottom:4px; font-size:9px; font-weight:normal; }
-        .sheet .bar { width:100%; height:8px; background:#2a2018; border-radius:4px; overflow:hidden; margin-bottom:2px; }
-        .sheet .hp-fill { height:100%; background:linear-gradient(90deg,#cc2048,#ff4068); transition:width 0.3s; border-radius:4px; }
-        .sheet .energy-fill { height:100%; background:linear-gradient(90deg,#2070c8,#40a0f0); transition:width 0.3s; border-radius:4px; }
-        .sheet .stats-grid { margin-top:3px; display:grid; grid-template-columns:1fr 1fr; gap:2px; }
-        .sheet .stats-grid div { background:#201814; padding:2px 5px; border-radius:3px; font-size:9px; color:#c0b0a0; }
-        .sheet-status { font-size:8px; color:#b090c8; text-align:center; margin-bottom:1px; }
-        .hp-energy-text { font-size:8px; display:flex; justify-content:space-between; margin-bottom:1px; color:#b0a090; }
-        .e-color { color:#40a0f0; }
-        .mod-pos { color:#60d060; }
-        .mod-neg { color:#ff6040; }
+        .sheet h2 { color: #e0b870; font-size: 12px; margin: 1px 0; letter-spacing: 1px; }
+        .sheet h4 { color: #b0a090; margin-bottom: 4px; font-size: 9px; font-weight: normal; }
+        .sheet .bar { width: 100%; height: 8px; background: #2a2018; border-radius: 4px; overflow: hidden; margin-bottom: 3px; }
+        .sheet .hp-fill     { height: 100%; background: linear-gradient(90deg,#cc2048,#ff4068); transition: width 0.3s; border-radius: 4px; }
+        .sheet .energy-fill { height: 100%; background: linear-gradient(90deg,#2070c8,#40a0f0); transition: width 0.3s; border-radius: 4px; }
+        .sheet .stats-grid  { margin-top: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+        .sheet .stats-grid div { background: #201814; padding: 2px 5px; border-radius: 3px; font-size: 9px; color: #c0b0a0; }
+        .sheet-status   { font-size: 8px; color: #b090c8; text-align: center; margin-bottom: 2px; }
+        .hp-energy-text { font-size: 8px; display: flex; justify-content: space-between; margin-bottom: 2px; color: #b0a090; }
+        .e-color { color: #40a0f0; }
+        .mod-pos { color: #60d060; }
+        .mod-neg { color: #ff6040; }
 
-        /* ── LOG SCROLL ── */
         .log-scroll {
-            flex:1; min-height:0; max-height:100%;
-            background:linear-gradient(180deg,#1a1610 0%,#12100a 100%);
-            border:1px solid #4a3a20; border-radius:8px;
-            padding:8px 12px; overflow-y:auto;
-            color:#b8a888; font-size:11px;
+            flex: 1; min-height: 0; max-height: 100%;
+            background: linear-gradient(180deg,#1a1610 0%,#12100a 100%);
+            border: 1px solid #4a3a20; border-radius: 8px;
+            padding: 8px 12px; overflow-y: auto;
+            color: #b8a888; font-size: 11px;
         }
-        .log-scroll h2 { text-align:center; margin-bottom:6px; font-size:10px; letter-spacing:2px; color:#7a6a4a; }
-        .log-scroll::-webkit-scrollbar { width:3px; }
-        .log-scroll::-webkit-scrollbar-track { background:#0a0806; }
-        .log-scroll::-webkit-scrollbar-thumb { background:#4a3a20; border-radius:2px; }
-        .log-entry { margin-bottom:3px; padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:10px; }
-        .log-entry:last-child { border-bottom:none; }
-        #logBatch { overflow-y:auto; height:100%; }
+        .log-scroll h2 { text-align: center; margin-bottom: 6px; font-size: 10px; letter-spacing: 2px; color: #7a6a4a; }
+        .log-scroll::-webkit-scrollbar { width: 3px; }
+        .log-scroll::-webkit-scrollbar-track { background: #0a0806; }
+        .log-scroll::-webkit-scrollbar-thumb { background: #4a3a20; border-radius: 2px; }
+        .log-entry { margin-bottom: 3px; padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 10px; }
+        .log-entry:last-child { border-bottom: none; }
+        #logBatch { overflow-y: auto; height: 100%; }
 
-        /* ── TURN MESSAGE ── */
         .turn-message {
-            text-align:center; font-size:15px; font-weight:700;
-            color:#e0b870; letter-spacing:2px;
-            text-shadow:0 2px 6px rgba(0,0,0,0.8); padding:3px 0;
+            text-align: center; font-size: 14px; font-weight: 700;
+            color: #e0b870; letter-spacing: 2px;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.8); padding: 3px 0;
         }
 
-        /* ── ANIMATIONS ── */
         @keyframes shakeLight { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
         @keyframes shakeHeavy { 0%,100%{transform:translateX(0)} 10%,50%,90%{transform:translateX(-8px)} 30%,70%{transform:translateX(8px)} }
-        .shake-light { animation:shakeLight 0.35s ease; }
-        .shake-heavy { animation:shakeHeavy 0.5s ease; }
-        @keyframes dodgeLeft { 0%{transform:translateX(0)} 40%{transform:translateX(-25px)} 100%{transform:translateX(0)} }
-        @keyframes dodgeRight { 0%{transform:translateX(0)} 40%{transform:translateX(25px)} 100%{transform:translateX(0)} }
-        .dodge-anim-l { animation:dodgeLeft 0.4s ease; }
-        .dodge-anim-r { animation:dodgeRight 0.4s ease; }
+        .shake-light { animation: shakeLight 0.35s ease; }
+        .shake-heavy { animation: shakeHeavy 0.5s ease; }
+        @keyframes dodgeLeft  { 0%{transform:translateX(0)} 40%{transform:translateX(-25px)} 100%{transform:translateX(0)} }
+        @keyframes dodgeRight { 0%{transform:translateX(0)} 40%{transform:translateX(25px)}  100%{transform:translateX(0)} }
+        .dodge-anim-l { animation: dodgeLeft  0.4s ease; }
+        .dodge-anim-r { animation: dodgeRight 0.4s ease; }
         @keyframes logFadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
-        .logEntryAnim { animation:logFadeIn 0.3s ease; }
+        .logEntryAnim { animation: logFadeIn 0.3s ease; }
 
-        /* ── ACTIVE CARDS (fanned) ── */
         .active-cards {
-            display:flex; align-items:flex-end; justify-content:center;
-            min-height:155px;
+            display: flex; align-items: flex-end; justify-content: center;
+            min-height: 140px; padding-bottom: 4px;
         }
         .slot-card {
-            width:135px; height:185px;
-            background:linear-gradient(145deg,#2a2218,#1a1410);
-            border:2px solid #5a4020; border-radius:10px;
-            color:#d0c0a0; padding:7px 9px;
-            display:flex; flex-direction:column;
-            cursor:pointer; transition:all 0.2s; flex-shrink:0;
+            width: 120px; height: 165px;
+            background: linear-gradient(145deg,#2a2218,#1a1410);
+            border: 2px solid #5a4020; border-radius: 10px;
+            color: #d0c0a0; padding: 7px 9px;
+            display: flex; flex-direction: column;
+            cursor: pointer; transition: all 0.2s; flex-shrink: 0;
         }
-        .slot-card:hover { filter:brightness(1.15); }
-        .slot-card.selected { border-color:#e0b870; box-shadow:0 0 12px rgba(200,160,80,0.3); }
-        .slot-card.disabled { opacity:0.4; cursor:not-allowed; }
-        .slot-card .card-name { font-size:11px; font-weight:700; margin-bottom:3px; color:#e0b870; }
-        .slot-card .card-cost { margin-top:auto; text-align:right; font-size:14px; color:#40a0f0; font-weight:700; }
-        .slot-card .card-cost .e-color { font-size:11px; }
-        .slot-card .card-desc { font-size:9px; color:#9a8a7a; flex:1; line-height:1.4; }
+        .slot-card:hover    { filter: brightness(1.15); transform: translateY(-6px); }
+        .slot-card.selected { border-color: #e0b870; box-shadow: 0 0 12px rgba(200,160,80,0.3); transform: translateY(-10px); }
+        .slot-card.disabled { opacity: 0.4; cursor: not-allowed; }
+        .slot-card .card-name { font-size: 10px; font-weight: 700; margin-bottom: 3px; color: #e0b870; }
+        .slot-card .card-cost { margin-top: auto; text-align: right; font-size: 13px; color: #40a0f0; font-weight: 700; }
+        .slot-card .card-cost .e-color { font-size: 10px; }
+        .slot-card .card-desc { font-size: 8px; color: #9a8a7a; flex: 1; line-height: 1.4; }
 
-        /* ── BOTTOM CONTROLS ── */
         .btn-inventory {
-            padding:7px 14px; border:1px solid #5a3a20;
-            border-radius:6px; background:linear-gradient(180deg,#2a1a0e,#1a0e06);
-            color:#d0b080; font-weight:700;
-            cursor:pointer; font-size:10px; flex-shrink:0; font-family:'Cinzel',serif; letter-spacing:1px;
+            padding: 7px 14px; border: 1px solid #5a3a20;
+            border-radius: 6px; background: linear-gradient(180deg,#2a1a0e,#1a0e06);
+            color: #d0b080; font-weight: 700; cursor: pointer;
+            font-size: 10px; flex-shrink: 0; font-family: 'Cinzel',serif; letter-spacing: 1px;
         }
-        .btn-inventory:hover { filter:brightness(1.2); }
+        .btn-inventory:hover { filter: brightness(1.2); }
 
-        .actions { display:flex; gap:4px; }
+        .actions { display: flex; gap: 5px; }
         .actions button {
-            border:none; border-radius:6px; padding:6px 11px;
-            font-weight:700; cursor:pointer; font-size:9px; font-family:'Cinzel',serif; letter-spacing:1px;
+            border: none; border-radius: 6px; padding: 8px 14px;
+            font-weight: 700; cursor: pointer; font-size: 10px;
+            font-family: 'Cinzel',serif; letter-spacing: 1px;
         }
-        .actions button:hover { filter:brightness(1.2); }
-        .btn-atk { background:linear-gradient(180deg,#cc2848,#8a1830); color:#fff; }
-        .btn-rest { background:linear-gradient(180deg,#2878c8,#184888); color:#fff; }
-        .btn-pose { background:linear-gradient(180deg,#e0b040,#a07820); color:#fff; }
-        .btn-extra { background:linear-gradient(180deg,#58b870,#307848); color:#fff; }
+        .actions button:hover { filter: brightness(1.2); }
+        .btn-atk  { background: linear-gradient(180deg,#cc2848,#8a1830); color: #fff; }
+        .btn-rest { background: linear-gradient(180deg,#2878c8,#184888); color: #fff; }
+        .btn-pose { background: linear-gradient(180deg,#e0b040,#a07820); color: #fff; }
+        .btn-extra{ background: linear-gradient(180deg,#58b870,#307848); color: #fff; }
 
         .inventario-panel {
-            position:fixed; top:60px; right:10px; width:190px;
-            background:#14100c; border:1px solid #5a3a20; border-radius:8px;
-            padding:8px; z-index:30; max-height:170px; overflow-y:auto; font-size:10px;
+            position: fixed; top: 52px; right: 10px; width: 190px;
+            background: #14100c; border: 1px solid #5a3a20; border-radius: 8px;
+            padding: 8px; z-index: 30; max-height: 180px; overflow-y: auto; font-size: 10px;
         }
         .acciones-extra {
-            position:fixed; bottom:75px; left:50%; transform:translateX(-50%);
-            background:#14100c; border:1px solid #5a3a20; border-radius:8px;
-            padding:8px; z-index:30; max-height:150px; overflow-y:auto;
-            min-width:220px;
+            position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+            background: #14100c; border: 1px solid #5a3a20; border-radius: 8px;
+            padding: 8px; z-index: 30; max-height: 150px; overflow-y: auto; min-width: 220px;
         }
-        .actions-extra-grid { display:flex; flex-wrap:wrap; gap:4px; justify-content:center; }
+        .actions-extra-grid { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
         .actions-extra-grid button {
-            padding:5px 10px; border:1px solid #4a3a20; border-radius:5px;
-            background:rgba(255,255,255,0.04); color:#c0b090;
-            font-weight:700; cursor:pointer; font-size:9px; font-family:'Cinzel',serif;
+            padding: 5px 10px; border: 1px solid #4a3a20; border-radius: 5px;
+            background: rgba(255,255,255,0.04); color: #c0b090;
+            font-weight: 700; cursor: pointer; font-size: 9px; font-family: 'Cinzel',serif;
         }
-        .actions-extra-grid button:hover { background:rgba(255,255,255,0.08); }
+        .actions-extra-grid button:hover { background: rgba(255,255,255,0.08); }
 
-        /* ── RADIAL (se muestra al tocar ACCIÓN) ── */
         .radial-overlay {
-            position:fixed; inset:0; z-index:100;
-            display:none; align-items:center; justify-content:center;
-            background:rgba(0,0,0,0.7);
+            position: fixed; inset: 0; z-index: 100;
+            display: none; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.7);
         }
-        .radial-overlay.active { display:flex; }
-        .radial-container { position:relative; width:230px; height:230px; }
+        .radial-overlay.active { display: flex; }
+        .radial-container { position: relative; width: 230px; height: 230px; }
         .central-btn {
-            width:78px; height:78px; border-radius:50%;
-            background:linear-gradient(180deg,#c85030 0%,#7a2010 100%);
-            color:#fff; font-weight:700; font-size:11px; letter-spacing:1px;
-            border:2px solid #a04020; cursor:pointer; position:absolute;
-            top:50%; left:50%; transform:translate(-50%,-50%); z-index:10;
-            font-family:'Cinzel',serif; box-shadow:0 0 10px rgba(200,80,48,0.3);
+            width: 78px; height: 78px; border-radius: 50%;
+            background: linear-gradient(180deg,#c85030 0%,#7a2010 100%);
+            color: #fff; font-weight: 700; font-size: 11px; letter-spacing: 1px;
+            border: 2px solid #a04020; cursor: pointer; position: absolute;
+            top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 10;
+            font-family: 'Cinzel',serif; box-shadow: 0 0 10px rgba(200,80,48,0.3);
         }
         .radial-btn {
-            position:absolute; width:54px; height:54px; border-radius:50%;
-            background:radial-gradient(circle at 40% 35%, #2a2218, #120e0a);
-            color:#c0b090; border:1px solid #5a3a20; cursor:pointer;
-            font-size:10px; font-weight:700;
-            display:flex; flex-direction:column; align-items:center; justify-content:center;
-            top:50%; left:50%; font-family:'Cinzel',serif;
+            position: absolute; width: 54px; height: 54px; border-radius: 50%;
+            background: radial-gradient(circle at 40% 35%, #2a2218, #120e0a);
+            color: #c0b090; border: 1px solid #5a3a20; cursor: pointer;
+            font-size: 10px; font-weight: 700;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            top: 50%; left: 50%; font-family: 'Cinzel',serif;
         }
-        .radial-btn:hover { border-color:#8a6a40; background:radial-gradient(circle at 40% 35%, #3a2a18, #1a1208); }
-        .radial-btn .icon { font-size:16px; }
-        #btnAtakar   { transform:translate(-50%,-50%) rotate(0deg) translateY(-100px) rotate(0deg); }
-        #btnDescansar { transform:translate(-50%,-50%) rotate(72deg) translateY(-100px) rotate(-72deg); }
-        #btnPose     { transform:translate(-50%,-50%) rotate(144deg) translateY(-100px) rotate(-144deg); }
-        #btnCarta    { transform:translate(-50%,-50%) rotate(216deg) translateY(-100px) rotate(-216deg); }
-        #btnExtra2   { transform:translate(-50%,-50%) rotate(288deg) translateY(-100px) rotate(-288deg); }
+        .radial-btn:hover { border-color: #8a6a40; background: radial-gradient(circle at 40% 35%, #3a2a18, #1a1208); }
+        .radial-btn .icon { font-size: 16px; }
+        #btnAtakar    { transform: translate(-50%,-50%) rotate(0deg)   translateY(-100px) rotate(0deg); }
+        #btnDescansar { transform: translate(-50%,-50%) rotate(72deg)  translateY(-100px) rotate(-72deg); }
+        #btnPose      { transform: translate(-50%,-50%) rotate(144deg) translateY(-100px) rotate(-144deg); }
+        #btnCarta     { transform: translate(-50%,-50%) rotate(216deg) translateY(-100px) rotate(-216deg); }
+        #btnExtra2    { transform: translate(-50%,-50%) rotate(288deg) translateY(-100px) rotate(-288deg); }
 
         @media (max-width: 820px) {
-            .topbar { height:40px; padding:0 10px; }
-            .orb { width:26px; height:26px; }
+            .topbar { height: 38px; padding: 0 10px; }
+            .orb    { width: 24px; height: 24px; }
 
             .battlefield {
-                grid-template-columns:1fr 1fr;
-                grid-template-rows:auto minmax(0,1fr) auto auto;
-                gap:5px; padding:5px;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto minmax(0,1fr) auto auto;
+                gap: 5px; padding: 5px;
             }
-            .col-left  { grid-column:1; grid-row:1; }
-            .col-right { grid-column:2; grid-row:1; }
-            .col-mid   { grid-column:1/-1; grid-row:2; }
-            .cards-row { grid-column:1/-1; grid-row:3; }
-            .actions-row { grid-column:1/-1; grid-row:4; }
+            .col-left  { grid-column: 1; grid-row: 1; }
+            .col-right { grid-column: 2; grid-row: 1; }
+            .col-mid   { grid-column: 1/-1; grid-row: 2; min-height: 0; }
+            .cards-row { grid-column: 1/-1; grid-row: 3; }
+            .actions-row { grid-column: 1/-1; grid-row: 4; }
 
-            .enemy-character, .player-character {
-                height:clamp(65px, 10vh, 110px); font-size:28px;
-            }
-            .char-portrait { width:38px; height:38px; }
-            .sheet { padding:5px 7px; }
-            .sheet h2 { font-size:10px; }
-            .sheet h4 { font-size:8px; margin-bottom:3px; }
-            .sheet .bar { height:7px; margin-bottom:2px; }
-            .sheet .stats-grid div { font-size:8px; padding:1px 3px; }
-            .hp-energy-text { font-size:7px; }
-            .log-scroll { font-size:10px; padding:6px 10px; min-height:48px; }
-            .log-scroll h2 { font-size:10px; }
-            .turn-message { font-size:13px; }
-            .active-cards { min-height:115px; }
-            .slot-card { width:100px; height:140px; padding:5px 7px; border-width:2px; }
-            .slot-card .card-name { font-size:10px; margin-bottom:2px; }
-            .slot-card .card-cost { font-size:12px; }
-            .slot-card .card-desc { font-size:8px; }
-            .btn-inventory { padding:5px 10px; font-size:9px; }
-            .actions { gap:3px; }
-            .actions button { padding:5px 8px; font-size:8px; }
-            .acciones-extra { max-height:120px; min-width:190px; }
-            .inventario-panel { top:52px; right:6px; width:160px; max-height:120px; }
-            .radial-container { width:180px; height:180px; }
-            .radial-btn { width:46px; height:46px; font-size:9px; }
-            .radial-btn .icon { font-size:13px; }
-            .central-btn { width:64px; height:64px; font-size:10px; }
-            #btnAtakar   { transform:translate(-50%,-50%) rotate(0deg) translateY(-78px) rotate(0deg); }
-            #btnDescansar { transform:translate(-50%,-50%) rotate(72deg) translateY(-78px) rotate(-72deg); }
-            #btnPose     { transform:translate(-50%,-50%) rotate(144deg) translateY(-78px) rotate(-144deg); }
-            #btnCarta    { transform:translate(-50%,-50%) rotate(216deg) translateY(-78px) rotate(-216deg); }
-            #btnExtra2   { transform:translate(-50%,-50%) rotate(288deg) translateY(-78px) rotate(-288deg); }
-            .actions-extra-grid button { font-size:9px; padding:5px 8px; }
+            .enemy-character, .player-character { height: clamp(65px, 11vh, 120px); font-size: 24px; }
+            .sheet { padding: 5px 7px; }
+            .sheet h2 { font-size: 10px; }
+            .sheet h4 { font-size: 8px; margin-bottom: 2px; }
+            .sheet .bar { height: 6px; }
+            .sheet .stats-grid div { font-size: 8px; padding: 1px 3px; }
+            .hp-energy-text { font-size: 7px; }
+            .log-scroll { font-size: 10px; padding: 6px 10px; }
+            .turn-message { font-size: 13px; }
+            .active-cards { min-height: 110px; }
+            .slot-card { width: 95px; height: 132px; padding: 5px 6px; }
+            .slot-card .card-name { font-size: 9px; }
+            .slot-card .card-cost { font-size: 11px; }
+            .slot-card .card-desc { font-size: 7px; }
+            .btn-inventory { padding: 5px 10px; font-size: 9px; }
+            .actions button { padding: 6px 10px; font-size: 9px; }
+            .radial-container { width: 180px; height: 180px; }
+            .radial-btn { width: 46px; height: 46px; font-size: 9px; }
+            .radial-btn .icon { font-size: 13px; }
+            .central-btn { width: 64px; height: 64px; font-size: 10px; }
+            #btnAtakar    { transform: translate(-50%,-50%) rotate(0deg)   translateY(-78px) rotate(0deg); }
+            #btnDescansar { transform: translate(-50%,-50%) rotate(72deg)  translateY(-78px) rotate(-72deg); }
+            #btnPose      { transform: translate(-50%,-50%) rotate(144deg) translateY(-78px) rotate(-144deg); }
+            #btnCarta     { transform: translate(-50%,-50%) rotate(216deg) translateY(-78px) rotate(-216deg); }
+            #btnExtra2    { transform: translate(-50%,-50%) rotate(288deg) translateY(-78px) rotate(-288deg); }
         }
 
         @media (max-width: 500px) {
-            .topbar { height:36px; padding:0 6px; }
-            .orb { width:20px; height:20px; }
-            .battlefield { gap:3px; padding:3px; }
-            .enemy-character, .player-character {
-                height:clamp(50px, 8vh, 80px); font-size:20px; border-radius:6px;
-            }
-            .char-portrait { width:32px; height:32px; border-width:1px; }
-            .sheet { padding:4px 5px; }
-            .sheet h2 { font-size:9px; }
-            .sheet h4 { font-size:7px; }
-            .sheet .bar { height:6px; }
-            .sheet .stats-grid div { font-size:7px; padding:1px 2px; }
-            .hp-energy-text { font-size:6px; }
-            .log-scroll { font-size:9px; padding:5px 8px; min-height:36px; }
-            .log-scroll h2 { font-size:9px; }
-            .turn-message { font-size:12px; }
-            .active-cards { min-height:85px; }
-            .slot-card { width:78px; height:108px; padding:4px 5px; }
-            .slot-card .card-name { font-size:8px; }
-            .slot-card .card-cost { font-size:10px; }
-            .slot-card .card-desc { font-size:7px; }
-            .btn-inventory { padding:4px 8px; font-size:8px; }
-            .actions { gap:2px; }
-            .actions button { padding:4px 6px; font-size:7px; }
-            .radial-container { width:150px; height:150px; }
-            .radial-btn { width:40px; height:40px; font-size:8px; }
-            .radial-btn .icon { font-size:12px; }
-            .central-btn { width:54px; height:54px; font-size:8px; }
-            #btnAtakar   { transform:translate(-50%,-50%) rotate(0deg) translateY(-66px) rotate(0deg); }
-            #btnDescansar { transform:translate(-50%,-50%) rotate(72deg) translateY(-66px) rotate(-72deg); }
-            #btnPose     { transform:translate(-50%,-50%) rotate(144deg) translateY(-66px) rotate(-144deg); }
-            #btnCarta    { transform:translate(-50%,-50%) rotate(216deg) translateY(-66px) rotate(-216deg); }
-            #btnExtra2   { transform:translate(-50%,-50%) rotate(288deg) translateY(-66px) rotate(-288deg); }
+            .topbar { height: 34px; padding: 0 6px; }
+            .orb    { width: 20px; height: 20px; }
+            .battlefield { gap: 4px; padding: 4px; }
+            .enemy-character, .player-character { height: clamp(55px, 10vh, 90px); font-size: 18px; border-radius: 6px; }
+            .sheet { padding: 4px 5px; }
+            .sheet h2 { font-size: 9px; }
+            .sheet h4 { font-size: 7px; }
+            .sheet .bar { height: 5px; margin-bottom: 2px; }
+            .sheet .stats-grid div { font-size: 7px; padding: 1px 2px; }
+            .hp-energy-text { font-size: 6px; }
+            .log-scroll { font-size: 9px; padding: 4px 8px; }
+            .turn-message { font-size: 11px; }
+            .active-cards { min-height: 95px; }
+            .slot-card { width: 75px; height: 105px; padding: 4px 5px; border-width: 1px; }
+            .slot-card .card-name { font-size: 8px; margin-bottom: 1px; }
+            .slot-card .card-cost { font-size: 10px; }
+            .slot-card .card-desc { font-size: 6px; line-height: 1.3; }
+            .btn-inventory { padding: 4px 8px; font-size: 8px; }
+            .actions { gap: 3px; }
+            .actions button { padding: 5px 7px; font-size: 8px; letter-spacing: 0; }
+            .inventario-panel { top: 40px; right: 4px; width: 150px; max-height: 120px; }
+            .radial-container { width: 150px; height: 150px; }
+            .radial-btn { width: 40px; height: 40px; font-size: 8px; }
+            .radial-btn .icon { font-size: 12px; }
+            .central-btn { width: 54px; height: 54px; font-size: 9px; }
+            #btnAtakar    { transform: translate(-50%,-50%) rotate(0deg)   translateY(-66px) rotate(0deg); }
+            #btnDescansar { transform: translate(-50%,-50%) rotate(72deg)  translateY(-66px) rotate(-72deg); }
+            #btnPose      { transform: translate(-50%,-50%) rotate(144deg) translateY(-66px) rotate(-144deg); }
+            #btnCarta     { transform: translate(-50%,-50%) rotate(216deg) translateY(-66px) rotate(-216deg); }
+            #btnExtra2    { transform: translate(-50%,-50%) rotate(288deg) translateY(-66px) rotate(-288deg); }
         }
 
         /* ── CARTA DE PERSONAJE ── */
