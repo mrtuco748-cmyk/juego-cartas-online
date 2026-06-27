@@ -350,6 +350,8 @@ io.on('connection', (socket) => {
                     log += ` (convierte ${conv} daño a HP)`;
                 }
 
+                rival.hp -= danoFinal;
+
                 const pLog1 = gp.processPassives(yo.pasivas, yo, rival, 'on_hit', { damage: danoFinal, target: rival });
                 const pLog3 = gp.processPassives(yo.pasivas, yo, rival, 'on_attack', {});
                 [...pLog1, ...pLog3].forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });

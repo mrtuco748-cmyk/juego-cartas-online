@@ -392,6 +392,8 @@
         .dodge-anim-r { animation: dodgeRight 0.4s ease; }
         @keyframes logFadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
         .logEntryAnim { animation: logFadeIn 0.25s ease; }
+        @keyframes dmgFloat { 0%{opacity:1;transform:translate(-50%,-50%) scale(1.2)} 35%{opacity:1;transform:translate(-50%,-55%) scale(1)} 100%{opacity:0;transform:translate(-50%,-80%) scale(0.8)} }
+        .dmg-popup { position:fixed;left:50%;top:45%;z-index:100;pointer-events:none;font-family:'Cinzel',serif;font-weight:700;text-shadow:0 0 20px rgba(200,60,30,0.8),0 0 40px rgba(200,60,30,0.4);animation:dmgFloat 1s ease-out forwards; }
 
         /* ── CARTAS ── */
         .active-cards {

@@ -711,11 +711,32 @@ let logInstantMode = false;
 let instantTimer = null;
 let ultimoTurno;
 
-function agregarLog(msg, estilo) {
+function mostrarDañoFlotante(valor, esCritico) {
+  const popup = document.createElement('div');
+  popup.className = 'dmg-popup';
+  popup.style.color = esCritico ? '#ffcc00' : '#ff6030';
+  popup.style.fontSize = esCritico ? 'clamp(40px, 7vw, 64px)' : 'clamp(28px, 5vw, 48px)';
+  popup.style.textShadow = esCritico ? '0 0 30px rgba(255,200,0,0.9),0 0 60px rgba(255,200,0,0.5)' : '0 0 20px rgba(200,60,30,0.8),0 0 40px rgba(200,60,30,0.4)';
+  popup.innerHTML = `-${Math.round(valor)}`;
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 1100);
+}
+
+function agregarLog(data) {
+  const msg = typeof data === 'string' ? data : data.msg;
+  const estilo = typeof data === 'string' ? 'color:#9a7040;font-size:10px;' : estiloLog(data);
   const el = document.getElementById('logBatch');
   if (!el) return;
   el.innerHTML += `<div class="logEntryAnim" style="${estilo}">> ${colorearNombres(msg)}</div>`;
   el.scrollTop = el.scrollHeight;
+
+  const tipo = data.tipo || '';
+  if (tipo === 'ataque') {
+    const nums = msg.match(/(\d+)\s*$/) || msg.match(/(\d+)(?:\s*daño)?\s*$/);
+    if (nums) {
+      mostrarDañoFlotante(parseInt(nums[1]), /crític|CRÍTIC/i.test(msg));
+    }
+  }
 
   if (/esquiv|evadi|dodge|parr|bloque/i.test(msg)) {
     const esYo = miPJ && msg.includes(miPJ.nombre);
@@ -734,9 +755,7 @@ function forzarLogsPendientes() {
   logProcessing = false;
   while (logQueue.length > 0) {
     const data = logQueue.shift();
-    const msg = typeof data === 'string' ? data : data.msg;
-    const estilo = typeof data === 'string' ? 'color:#9a7040;font-size:10px;' : estiloLog(data);
-    agregarLog(msg, estilo);
+    agregarLog(data);
   }
 }
 
@@ -749,9 +768,7 @@ function agregarLineaTurno() {
 
 socket.on('logBatalla', (data) => {
   if (logInstantMode) {
-    const msg = typeof data === 'string' ? data : data.msg;
-    const estilo = typeof data === 'string' ? 'color:#9a7040;font-size:10px;' : estiloLog(data);
-    agregarLog(msg, estilo);
+    agregarLog(data);
     clearTimeout(instantTimer);
     instantTimer = setTimeout(() => { logInstantMode = false; }, 1500);
     return;
@@ -764,9 +781,7 @@ function procesarLogQueue() {
   if (logProcessing || logQueue.length === 0) return;
   logProcessing = true;
   const data = logQueue.shift();
-  const msg = typeof data === 'string' ? data : data.msg;
-  const estilo = typeof data === 'string' ? 'color:#9a7040;font-size:10px;' : estiloLog(data);
-  agregarLog(msg, estilo);
+  agregarLog(data);
 
   setTimeout(() => {
     logProcessing = false;
