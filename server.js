@@ -204,7 +204,7 @@ async function otorgarXP(cuentaId, personajeId, xp) {
         while (pj.experiencia >= pj.nivel) {
             pj.experiencia -= pj.nivel;
             pj.nivel++;
-            pj.puntosStats = (pj.puntosStats || 0) + 5;
+            pj.puntosStats = (pj.puntosStats || 0) + 3;
         }
         await cuenta.save();
         return cuenta;
@@ -1073,7 +1073,7 @@ io.on('connection', (socket) => {
                 const pj = cuenta.personajes.id(params.personaje_id);
                 if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
                 pj.experiencia = Math.max(0, (pj.experiencia || 0) + params.valor);
-                while (pj.experiencia >= pj.nivel) { pj.experiencia -= pj.nivel; pj.nivel++; pj.puntosStats = (pj.puntosStats || 0) + 5; }
+                while (pj.experiencia >= pj.nivel) { pj.experiencia -= pj.nivel; pj.nivel++; pj.puntosStats = (pj.puntosStats || 0) + 3; }
             } else if (accion === 'addPuntosStats') {
                 const pj = cuenta.personajes.id(params.personaje_id);
                 if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
