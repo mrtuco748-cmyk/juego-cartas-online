@@ -11,6 +11,9 @@ let inventarioVisible = false;
 let modoAccion = null;
 let draggedCardIdx = null;
 let touchClone = null;
+let esPractica = false;
+let rivalSkills = [];
+let rivalPasivas = [];
 
 const PASIVAS_POR_CLASE = {
   Chaman: { nombre: 'Espiritu Natural', desc: 'Recupera 2 HP por turno.', icono: '' },
@@ -47,6 +50,9 @@ socket.on('rivalEncontrado', (data) => {
   misPasivas = data.pasivas || [];
   misRecetas = data.recetas || [];
   cartaSeleccionada = null;
+  esPractica = data.esPractica || false;
+  rivalSkills = data.skillsRival || [];
+  rivalPasivas = data.pasivasRival || [];
 
   mostrarPantallaCombate();
   renderizarCombate();
@@ -186,25 +192,52 @@ function renderizarCombate() {
         ${sheetHTML(rivalPJ, 'rival')}
       </div>
 
-      <div class="cards-row">
-        <div class="active-cards" id="cartasSkill">
-          ${misSkills.map((skill, i) => {
-            const angle = startAngle + i * angleStep;
-            const ty = Math.abs(angle) * 1.3;
-            const zIdx = totalCards === 1 ? 5 : totalCards - Math.abs(i - Math.floor((totalCards - 1) / 2));
-            const cls = (skill.coste > (miPJ.energia || 0) ? 'disabled ' : '') + (cartaSeleccionada === i ? 'selected' : '');
-            const skillData = SKILL_DATA_LOOKUP[skill.id];
-            return `<div class="slot-card ${cls}" style="transform:rotate(${angle}deg) translateY(${ty}px);z-index:${zIdx}" draggable="true"
-              ondragstart="onCardDragStart(event, ${i})"
-              ontouchstart="onCardTouchStart(event, ${i})"
-              ontouchmove="onCardTouchMove(event)"
-              ontouchend="onCardTouchEnd(event)"
-              onclick="seleccionarCarta(${i})" id="skillCard-${i}">
-              <div class="card-name">${skill.nombre}</div>
-              <div class="card-desc">${skillData ? describirEfecto(skillData) : ''}</div>
-              <div class="card-cost">${skill.coste} <span class="e-color">E</span></div>
-            </div>`;
-          }).join('')}
+      <div class="cards-row${esPractica ? ' stacked' : ''}">
+        <div class="cards-stack">
+          <div class="cards-stack-item">
+            ${esPractica ? `<div class="cards-label ${esMiTurno ? 'active-turn' : ''}">TUS CARTAS</div>` : ''}
+            <div class="active-cards" id="cartasSkill">
+              ${misSkills.map((skill, i) => {
+                const angle = startAngle + i * angleStep;
+                const ty = Math.abs(angle) * 1.3;
+                const zIdx = totalCards === 1 ? 5 : totalCards - Math.abs(i - Math.floor((totalCards - 1) / 2));
+                const cls = (skill.coste > (miPJ.energia || 0) ? 'disabled ' : '') + (cartaSeleccionada === i ? 'selected' : '');
+                const skillData = SKILL_DATA_LOOKUP[skill.id];
+                return `<div class="slot-card ${cls}" style="transform:rotate(${angle}deg) translateY(${ty}px);z-index:${zIdx}" draggable="true"
+                  ondragstart="onCardDragStart(event, ${i})"
+                  ontouchstart="onCardTouchStart(event, ${i})"
+                  ontouchmove="onCardTouchMove(event)"
+                  ontouchend="onCardTouchEnd(event)"
+                  onclick="seleccionarCarta(${i})" id="skillCard-${i}">
+                  <div class="card-name">${skill.nombre}</div>
+                  <div class="card-desc">${skillData ? describirEfecto(skillData) : ''}</div>
+                  <div class="card-cost">${skill.coste} <span class="e-color">E</span></div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+          ${esPractica ? `
+          <div class="cards-stack-item">
+            <div class="cards-label ${!esMiTurno ? 'active-turn' : ''}">CARTAS DEL ${rivalPJ.nombre}</div>
+            <div class="active-cards" id="cartasSkillRival">
+              ${rivalSkills.map((skill, i) => {
+                const totalR = rivalSkills.length;
+                const stepR = totalR > 1 ? Math.min(8, 40 / totalR) : 0;
+                const startR = -((totalR - 1) * stepR) / 2;
+                const angle = startR + i * stepR;
+                const ty = Math.abs(angle) * 1.3;
+                const zIdx = totalR === 1 ? 5 : totalR - Math.abs(i - Math.floor((totalR - 1) / 2));
+                const costOk = skill.coste <= (rivalPJ.energia || 0);
+                const skillData = SKILL_DATA_LOOKUP[skill.id];
+                return `<div class="slot-card ${costOk ? '' : 'disabled'}" style="transform:rotate(${angle}deg) translateY(${ty}px);z-index:${zIdx}"
+                  onclick="${!esMiTurno && costOk ? `usarCartaRival(${i})` : ''}" id="skillCardRival-${i}">
+                  <div class="card-name">${skill.nombre}</div>
+                  <div class="card-desc">${skillData ? describirEfecto(skillData) : ''}</div>
+                  <div class="card-cost">${skill.coste} <span class="e-color">E</span></div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>` : ''}
         </div>
       </div>
 
@@ -278,7 +311,9 @@ function mostrarAccionesExtra() {
 
 function ejecutarAccionExtra(tipo) {
   document.getElementById('panelAccionesExtra').style.display = 'none';
-  if (!esMiTurno || accionesRestantes <= 0) return;
+  const rivalExtra = esPractica && !esMiTurno;
+  if (!rivalExtra && (!esMiTurno || accionesRestantes <= 0)) return;
+  if (rivalExtra && accionesRestantes <= 0) return;
 
   switch (tipo) {
     case 'investigar':
@@ -535,28 +570,47 @@ function usarCartaDrag() {
   document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
 }
 
-function enviarAccion(tipo, cartaId, accionData) {
+function usarCartaRival(idx) {
+  const skill = rivalSkills[idx];
+  if (!skill || skill.coste > (rivalPJ.energia || 0)) return;
+  enviarAccion('carta', skill.id || skill.nombre, null, true);
+}
+
+function enviarAccion(tipo, cartaId, accionData, comoRival) {
   if (!partidaActualId) return;
-  if (!esMiTurno || accionesRestantes <= 0) return;
+  if (esPractica && !esMiTurno) comoRival = true;
+  if (!esPractica && (!esMiTurno || accionesRestantes <= 0)) return;
+  if (esPractica && !comoRival && (!esMiTurno || accionesRestantes <= 0)) return;
   socket.emit('ejecutarAccion', {
     partidaId: partidaActualId,
     tipo,
-    atacante: miPJ,
-    defensor: rivalPJ,
+    atacante: comoRival ? rivalPJ : miPJ,
+    defensor: comoRival ? miPJ : rivalPJ,
     cartaId: cartaId || null,
-    accionData: accionData || null
+    accionData: accionData || null,
+    actuandoComoRival: comoRival || false
   });
 }
 
 function actualizarIndicadorTurno() {
   const el = document.getElementById('indicadorTurno');
   if (!el) return;
-  el.textContent = esMiTurno ? `TU TURNO (${accionesRestantes}/2)` : 'RIVAL';
+  if (esPractica) {
+    el.textContent = esMiTurno ? `TU TURNO (${accionesRestantes}/2) — Controlas a ${miPJ.nombre}` : `TURNO DE ${rivalPJ.nombre} (${accionesRestantes}/2) — Controlas al rival`;
+  } else {
+    el.textContent = esMiTurno ? `TU TURNO (${accionesRestantes}/2)` : 'RIVAL';
+  }
   document.querySelectorAll('.character-bio, .player-character, .enemy-character').forEach(el2 => el2.classList.remove('tu-turno'));
   if (esMiTurno) {
     document.querySelectorAll('.col-left .player-character, .col-left .character-bio').forEach(el2 => { if (el2) el2.classList.add('tu-turno'); });
   } else {
     document.querySelectorAll('.col-right .enemy-character, .col-right .character-bio').forEach(el2 => { if (el2) el2.classList.add('tu-turno'); });
+  }
+  const labels = document.querySelectorAll('.cards-label');
+  labels.forEach(l => l.classList.remove('active-turn'));
+  if (esPractica) {
+    const idx = esMiTurno ? 0 : 1;
+    if (labels[idx]) labels[idx].classList.add('active-turn');
   }
 }
 function agitarPersonaje(selector, intensidad) {
@@ -681,6 +735,11 @@ socket.on('actualizarEstado', (datos) => {
   miPJ.objetosRecibidos = yoMio ? (datos.objetosRecibidosJ1 || []) : (datos.objetosRecibidosJ2 || []);
   rivalPJ.objetosRecibidos = yoMio ? (datos.objetosRecibidosJ2 || []) : (datos.objetosRecibidosJ1 || []);
 
+  if (esPractica) {
+    rivalSkills = yoMio ? (datos.j2skills || []) : (datos.j1skills || []);
+    rivalPasivas = yoMio ? (datos.pasivasJ2 || []) : (datos.pasivasJ1 || []);
+  }
+
   actualizarHP();
   actualizarCardsSkills();
   actualizarIndicadorTurno();
@@ -709,6 +768,27 @@ function actualizarCardsSkills() {
       <div class="card-cost">${skill.coste} <span style="color:#2688ff;">E</span></div>
     </div>`;
   }).join('');
+
+  if (esPractica) {
+    const rivalContainer = document.getElementById('cartasSkillRival');
+    if (!rivalContainer) return;
+    const totalR = rivalSkills.length;
+    const stepR = totalR > 1 ? Math.min(8, 40 / totalR) : 0;
+    const startR = -((totalR - 1) * stepR) / 2;
+    rivalContainer.innerHTML = rivalSkills.map((skill, i) => {
+      const angle = startR + i * stepR;
+      const ty = Math.abs(angle) * 1.3;
+      const zIdx = totalR === 1 ? 5 : totalR - Math.abs(i - Math.floor((totalR - 1) / 2));
+      const costOk = skill.coste <= (rivalPJ.energia || 0);
+      const skillData = SKILL_DATA_LOOKUP[skill.id];
+      return `<div class="slot-card ${costOk ? '' : 'disabled'}" style="transform:rotate(${angle}deg) translateY(${ty}px);z-index:${zIdx}"
+        onclick="${!esMiTurno && costOk ? `usarCartaRival(${i})` : ''}" id="skillCardRival-${i}">
+        <div class="card-name">${skill.nombre}</div>
+        <div class="card-desc">${skillData ? describirEfecto(skillData) : ''}</div>
+        <div class="card-cost">${skill.coste} <span style="color:#2688ff;">E</span></div>
+      </div>`;
+    }).join('');
+  }
 }
 
 socket.on('finPartida', (datos) => {

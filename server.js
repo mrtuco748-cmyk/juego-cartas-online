@@ -219,15 +219,21 @@ function partidaEmitirEstado(partidaId, partida) {
 io.on('connection', (socket) => {
     console.log('Cliente conectado:', socket.id);
 
-    socket.on('ejecutarAccion', async ({ partidaId, tipo, atacante, defensor, cartaId, accionData }) => {
+    socket.on('ejecutarAccion', async ({ partidaId, tipo, atacante, defensor, cartaId, accionData, actuandoComoRival }) => {
         const partida = partidas[partidaId];
         if (!partida) return;
 
-        const soyJ1 = socket.id === partida.jugador1.socketId;
-        const yo = soyJ1 ? partida.jugador1 : partida.jugador2;
-        const rival = soyJ1 ? partida.jugador2 : partida.jugador1;
+        let soyJ1 = socket.id === partida.jugador1.socketId;
+        let yo, rival;
+        if (partida.esPractica && actuandoComoRival) {
+            yo = soyJ1 ? partida.jugador2 : partida.jugador1;
+            rival = soyJ1 ? partida.jugador1 : partida.jugador2;
+        } else {
+            yo = soyJ1 ? partida.jugador1 : partida.jugador2;
+            rival = soyJ1 ? partida.jugador2 : partida.jugador1;
+        }
 
-        if (partida.turnoActual !== socket.id) {
+        if (!partida.esPractica && partida.turnoActual !== socket.id) {
             socket.emit('errorAccion', 'No es tu turno.');
             return;
         }
@@ -656,8 +662,10 @@ io.on('connection', (socket) => {
 
                 const gSocket = ganador.socketId;
                 const pSocket = perdedor.socketId;
-                otorgarXP(ganador.cuenta_id, ganador.personaje._id, 1).then(c => { if (c) io.to(gSocket).emit('cuentaActualizada', c.toObject()); });
-                otorgarXP(perdedor.cuenta_id, perdedor.personaje._id, 0.5).then(c => { if (c) io.to(pSocket).emit('cuentaActualizada', c.toObject()); });
+                if (!partida.esPractica) {
+                    otorgarXP(ganador.cuenta_id, ganador.personaje._id, 1).then(c => { if (c) io.to(gSocket).emit('cuentaActualizada', c.toObject()); });
+                    otorgarXP(perdedor.cuenta_id, perdedor.personaje._id, 0.5).then(c => { if (c) io.to(pSocket).emit('cuentaActualizada', c.toObject()); });
+                }
 
                 io.to(partidaId).emit('finPartida', { ganador: gSocket });
                 delete partidas[partidaId];
@@ -665,98 +673,6 @@ io.on('connection', (socket) => {
             }
         }
         return false;
-    }
-
-    function ejecutarTurnoBot(partidaId) {
-        const partida = partidas[partidaId];
-        if (!partida) return;
-        const esBotJ1 = partida.turnoActual === partida.jugador1.socketId;
-        const yo = esBotJ1 ? partida.jugador1 : partida.jugador2;
-        const rival = esBotJ1 ? partida.jugador2 : partida.jugador1;
-        if (yo.hp <= 0 || rival.hp <= 0) return;
-
-        const hpAntesYo = yo.hp;
-        const hpAntesRival = rival.hp;
-        const statsYo = gp.calcularStatsConBuffs(yo);
-        const statsRival = gp.calcularStatsConBuffs(rival);
-
-        // Bot paralizado — pierde la acción sin hacer nada
-        if (yo.status && yo.status.frozen > 0) {
-            io.to(partidaId).emit('logBatalla', { msg: `${yo.nombre} está paralizado y no puede actuar`, tipo: 'status' });
-            partida.accionesUsadas.push('frozen');
-            partidaFinalizarAccion(partidaId, partida);
-            return;
-        }
-
-        const skillsBot = getSkillsParaClase(yo.personaje.clase, yo.skillsCompradas || [], yo.equipment);
-        const usables = skillsBot.filter(s => s.coste <= yo.energia && SKILLS_DATA.activas[s.id] && !(yo.status && yo.status.silenced > 0));
-        const hpPct = yo.hp / yo.maxHp;
-
-        let tipoAccion = 'atacar';
-        let cartaId = null;
-
-        if (hpPct < 0.3 && Math.random() < 0.5) {
-            tipoAccion = 'descansar';
-        } else if (usables.length > 0 && Math.random() < 0.45) {
-            tipoAccion = 'carta';
-            cartaId = usables[Math.floor(Math.random() * usables.length)].id;
-        }
-
-        if (tipoAccion === 'atacar') {
-            const dado = Math.floor(Math.random() * 6) + 1;
-            let danoBase = Math.max(0, dado + statsYo.fuerza - statsRival.resistencia);
-            let critMulti = Math.max(statsYo.critClaseMulti || 0, gp.calcularCritico(statsYo.velocidad, statsRival.velocidad) + (statsYo.critBonus || 0));
-            let danoFinal = Math.floor(danoBase * (1 + critMulti));
-            if (yo.enrageBonus) danoFinal += yo.enrageBonus;
-
-            const dmgCtx = { damage: danoFinal };
-            const pLog = gp.processPassives(rival.pasivas, rival, yo, 'on_take_damage', dmgCtx);
-            danoFinal = Math.max(0, dmgCtx.damage);
-            pLog.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
-
-            if (rival.status && rival.status.shield > 0) {
-                const absorb = Math.min(rival.status.shield, danoFinal);
-                rival.status.shield -= absorb;
-                danoFinal -= absorb;
-            }
-            const pLog2 = gp.processPassives(yo.pasivas, yo, rival, 'on_hit', { damage: danoFinal });
-            pLog2.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
-            gp.procesarEfectosOnHit(yo, rival).forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'ataque' }));
-
-            rival.hp -= danoFinal;
-            io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} ataca → ${danoFinal} daño` + (critMulti > 0 ? ` (Crítico x${1+critMulti})` : ''), tipo: 'ataque' });
-
-        } else if (tipoAccion === 'descansar') {
-            yo.hp = Math.min(yo.maxHp + (yo.hpOverflow || 0), yo.hp + 5);
-            yo.energia = Math.min(100, yo.energia + 5);
-            io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} descansa → +5 HP, +5 energía`, tipo: 'curacion' });
-
-        } else if (tipoAccion === 'carta' && cartaId) {
-            const carta = SKILLS_DATA.activas[cartaId];
-            if (carta) {
-                const ctx = { source: yo, rival };
-                const result = gp.executeCard(carta, yo, rival, ctx);
-                if (result.log) io.to(partidaId).emit('logBatalla', { msg: result.log, tipo: 'carta' });
-                if (result.damage) {
-                    const castCtx = { damage: result.damage };
-                    const spellLogs = gp.processPassives(yo.pasivas, yo, rival, 'on_cast', castCtx);
-                    spellLogs.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
-                }
-            }
-        }
-
-        // on_hp_loss triggers
-        if (yo.hp < hpAntesYo) {
-            const perdida = hpAntesYo - Math.max(0, yo.hp);
-            gp.processPassives(yo.pasivas, yo, rival, 'on_hp_loss', { hpLost: perdida }).forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
-        }
-        if (rival.hp < hpAntesRival) {
-            const perdida = hpAntesRival - Math.max(0, rival.hp);
-            gp.processPassives(rival.pasivas, rival, yo, 'on_hp_loss', { hpLost: perdida }).forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
-        }
-
-        partida.accionesUsadas.push(tipoAccion);
-        partidaFinalizarAccion(partidaId, partida);
     }
 
     function partidaFinalizarAccion(partidaId, partida) {
@@ -770,9 +686,6 @@ io.on('connection', (socket) => {
 
         if (accRest > 0 && !partida.accionCancelada) {
             partidaEmitirEstado(partidaId, partida);
-            if (partida.turnoActual && partida.turnoActual.startsWith('bot-')) {
-                setTimeout(() => ejecutarTurnoBot(partidaId), 1000);
-            }
             return;
         }
 
@@ -841,9 +754,6 @@ io.on('connection', (socket) => {
 
         io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} recupera ${enRegen} energía`, tipo: 'energia' });
         partidaEmitirEstado(partidaId, partida);
-        if (partida.turnoActual && partida.turnoActual.startsWith('bot-')) {
-            setTimeout(() => ejecutarTurnoBot(partidaId), 1500);
-        }
     }
 
     socket.on('crearCuenta', async ({ nombre, password }) => {
@@ -1247,6 +1157,7 @@ io.on('connection', (socket) => {
 
         const esJugPrimero = turnoInicial === socket.id;
         const sJug = getSkillsParaClase(pj.clase, comp1, partidas[partidaId].jugador1.equipment);
+        const sRival = getSkillsParaClase(botPj.clase, comp2, partidas[partidaId].jugador2.equipment);
 
         socket.emit('rivalEncontrado', {
             partidaId,
@@ -1273,14 +1184,13 @@ io.on('connection', (socket) => {
             turnoActual: turnoInicial,
             esmiTurno: esJugPrimero,
             accionesRestantes: esJugPrimero ? 2 : 0,
-            skills: esJugPrimero ? sJug : [],
-            pasivas: Object.keys(esJugPrimero ? pas1 : pas2),
+            skills: sJug,
+            pasivas: Object.keys(pas1),
+            skillsRival: sRival,
+            pasivasRival: Object.keys(pas2),
+            esPractica: true,
             recetas: MAZOS.recetas
         });
-
-        if (!esJugPrimero) {
-            setTimeout(() => ejecutarTurnoBot(partidaId), 1500);
-        }
     });
 
     socket.on('cancelarBusqueda', () => {
@@ -1340,7 +1250,9 @@ io.on('connection', (socket) => {
                 const rivalId = partida.jugador1.socketId === socket.id ? partida.jugador2.socketId : partida.jugador1.socketId;
                 const rivalData = partida.jugador1.socketId === socket.id ? partida.jugador2 : partida.jugador1;
                 io.to(rivalId).emit('finPartida', { ganador: rivalId, motivo: 'El rival se desconectó.' });
-                otorgarXP(rivalData.cuenta_id, rivalData.personaje._id, 1).then(c => { if (c) io.to(rivalId).emit('cuentaActualizada', c.toObject()); });
+                if (!partida.esPractica) {
+                    otorgarXP(rivalData.cuenta_id, rivalData.personaje._id, 1).then(c => { if (c) io.to(rivalId).emit('cuentaActualizada', c.toObject()); });
+                }
                 delete partidas[id];
             }
         }

@@ -306,7 +306,12 @@
         .col-left  { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
         .col-mid   { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; gap: 6px; min-height: 0; overflow: hidden; }
         .col-right { grid-column: 3; grid-row: 1; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
-        .cards-row { grid-column: 1/-1; grid-row: 2; display: flex; justify-content: center; align-items: flex-end; min-height: 130px; }
+        .cards-row { grid-column: 1/-1; grid-row: 2; display: flex; align-items: flex-end; justify-content: center; min-height: 130px; }
+        .cards-row.stacked { align-items: stretch; }
+        .cards-stack { display: flex; flex-direction: column; gap: 4px; width: 100%; align-items: center; justify-content: flex-end; }
+        .cards-stack-item { display: flex; flex-direction: column; align-items: center; }
+        .cards-label { font-size: 10px; letter-spacing: 3px; color: #5a4a3a; margin-bottom: 4px; transition: color 0.3s; }
+        .cards-label.active-turn { color: #e0b060; }
         .actions-row {
             grid-column: 1/-1; grid-row: 3;
             display: flex; align-items: center;
