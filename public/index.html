@@ -1400,7 +1400,7 @@
                 <div style="text-align:center; color:#9a7040; font-size:10px; letter-spacing:2px; margin-bottom:14px;">${original.nombre}</div>
                 ${nivelesPendientes > 1 ? `<div style="text-align:center; color:#c08050; font-size:8px; letter-spacing:1px; margin-bottom:6px;">Niveles pendientes: ${nivelesPendientes}</div>` : ''}
                 <div style="text-align:center; color:#ff4422; font-size:13px; letter-spacing:2px; margin-bottom:6px; font-weight:700;">PUNTOS: ${restantes}</div>
-                <div style="text-align:center; color:#8a6a38; font-size:7px; letter-spacing:1px; margin-bottom:10px;">Distribuí hasta 5 por vez — ${usadosEstaVez}/5 usados</div>
+                <div style="text-align:center; color:#8a6a38; font-size:7px; letter-spacing:1px; margin-bottom:10px;">Distribuí hasta 3 por vez — ${usadosEstaVez}/3 usados</div>
                 <hr class="divider">
                 ${['fuerza','resistencia','velocidad','magia','suerte'].map(stat => {
                     const sumado = s[stat] - original[stat];
