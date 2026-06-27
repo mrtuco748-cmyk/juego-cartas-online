@@ -150,7 +150,7 @@ function startRoll(serverVal, resolve) {
   S.settleFrames=0; S.resultShown=false;
   S.vx=(Math.random()-0.5)*0.2;
   S.vy=-(0.2+Math.random()*0.6);
-  S.vz=(Math.random()-0.5)*0.15 + 0.15;
+  S.vz=(Math.random()-0.5)*0.2;
   S.posY=2.6+Math.random()*0.5;
   S.angVX=(Math.random()-0.5)*1.2;
   S.angVY=(Math.random()-0.5)*1.2;
@@ -165,23 +165,22 @@ function tick() {
   requestAnimationFrame(tick);
 
   if(S.phase==='falling'){
-    S.vy+=-0.048;
-    S.vz+=FLOOR_TILT*0.15;
+    S.vy+=-0.05;
     S.posY+=S.vy;
     diceMesh.position.x+=S.vx; diceMesh.position.y=S.posY; diceMesh.position.z+=S.vz;
     diceMesh.rotation.x+=S.angVX; diceMesh.rotation.y+=S.angVY; diceMesh.rotation.z+=S.angVZ;
-    S.vx*=0.993; S.vz*=0.993;
+    S.vx*=0.99; S.vz*=0.99;
 
     if(S.posY<=FLOOR_Y+0.05){
       S.posY=FLOOR_Y+0.05; diceMesh.position.y=FLOOR_Y+0.05;
       S.vx=0; S.vz=0;
-      if(Math.abs(S.vy)>0.04){
+      if(Math.abs(S.vy)>0.06){
         S.vy=-S.vy*0.12;
         S.angVX*=0.75; S.angVY*=0.75; S.angVZ*=0.75;
       }else{
         S.vy=0;
         S.angVX*=0.35; S.angVY*=0.35; S.angVZ*=0.35;
-        if(Math.abs(S.angVX)<0.002&&Math.abs(S.angVY)<0.002&&Math.abs(S.angVZ)<0.002){
+        if(Math.abs(S.angVX)<0.003&&Math.abs(S.angVY)<0.003&&Math.abs(S.angVZ)<0.003){
           resultValue = S.serverVal||getTopFace();
           showProgress = 0;
           showQuat = diceMesh.quaternion.clone();
