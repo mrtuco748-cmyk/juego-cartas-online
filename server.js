@@ -290,6 +290,7 @@ io.on('connection', (socket) => {
                     break;
                 }
 
+                if (result.diceRoll) io.to(partidaId).emit('diceRoll', { valor: result.diceRoll });
                 if (result.log) io.to(partidaId).emit('logBatalla', { msg: result.log, tipo: 'carta' });
 
                 const castCtx = { damage: result.damage || 0 };
@@ -302,6 +303,7 @@ io.on('connection', (socket) => {
                     const statsYo2 = gp.calcularStatsConBuffs(yo);
                     const statsRiv2 = gp.calcularStatsConBuffs(rival);
                     const dado2 = Math.floor(Math.random() * 6) + 1;
+                    io.to(partidaId).emit('diceRoll', { valor: dado2 });
                     let danoExtra = Math.max(0, dado2 + statsYo2.fuerza - statsRiv2.resistencia);
                     const critExtra = Math.max(statsYo2.critClaseMulti || 0, gp.calcularCritico(statsYo2.velocidad, statsRiv2.velocidad) + (statsYo2.critBonus || 0));
                     danoExtra = Math.floor(danoExtra * (1 + critExtra));
@@ -328,6 +330,7 @@ io.on('connection', (socket) => {
                 const statsRivAtk = gp.calcularStatsConBuffs(rival);
 
                 const dado = Math.floor(Math.random() * 6) + 1;
+                io.to(partidaId).emit('diceRoll', { valor: dado });
                 let danoBase = Math.max(0, dado + statsYoAtk.fuerza - statsRivAtk.resistencia);
                 let critMulti = Math.max(statsYoAtk.critClaseMulti || 0, gp.calcularCritico(statsYoAtk.velocidad, statsRivAtk.velocidad) + (statsYoAtk.critBonus || 0));
                 let danoFinal = Math.floor(danoBase * (1 + critMulti));
@@ -396,6 +399,7 @@ io.on('connection', (socket) => {
             case 'pose': {
                 const tipoPose = (accionData && accionData.tipo) || (statsYo.resistencia > statsRival.fuerza ? 'parry' : 'esquivar');
                 const dadoPose = Math.floor(Math.random() * 6) + 1;
+                io.to(partidaId).emit('diceRoll', { valor: dadoPose });
                 if (tipoPose === 'parry') {
                     yo.pose = { tipo: 'parry', valor: dadoPose + statsYo.resistencia };
                     io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} prepara PARRY (${dadoPose}+R)`, tipo: 'pose' });
@@ -472,6 +476,7 @@ io.on('connection', (socket) => {
                 if (!gp.puedeAgregarInventario(yo.inventario, {})) { socket.emit('errorAccion', 'Inventario lleno'); break; }
                 const rivalStats = gp.calcularStatsConBuffs(rival);
                 const dadoRobo = Math.floor(Math.random() * 6) + 1 + statsYo.velocidad;
+                io.to(partidaId).emit('diceRoll', { valor: dadoRobo - statsYo.velocidad });
                 const dificultad = rivalStats.velocidad + 3;
                 if (dadoRobo > dificultad) {
                     const idx = Math.floor(Math.random() * rival.inventario.length);
@@ -488,6 +493,7 @@ io.on('connection', (socket) => {
                 if (objIdx === undefined || !yo.inventario[objIdx]) { socket.emit('errorAccion', 'Objeto inválido'); break; }
                 const obj = yo.inventario[objIdx];
                 const dadoL = Math.floor(Math.random() * 6) + 1;
+                io.to(partidaId).emit('diceRoll', { valor: dadoL });
                 const dañoStats = (obj.stats ? (obj.stats.dañoDirecto || 0) + (obj.stats.peso || 0) : 0);
                 const danoL = Math.max(0, dadoL + (obj.peso || 0) + (obj.filo || 0) + dañoStats);
                 if (rival.status && rival.status.shield > 0) {
@@ -506,6 +512,7 @@ io.on('connection', (socket) => {
             case 'recibir': {
                 if (!yo.objetosRecibidos || yo.objetosRecibidos.length === 0) { socket.emit('errorAccion', 'No hay objetos para recibir'); break; }
                 const dadoRec = Math.floor(Math.random() * 6) + 1;
+                io.to(partidaId).emit('diceRoll', { valor: dadoRec });
                 const ultimoObj = yo.objetosRecibidos[yo.objetosRecibidos.length - 1];
                 const dificultadRec = accionData ? (accionData.dificultad || 6) : 6;
                 if (dadoRec > dificultadRec) {
@@ -524,6 +531,7 @@ io.on('connection', (socket) => {
             case 'desviar': {
                 if (!yo.objetosRecibidos || yo.objetosRecibidos.length === 0) { socket.emit('errorAccion', 'No hay objetos para desviar'); break; }
                 const dadoDesv = Math.floor(Math.random() * 6) + 1;
+                io.to(partidaId).emit('diceRoll', { valor: dadoDesv });
                 const dificultadDesv = accionData ? (accionData.dificultad || 6) : 6;
                 if (dadoDesv > dificultadDesv) {
                     const objDesv = yo.objetosRecibidos.pop();

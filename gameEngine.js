@@ -219,9 +219,9 @@ class GameProcessor {
         const roll = Math.floor(Math.random() * 6) + 1;
         if (roll === card.rng) {
           target.hp = 0;
-          return { damage: 9999, log: `¡${target.nombre} ha sido aniquilado por Jackpot!` };
+          return { damage: 9999, log: `¡${target.nombre} ha sido aniquilado por Jackpot!`, diceRoll: roll };
         }
-        return { log: `Jackpot falló (dado: ${roll})` };
+        return { log: `Jackpot falló (dado: ${roll})`, diceRoll: roll };
       },
       shield: (target, card, ctx) => {
         const src = ctx.source;

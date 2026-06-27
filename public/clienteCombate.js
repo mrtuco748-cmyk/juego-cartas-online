@@ -378,14 +378,20 @@ function ejecutarAccionExtra(tipo) {
       break;
     case 'recibir':
       if (miPJ.objetosRecibidos && miPJ.objetosRecibidos.length > 0) {
-        const dif = Math.floor(Math.random() * 6) + 3;
-        enviarAccion('recibir', null, { dificultad: dif });
+        if (typeof rollDice !== 'undefined') {
+          rollDice().then(val => enviarAccion('recibir', null, { dificultad: val + 2 }));
+        } else {
+          enviarAccion('recibir', null, { dificultad: Math.floor(Math.random() * 6) + 3 });
+        }
       } else enviarAccion('recibir');
       break;
     case 'desviar':
       if (miPJ.objetosRecibidos && miPJ.objetosRecibidos.length > 0) {
-        const dif2 = Math.floor(Math.random() * 6) + 3;
-        enviarAccion('desviar', null, { dificultad: dif2, redirigirA: 'rival' });
+        if (typeof rollDice !== 'undefined') {
+          rollDice().then(val => enviarAccion('desviar', null, { dificultad: val + 2, redirigirA: 'rival' }));
+        } else {
+          enviarAccion('desviar', null, { dificultad: Math.floor(Math.random() * 6) + 3, redirigirA: 'rival' });
+        }
       } else enviarAccion('desviar');
       break;
   }
@@ -1071,6 +1077,10 @@ socket.on('logBatalla', (data) => {
   }
   logQueue.push(data);
   procesarLogQueue();
+});
+
+socket.on('diceRoll', (data) => {
+  if (typeof rollDice !== 'undefined') rollDice(data.valor);
 });
 
 function procesarLogQueue() {
