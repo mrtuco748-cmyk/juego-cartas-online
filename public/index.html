@@ -1006,6 +1006,15 @@
     let pjSeleccionado = null;
     let seccionActual = 'menu';
     let modoPractica = false;
+    const STORAGE_KEY = 'loop_cuenta_id';
+
+    socket.on('connect', () => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved && !cuentaActual) {
+            socket.emit('reconectarCuenta', { cuenta_id: saved });
+        }
+    });
+    socket.on('errorReconexion', () => { localStorage.removeItem(STORAGE_KEY); });
 
     // ── NAVEGACIÓN ──
     function mostrarPantalla(id) {
@@ -1021,7 +1030,7 @@
     }
 
     function irAAuth() { mostrarPantalla('auth'); }
-    function cerrarSesion() { cuentaActual = null; pjSeleccionado = null; mostrarPantalla('auth'); }
+    function cerrarSesion() { cuentaActual = null; pjSeleccionado = null; localStorage.removeItem(STORAGE_KEY); mostrarPantalla('auth'); }
 
     function irAMenuDesdeSeccion() {
         mostrarSeccionMenu('pantallaMenu');
@@ -1812,6 +1821,7 @@
 
     socket.on('loginExitoso', (cuenta) => {
         cuentaActual = cuenta;
+        localStorage.setItem(STORAGE_KEY, cuenta.id);
         actualizarUI(cuenta);
         mostrarPantalla('menu');
         mostrarSeccionMenu('pantallaMenu');

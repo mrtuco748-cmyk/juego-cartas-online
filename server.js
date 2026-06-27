@@ -790,6 +790,20 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('reconectarCuenta', async ({ cuenta_id }) => {
+        try {
+            const cuenta = await Cuenta.findById(cuenta_id);
+            if (!cuenta) { socket.emit('errorReconexion', 'Cuenta no encontrada.'); return; }
+            socket.emit('loginExitoso', {
+                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
+                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
+                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
+            });
+        } catch (err) {
+            socket.emit('errorReconexion', 'Error al reconectar.');
+        }
+    });
+
     socket.on('actualizarPerfil', async ({ cuenta_id, nombre, password, foto }) => {
         try {
             const update = {};
