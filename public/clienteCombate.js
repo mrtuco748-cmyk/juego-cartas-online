@@ -599,15 +599,41 @@ function onCardTouchStart(e, idx) {
   if (!skill || skill.coste > (miPJ.energia || 0)) return;
   draggedCardIdx = idx;
   seleccionarCarta(idx);
+  const touch = e.touches[0];
+  const cardEl = document.getElementById('skillCard-' + idx);
+  if (!cardEl) return;
+  touchClone = cardEl.cloneNode(true);
+  touchClone.style.position = 'fixed';
+  touchClone.style.width = '100px';
+  touchClone.style.height = '140px';
+  touchClone.style.pointerEvents = 'none';
+  touchClone.style.zIndex = '200';
+  touchClone.style.opacity = '0.85';
+  touchClone.style.transform = 'rotate(0deg) translateY(0)';
+  touchClone.style.left = (touch.clientX - 50) + 'px';
+  touchClone.style.top = (touch.clientY - 70) + 'px';
+  document.body.appendChild(touchClone);
 }
 
 function onCardTouchMove(e) {
   if (!touchClone) return;
   e.preventDefault();
+  const touch = e.touches[0];
+  touchClone.style.left = (touch.clientX - 50) + 'px';
+  touchClone.style.top = (touch.clientY - 70) + 'px';
 }
 
 function onCardTouchEnd(e) {
-  if (!touchClone) return;
+  if (!touchClone) {
+    if (draggedCardIdx !== null) {
+      const skill = misSkills[draggedCardIdx];
+      if (skill && skill.coste <= (miPJ.energia || 0)) {
+        enviarAccion('carta', skill.id || skill.nombre);
+      }
+      draggedCardIdx = null;
+    }
+    return;
+  }
   touchClone.remove();
   touchClone = null;
   const touch = e.changedTouches[0];
@@ -617,6 +643,11 @@ function onCardTouchEnd(e) {
     if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
         touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
       usarCartaDrag();
+    } else {
+      const info = document.getElementById('cartaSeleccionInfo');
+      if (info) info.style.display = 'none';
+      document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
+      draggedCardIdx = null;
     }
   }
 }
