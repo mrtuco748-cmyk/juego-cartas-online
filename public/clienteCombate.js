@@ -87,8 +87,12 @@ const CLASS_MODS = {
 function calcularStatsConBuffsCliente(pj) {
   const STATS = ['fuerza','resistencia','velocidad','magia','suerte'];
   const permanent = {}, buffMod = {}, total = {};
+  const breakdown = {};
+  const classMods = (typeof CLASS_MODS !== 'undefined' && pj.clase) ? (CLASS_MODS[pj.clase] || {}) : {};
   for (const s of STATS) {
     const serverStat = pj[s] || 0;
+    const classMod = classMods[s] || 0;
+    const baseStat = serverStat - classMod;
     let eMod = 0;
     if (pj.equipment) {
       for (const eq of Object.values(pj.equipment)) {
@@ -106,8 +110,9 @@ function calcularStatsConBuffsCliente(pj) {
     permanent[s] = serverStat + eMod;
     buffMod[s] = bMod;
     total[s] = serverStat + eMod + bMod;
+    breakdown[s] = { base: baseStat, class: classMod, equip: eMod, buff: bMod };
   }
-  return { total, permanent, buffMod };
+  return { total, permanent, buffMod, breakdown };
 }
 
 let prevMiHP, prevRivalHP;
@@ -132,11 +137,27 @@ function renderizarCombate() {
   };
 
   const statLine = (label, stat, c) => {
-    const base = c.permanent[stat];
-    const b = c.buffMod[stat];
-    if (b > 0) return `<div>${label} ${base} <span class="mod-pos">+${b}</span></div>`;
-    if (b < 0) return `<div>${label} ${base} <span class="mod-neg">${b}</span></div>`;
-    return `<div>${label} ${base}</div>`;
+    const brk = c.breakdown && c.breakdown[stat];
+    if (!brk) {
+      const base = c.permanent[stat];
+      const b = c.buffMod[stat];
+      if (b > 0) return `<div>${label} ${base} <span class="mod-pos">+${b}</span></div>`;
+      if (b < 0) return `<div>${label} ${base} <span class="mod-neg">${b}</span></div>`;
+      return `<div>${label} ${base}</div>`;
+    }
+    const fmt = (v, cls) => {
+      if (v === 0) return '';
+      return `<span class="${cls}">${v > 0 ? '+' : ''}${v}</span>`;
+    };
+    const total = brk.base + brk.class + brk.equip + brk.buff;
+    let detail = `${brk.base}`;
+    const cp = fmt(brk.class, 'mod-class');
+    const ep = fmt(brk.equip, 'mod-equip');
+    const bp = fmt(brk.buff, 'mod-buff');
+    if (cp) detail += cp;
+    if (ep) detail += ep;
+    if (bp) detail += bp;
+    return `<div class="stat-breakdown" title="${label}: base ${brk.base}, clase ${brk.class}, equipo ${brk.equip}, buff ${brk.buff}">${label} <span class="stat-total">${total}</span> <span class="stat-detail">${detail}</span></div>`;
   };
 
   const sheetHTML = (pj, prefix) => {

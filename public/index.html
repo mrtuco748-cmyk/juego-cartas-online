@@ -194,6 +194,16 @@
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin: 6px 0; }
         .stat-item { display: flex; align-items: center; gap: 5px; }
         .stat-label { color: #9a7040; font-size: 8px; letter-spacing: 1px; text-transform: uppercase; width: 65px; }
+        #classInfo { background: rgba(0,0,0,0.4); border: 1px solid #2a1808; border-radius: 4px; padding: 6px 8px; margin-top: 6px; font-size: 9px; line-height: 1.4; display: none; }
+        #classInfo .ci-tipo { color: #d4a060; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 3px; }
+        #classInfo .ci-desc { color: #aa8850; font-size: 8px; margin-bottom: 4px; }
+        #classInfo .ci-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1px 8px; margin-bottom: 4px; }
+        #classInfo .ci-stat { color: #9a7040; }
+        #classInfo .ci-stat .val-pos { color: #60b060; }
+        #classInfo .ci-stat .val-neg { color: #c05050; }
+        #classInfo .ci-passive { color: #b09060; font-size: 7px; letter-spacing: 1px; }
+        #classInfo .ci-passive span { color: #c0a070; font-weight: bold; }
+        #classInfo .ci-bonus { color: #60a0c0; font-size: 7px; letter-spacing: 1px; }
         .stat-input {
             width: 40px; background: rgba(0,0,0,0.5); border: 1px solid #3a2010;
             border-radius: 3px; color: #d4b060; font-family: 'Cinzel', serif;
@@ -431,6 +441,13 @@
         .e-color  { color: #40a0f0; }
         .mod-pos  { color: #50c050; }
         .mod-neg  { color: #e05030; }
+        .stat-breakdown { cursor: help; }
+        .stat-breakdown .stat-total { color: #d4b060; }
+        .stat-breakdown .stat-detail { margin-left: 2px; opacity: 0.5; }
+        .stat-breakdown .stat-detail span { font-size: 6px; }
+        .stat-breakdown .mod-class { color: #c08050; }
+        .stat-breakdown .mod-equip { color: #60a0c0; }
+        .stat-breakdown .mod-buff { color: #a0c060; }
 
         /* ── LOG DE COMBATE ── */
         .log-scroll {
@@ -833,7 +850,7 @@
                     <hr class="divider">
                     <div class="campo">
                         <label>Clase</label>
-                        <select id="clase">
+                        <select id="clase" onchange="mostrarInfoClase()">
                             <optgroup label="── Magia ──"><option value="Chaman">Chamán</option><option value="Sacerdote">Sacerdote</option><option value="Druida">Druida</option></optgroup>
                             <optgroup label="── Fuerza ──"><option value="Guerrero">Guerrero</option><option value="Paladin">Paladín</option><option value="Berserker">Berserker</option></optgroup>
                             <optgroup label="── Resistencia ──"><option value="Acorazado">Acorazado</option><option value="Ogro">Ogro</option><option value="Golem">Golem</option></optgroup>
@@ -841,6 +858,7 @@
                             <optgroup label="── Magia Avanzada ──"><option value="Mago">Mago</option><option value="MagoMaestro">Mago Maestro</option><option value="MagoGuerrero">Mago Guerrero</option></optgroup>
                             <optgroup label="── Especial ──"><option value="SemiDios">Semi-Dios</option><option value="Demonio">Demonio</option><option value="Titan">Titán</option></optgroup>
                         </select>
+                        <div id="classInfo"></div>
                     </div>
                     <hr class="divider">
                     <div class="campo"><label>URL de foto del personaje</label><input type="text" id="fotoUrl" placeholder="https://i.imgur.com/... (opcional)"></div>
@@ -1080,6 +1098,59 @@
             };
             const base = mapa[clase] || ["regeneracion", "fortaleza"];
             return [...new Set([...base, ...compradas])];
+        }
+
+        function mostrarInfoClase() {
+            const sel = document.getElementById('clase');
+            const div = document.getElementById('classInfo');
+            const clase = sel.value;
+            if (!clase) { div.style.display = 'none'; return; }
+            const mods = CLASS_MODS[clase] || {};
+            const descs = {Chaman:"Curandero espiritual",Sacerdote:"Sanador divino",Druida:"Guardián natural",Guerrero:"Luchador versátil",Paladin:"Caballero sagrado",Berserker:"Guerrero furioso",Acorazado:"Muro andante",Ogro:"Bruto imparable",Golem:"Ser de piedra",Picaro:"Ladrón astuto",Ninja:"Asesino silencioso",Cazador:"Rastreador experto",Mago:"Lanzador de conjuros",MagoMaestro:"Archimago",MagoGuerrero:"Mago de batalla",SemiDios:"Ser divino",Demonio:"Ente infernal",Titan:"Coloso ancestral"};
+            const tipos = {Chaman:"PS",Sacerdote:"PS",Druida:"PS",Guerrero:"Fuerza",Paladin:"Fuerza",Berserker:"Fuerza",Acorazado:"Resistencia",Ogro:"Resistencia",Golem:"Resistencia",Picaro:"Velocidad",Ninja:"Velocidad",Cazador:"Velocidad",Mago:"Magia",MagoMaestro:"Magia",MagoGuerrero:"Magia",SemiDios:"Especial",Demonio:"Especial",Titan:"Especial"};
+            const stats = ['fuerza','resistencia','velocidad','magia','suerte'];
+            const statLabels = {fuerza:'FUE',resistencia:'RES',velocidad:'VEL',magia:'MAG',suerte:'SUE'};
+            const pasivasClase = getPasivasClase2(clase);
+            const bonusParts = [];
+            if (['Chaman','Sacerdote','Druida','Acorazado','Ogro','Golem','Titan'].includes(clase)) {
+                if (clase === 'Chaman') bonusParts.push('HP +15, Regen +2');
+                else if (clase === 'Sacerdote') bonusParts.push('HP +25, Regen +1');
+                else if (clase === 'Druida') bonusParts.push('HP +20, Regen +2');
+                else if (clase === 'Acorazado') bonusParts.push('HP +10');
+                else if (clase === 'Ogro') bonusParts.push('HP +10');
+                else if (clase === 'Golem') bonusParts.push('HP +15');
+                else if (clase === 'Titan') bonusParts.push('HP +10');
+            }
+            if (['Guerrero','Paladin','Berserker'].includes(clase)) bonusParts.push('Crítico con arma');
+            if (['Picaro','Ninja','Cazador'].includes(clase)) bonusParts.push('1 acción extra');
+            if (['Mago','MagoMaestro','MagoGuerrero'].includes(clase)) bonusParts.push('Energía extra 1er turno');
+            if (clase === 'SemiDios') bonusParts.push('Inmune 1ra ronda');
+            if (clase === 'Demonio') bonusParts.push('-20% HP máximo, daño a HP propio');
+
+            let statsHTML = '<div class="ci-stats">';
+            for (const s of stats) {
+                const v = mods[s] || 0;
+                const cls = v > 0 ? 'val-pos' : (v < 0 ? 'val-neg' : '');
+                const signo = v > 0 ? '+' : '';
+                statsHTML += `<div class="ci-stat">${statLabels[s]}: <span class="${cls}">${signo}${v}</span></div>`;
+            }
+            statsHTML += '</div>';
+
+            const pasivasHTML = pasivasClase.map(id => {
+                const d = SKILL_DATA_LOOKUP_PASIVAS[id];
+                return d ? `<div class="ci-passive">✦ <span>${d.nombre}</span> — ${d.desc}</div>` : '';
+            }).join('');
+
+            const bonusHTML = bonusParts.length > 0 ? `<div class="ci-bonus">◆ ${bonusParts.join(' · ')}</div>` : '';
+
+            div.innerHTML = `
+                <div class="ci-tipo">${tipos[clase] || ''} · ${clase}</div>
+                <div class="ci-desc">${descs[clase] || ''}</div>
+                ${statsHTML}
+                ${pasivasHTML}
+                ${bonusHTML}
+            `;
+            div.style.display = 'block';
         }
 
         const socket = io('https://juego-cartas-online-production.up.railway.app', {
