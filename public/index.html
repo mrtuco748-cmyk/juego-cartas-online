@@ -1220,8 +1220,11 @@
     function guardarStats() {
         const s = tempStatsEditando;
         if (!s) return;
+        const cid = cuentaActual.id || cuentaActual._id;
+        if (!cid) { document.getElementById('errorStats').textContent = 'Error: cuenta no identificada.'; return; }
+        if (!s.id) { document.getElementById('errorStats').textContent = 'Error: personaje no identificado.'; return; }
         socket.emit('asignarStats', {
-            cuenta_id: cuentaActual.id,
+            cuenta_id: cid,
             personaje_id: s.id,
             stats: { fuerza: s.fuerza, resistencia: s.resistencia, velocidad: s.velocidad, magia: s.magia, suerte: s.suerte }
         });
@@ -1901,10 +1904,15 @@
         irAPersonajes();
     });
 
-    socket.on('errorPersonaje', (msg) => { document.getElementById('errorPersonaje').textContent = msg; });
+    socket.on('errorPersonaje', (msg) => {
+        document.getElementById('errorPersonaje').textContent = msg;
+        const st = document.getElementById('errorStats');
+        if (st) st.textContent = msg;
+    });
 
     socket.on('personajeEliminado', (cuenta) => {
         cuentaActual = cuenta;
+        if (!cuentaActual.id && cuentaActual._id) cuentaActual.id = cuentaActual._id;
         actualizarUI(cuenta);
         actualizarNotificaciones();
         renderizarPersonajes();
@@ -1912,13 +1920,15 @@
 
     socket.on('cuentaActualizada', (cuenta) => {
         cuentaActual = cuenta;
+        if (!cuentaActual.id && cuentaActual._id) cuentaActual.id = cuentaActual._id;
         actualizarUI(cuenta);
         actualizarNotificaciones();
-        if (document.getElementById('listaPJs')) renderizarPersonajes();
+        renderizarPersonajes();
     });
 
     socket.on('statsAsignados', (cuenta) => {
         cuentaActual = cuenta;
+        if (!cuentaActual.id && cuentaActual._id) cuentaActual.id = cuentaActual._id;
         actualizarUI(cuenta);
         actualizarNotificaciones();
         cerrarPopupStats();
