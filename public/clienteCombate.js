@@ -305,10 +305,10 @@ function renderizarCombate() {
       </div>
     </div>
 
-    <div id="cartaSeleccionInfo" style="display:none;position:fixed;bottom:200px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.85);border:2px solid #8b6430;border-radius:10px;padding:8px 16px;color:#f3ca6b;font-weight:bold;z-index:50;white-space:nowrap;">
-      <span id="cartaSeleccionadaNombre">—</span>
-      <button onclick="usarCartaSeleccionada()" style="margin-left:10px;padding:6px 16px;border:none;border-radius:6px;background:#ff2859;color:white;font-weight:bold;cursor:pointer;">USAR</button>
-      <button onclick="cancelarSeleccionCarta()" style="margin-left:6px;padding:6px 12px;border:none;border-radius:6px;background:#555;color:white;cursor:pointer;">X</button>
+    <div id="cartaSeleccionInfo" style="display:none;position:fixed;bottom:200px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.85);border:2px solid #8b6430;border-radius:10px;padding:8px 16px;color:#f3ca6b;font-weight:bold;z-index:50;white-space:nowrap;text-align:center;">
+      <div style="font-size:10px;letter-spacing:1px;">ARRASTRALA AL</div>
+      <div style="font-size:10px;letter-spacing:1px;">REGISTRO DE BATALLA</div>
+      <button onclick="cancelarSeleccionCarta()" style="margin-top:6px;padding:4px 12px;border:none;border-radius:4px;background:#555;color:white;cursor:pointer;font-size:9px;">X</button>
     </div>
 
     <div id="panelInventario" style="display:none;position:fixed;top:80px;right:20px;width:220px;background:#1a1a1a;border:2px solid #8b6430;border-radius:10px;padding:10px;z-index:30;max-height:200px;overflow-y:auto;"></div>
@@ -567,7 +567,6 @@ function seleccionarCarta(idx) {
   document.querySelectorAll('.carta-slot').forEach(c => c.classList.remove('selected'));
   const el = document.getElementById(`skillCard-${idx}`);
   if (el) el.classList.add('selected');
-  document.getElementById('cartaSeleccionadaNombre').textContent = skill.nombre;
   document.getElementById('cartaSeleccionInfo').style.display = 'block';
   _timeoutDeselect = setTimeout(() => cancelarSeleccionCarta(), 8000);
 }
