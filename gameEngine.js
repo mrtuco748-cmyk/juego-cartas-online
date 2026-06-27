@@ -25,7 +25,7 @@ const SKILLS_DATA = {
   pasivas: {
     veneno: { nombre: "Veneno", efecto: "dot", valor: 0.05, trigger: "on_hit" },
     totem: { nombre: "Tótem", efecto: "survival", hp_min: 1, trigger: "on_death" },
-    regeneracion: { nombre: "Regeneración", efecto: "regen_hp", valor: 0.03, trigger: "on_turn_start" },
+    regeneracion: { nombre: "Regeneración", efecto: "regen_hp", valor: 0.015, trigger: "on_turn_start" },
     mana_infinito: { nombre: "Maná Infinito", efecto: "regen_energy", valor: 5, trigger: "on_turn_start" },
     contraataque: { nombre: "Contraataque", efecto: "counter", valor: 0.50, trigger: "on_take_damage" },
     escudo_espinas: { nombre: "Escudo de Espinas", efecto: "thorns", valor: 0.10, trigger: "on_take_damage" },
@@ -45,9 +45,9 @@ const SKILLS_DATA = {
 };
 
 const CLASS_DATA = {
-  Chaman: { tipo: "PS", mods: { magia: 3, resistencia: 2, fuerza: 2, velocidad: 4, suerte: 0 }, hpBonus: 15, hpRegen: 5, desc: "Curandero espiritual" },
-  Sacerdote: { tipo: "PS", mods: { magia: 5, resistencia: 3, fuerza: 1, velocidad: 0, suerte: 0 }, hpBonus: 25, hpRegen: 3, desc: "Sanador divino" },
-  Druida: { tipo: "PS", mods: { magia: 4, resistencia: 2, fuerza: 3, velocidad: 1, suerte: 0 }, hpBonus: 20, hpRegen: 4, desc: "Guardián natural" },
+  Chaman: { tipo: "PS", mods: { magia: 3, resistencia: 2, fuerza: 2, velocidad: 4, suerte: 0 }, hpBonus: 15, hpRegen: 2, desc: "Curandero espiritual" },
+  Sacerdote: { tipo: "PS", mods: { magia: 5, resistencia: 3, fuerza: 1, velocidad: 0, suerte: 0 }, hpBonus: 25, hpRegen: 1, desc: "Sanador divino" },
+  Druida: { tipo: "PS", mods: { magia: 4, resistencia: 2, fuerza: 3, velocidad: 1, suerte: 0 }, hpBonus: 20, hpRegen: 2, desc: "Guardián natural" },
   Guerrero: { tipo: "Fuerza", mods: { magia: -3, resistencia: 3, fuerza: 4, velocidad: 3, suerte: 0 }, hpBonus: 0, critEfecto: { multi: 1.0, duracion: 2 }, desc: "Luchador versátil" },
   Paladin: { tipo: "Fuerza", mods: { magia: -3, resistencia: 5, fuerza: 4, velocidad: 1, suerte: 0 }, hpBonus: 0, critEfecto: { multi: 0.5, duracion: 4 }, desc: "Caballero sagrado" },
   Berserker: { tipo: "Fuerza", mods: { magia: -6, resistencia: 5, fuerza: 5, velocidad: -5, suerte: 0 }, hpBonus: 0, critEfecto: { multi: 0.25, duracion: 8 }, desc: "Guerrero furioso" },

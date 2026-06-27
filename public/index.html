@@ -563,24 +563,41 @@
             .topbar { height: 32px; padding: 0 6px; }
             .orb    { width: 18px; height: 18px; }
 
-            .battlefield { gap: 4px; padding: 4px; }
+            .battlefield {
+                grid-template-columns: 1fr auto 1fr;
+                grid-template-rows: auto auto auto;
+                gap: 4px; padding: 4px;
+            }
+            .col-left  { grid-column: 1; grid-row: 1; justify-content: flex-end; }
+            .col-mid   { grid-column: 2; grid-row: 1; display: flex; align-items: center; justify-content: center; min-height: 0; overflow: hidden; }
+            .col-right { grid-column: 3; grid-row: 1; justify-content: flex-end; }
+            .cards-row { grid-column: 1/-1; grid-row: 2; }
+            .actions-row { grid-column: 1/-1; grid-row: 3; }
 
             .player-character, .enemy-character {
-                height: clamp(52px, 9vh, 85px);
+                height: clamp(80px, 14vh, 120px);
                 border-radius: 6px;
             }
 
-            .sheet { padding: 4px 5px; }
-            .sheet h2 { font-size: 9px; }
-            .sheet h4 { font-size: 6px; }
-            .sheet .bar { height: 5px; margin-bottom: 2px; }
-            .sheet .stats-grid { grid-template-columns: 1fr 1fr; }
-            .sheet .stats-grid div { font-size: 6px; padding: 1px 2px; }
-            .hp-energy-text { font-size: 6px; }
+            .sheet { padding: 3px 4px; }
+            .sheet h2 { font-size: 7px; margin-bottom: 0; }
+            .sheet h4 { display: none; }
+            .sheet .bar { height: 4px; margin-bottom: 1px; }
+            .sheet .stats-grid { gap: 1px; }
+            .sheet .stats-grid div { font-size: 5px; padding: 1px; }
+            .hp-energy-text { font-size: 5px; margin-bottom: 1px; }
 
-            .log-scroll { padding: 4px 7px; font-size: 9px; max-height: 80px; }
-            .log-scroll h2 { font-size: 8px; }
-            .turn-message { font-size: 11px; letter-spacing: 2px; }
+            .log-scroll {
+                flex: 0 0 auto; max-height: none; min-height: 0;
+                width: clamp(100px, 28vw, 160px);
+                aspect-ratio: 1;
+                padding: 6px;
+                font-size: 8px;
+                display: flex; flex-direction: column;
+            }
+            .log-scroll h2 { font-size: 7px; margin-bottom: 3px; padding-bottom: 2px; }
+            .log-scroll #logBatch { flex: 1; overflow-y: auto; font-size: 7px; }
+            .turn-message { font-size: 9px; letter-spacing: 1px; }
 
             .active-cards { min-height: 90px; padding-bottom: 3px; }
             .slot-card { width: 70px; height: 100px; padding: 5px 5px 4px; border-radius: 7px; }
