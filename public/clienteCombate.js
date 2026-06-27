@@ -722,6 +722,23 @@ function mostrarDañoFlotante(valor, esCritico) {
   setTimeout(() => popup.remove(), 1100);
 }
 
+function mostrarCuracionFlotante(valor, selector) {
+  const charEl = document.querySelector(selector);
+  if (!charEl) return;
+  const rect = charEl.getBoundingClientRect();
+  const popup = document.createElement('div');
+  popup.className = 'dmg-popup';
+  popup.style.left = rect.left + rect.width / 2 + 'px';
+  popup.style.top = rect.top + 'px';
+  popup.style.color = '#40e060';
+  popup.style.fontSize = 'clamp(22px, 4vw, 40px)';
+  popup.style.textShadow = '0 0 20px rgba(60,200,80,0.8),0 0 40px rgba(60,200,80,0.4)';
+  popup.style.animation = 'healFloat 1s ease-out forwards';
+  popup.innerHTML = `+${Math.round(valor)}`;
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 1100);
+}
+
 function agregarLog(data) {
   const msg = typeof data === 'string' ? data : data.msg;
   const estilo = typeof data === 'string' ? 'color:#9a7040;font-size:10px;' : estiloLog(data);
@@ -735,6 +752,13 @@ function agregarLog(data) {
     const nums = msg.match(/(\d+)\s*$/) || msg.match(/(\d+)(?:\s*daño)?\s*$/);
     if (nums) {
       mostrarDañoFlotante(parseInt(nums[1]), /crític|CRÍTIC/i.test(msg));
+    }
+  }
+  if (tipo === 'curacion') {
+    const nums = msg.match(/\+?(\d+)\s*HP/) || msg.match(/cura\s*(\d+)\s*HP/);
+    if (nums) {
+      const esYo = miPJ && msg.includes(miPJ.nombre);
+      mostrarCuracionFlotante(parseInt(nums[1]), esYo ? '.player-character' : '.enemy-character');
     }
   }
 

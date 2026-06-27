@@ -394,6 +394,8 @@
         .logEntryAnim { animation: logFadeIn 0.25s ease; }
         @keyframes dmgFloat { 0%{opacity:1;transform:translate(-50%,-50%) scale(1.2)} 35%{opacity:1;transform:translate(-50%,-55%) scale(1)} 100%{opacity:0;transform:translate(-50%,-80%) scale(0.8)} }
         .dmg-popup { position:fixed;left:50%;top:45%;z-index:100;pointer-events:none;font-family:'Cinzel',serif;font-weight:700;text-shadow:0 0 20px rgba(200,60,30,0.8),0 0 40px rgba(200,60,30,0.4);animation:dmgFloat 1s ease-out forwards; }
+        @keyframes healFloat { 0%{opacity:1;transform:translateY(0) scale(1.2)} 35%{opacity:1;transform:translateY(-10px) scale(1)} 100%{opacity:0;transform:translateY(-40px) scale(0.8)} }
+        .heal-popup { position:absolute;left:50%;bottom:100%;z-index:100;pointer-events:none;font-family:'Cinzel',serif;font-weight:700;white-space:nowrap;animation:healFloat 1s ease-out forwards; }
 
         /* ── CARTAS ── */
         .active-cards {
@@ -532,7 +534,7 @@
             .sheet .stats-grid div { font-size: 7px; padding: 1px 3px; }
             .hp-energy-text { font-size: 6px; }
 
-            .log-scroll { padding: 6px 8px; font-size: 9px; max-height: 140px; }
+            .log-scroll { padding: 8px 10px; font-size: 10px; max-height: 200px; }
             .turn-message { font-size: 12px; }
 
             .slot-card { width: 88px; height: 124px; padding: 6px 6px 5px; }
@@ -585,15 +587,15 @@
             .hp-energy-text { font-size: 5px; margin-bottom: 1px; }
 
             .log-scroll {
-                flex: 0 0 auto; max-height: none; min-height: 0;
-                width: clamp(100px, 28vw, 160px);
-                aspect-ratio: 1;
-                padding: 6px;
-                font-size: 8px;
+                flex: 1 1 auto; max-height: none; min-height: 0;
+                width: clamp(130px, 38vw, 220px);
+                aspect-ratio: auto;
+                padding: 8px 10px;
+                font-size: 10px;
                 display: flex; flex-direction: column;
             }
-            .log-scroll h2 { font-size: 7px; margin-bottom: 3px; padding-bottom: 2px; }
-            .log-scroll #logBatch { flex: 1; overflow-y: auto; font-size: 7px; }
+            .log-scroll h2 { font-size: 9px; margin-bottom: 4px; padding-bottom: 3px; }
+            .log-scroll #logBatch { flex: 1; overflow-y: auto; font-size: 9px; line-height: 1.4; }
             .turn-message { font-size: 9px; letter-spacing: 1px; }
 
             .active-cards { min-height: 90px; padding-bottom: 3px; }
