@@ -910,9 +910,10 @@ function actualizarCardsSkills() {
 
 socket.on('finPartida', (datos) => {
   const gane = datos.ganador === socket.id;
+  const empate = datos.empate === true;
   const logBatch = document.getElementById('logBatch');
   if (logBatch) {
-    const msg = esPractica ? 'ENTRENAMIENTO TERMINADO' : (gane ? 'VICTORIA!' : 'DERROTA');
+    let msg = esPractica ? 'ENTRENAMIENTO TERMINADO' : (empate ? 'EMPATE!' : (gane ? 'VICTORIA!' : 'DERROTA'));
     logBatch.innerHTML += `<div style="color:#e0b060;font-size:13px;text-align:center;margin-top:10px;letter-spacing:2px;">${msg}</div>`;
     logBatch.scrollTop = logBatch.scrollHeight;
   }

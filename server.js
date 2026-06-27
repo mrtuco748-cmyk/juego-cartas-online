@@ -257,6 +257,10 @@ io.on('connection', (socket) => {
                 socket.emit('errorAccion', 'No te quedan acciones.');
                 return;
             }
+            if (tipo !== 'carta' && tipo !== 'ataque_penalizado' && partida.accionesUsadas.includes(tipo)) {
+                socket.emit('errorAccion', 'Ya usaste esa acción este turno.');
+                return;
+            }
             partida.accionesUsadas.push(tipo);
         }
 
@@ -674,9 +678,13 @@ io.on('connection', (socket) => {
                 }
 
                 io.to(partidaId).emit('finPartida', { ganador: gSocket });
-                delete partidas[partidaId];
-                return true;
+            } else {
+                io.to(partidaId).emit('logBatalla', { msg: `Ambos jugadores han caído. ¡Empate!`, tipo: 'muerte' });
+                partidaEmitirEstado(partidaId, partida);
+                io.to(partidaId).emit('finPartida', { ganador: null, empate: true });
             }
+            delete partidas[partidaId];
+            return true;
         }
         return false;
     }
@@ -1280,6 +1288,17 @@ io.on('connection', (socket) => {
         console.log('Desconectado:', socket.id);
     });
 });
+
+// Periodically clean up stale matches (safety net)
+setInterval(() => {
+  for (const [id, partida] of Object.entries(partidas)) {
+    const j1ok = io.sockets.sockets.has(partida.jugador1.socketId);
+    const j2ok = partida.jugador2.socketId && io.sockets.sockets.has(partida.jugador2.socketId);
+    if (!j1ok || (!j2ok && !partida.esPractica)) {
+      delete partidas[id];
+    }
+  }
+}, 60000);
 
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => console.log(`Servidor en http://localhost:${PORT}`));

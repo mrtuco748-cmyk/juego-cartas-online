@@ -610,16 +610,17 @@ class GameProcessor {
     const diff = magJugador - magRival;
     if (diff <= 0) return 10;
     const ratio = diff / Math.max(magRival, 1);
-    if (ratio > 1.5) return 25;
-    if (ratio > 1.0) return 20;
-    if (ratio > 0.5) return 15;
-    return 10;
+    if (ratio > 1.5) return 30;
+    if (ratio > 1.0) return 25;
+    if (ratio > 0.5) return 20;
+    return 15;
   }
 
   calcularCritico(velJugador, velRival) {
     if (velJugador <= velRival) return 0;
-    const diff = velJugador - velRival;
-    return Math.min(0.5, diff * 0.05);
+    const ratio = (velJugador - velRival) / Math.max(velRival, 1);
+    const tiers = Math.floor(ratio / 0.5) + 1;
+    return Math.min(tiers * 0.25, 1.25);
   }
 
   calcularTurnoInicial(jugadores) {
