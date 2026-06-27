@@ -884,7 +884,7 @@
                         <div class="stat-item"><span class="stat-label">Magia</span><input class="stat-input" type="number" id="magia" value="0" min="0"></div>
                         <div class="stat-item"><span class="stat-label">Suerte</span><input class="stat-input" type="number" id="suerte" value="0" min="0"></div>
                     </div>
-                    <div style="color:#9a7040; font-size:9px; text-align:right; letter-spacing:1px; margin-top:2px;">Total: <span id="totalStats">0</span>/25 · Mín 2 c/u</div>
+                    <div style="color:#9a7040; font-size:9px; text-align:right; letter-spacing:1px; margin-top:2px;">Total: <span id="totalStats">0</span>/20 · Mín 2 c/u</div>
                     <hr class="divider">
                     <div class="campo">
                         <label>Clase</label>
@@ -1874,7 +1874,7 @@
         const stats = ['fuerza','resistencia','velocidad','magia','suerte'];
         const total = stats.reduce((sum, s) => sum + (parseInt(document.getElementById(s).value) || 0), 0);
         document.getElementById('totalStats').textContent = total;
-        document.getElementById('totalStats').style.color = total === 25 ? '#60d060' : '#ff6040';
+        document.getElementById('totalStats').style.color = total === 20 ? '#60d060' : '#ff6040';
     }
 
     // ── CONFIG ──
@@ -2096,8 +2096,8 @@
         const v = parseInt(document.getElementById('velocidad').value) || 0;
         const m = parseInt(document.getElementById('magia').value) || 0;
         const s = parseInt(document.getElementById('suerte').value) || 0;
-        if (f + r + v + m + s !== 25) {
-            document.getElementById('errorPersonaje').textContent = 'Los puntos deben sumar 25.';
+        if (f + r + v + m + s !== 20) {
+            document.getElementById('errorPersonaje').textContent = 'Los puntos deben sumar 20.';
             return;
         }
         if (f < 2 || r < 2 || v < 2 || m < 2 || s < 2) {

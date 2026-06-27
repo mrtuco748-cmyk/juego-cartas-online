@@ -921,9 +921,9 @@ io.on('connection', (socket) => {
 
     socket.on('guardarPersonaje', async (datos) => {
         const suma = datos.fuerza + datos.resistencia + datos.velocidad + datos.magia + datos.suerte;
-        if (suma !== 25 || datos.fuerza < 2 || datos.resistencia < 2 || datos.velocidad < 2 || datos.magia < 2 || datos.suerte < 2) {
-            if (suma !== 25) {
-                socket.emit('errorPersonaje', 'Los puntos deben sumar 25.');
+        if (suma !== 20 || datos.fuerza < 2 || datos.resistencia < 2 || datos.velocidad < 2 || datos.magia < 2 || datos.suerte < 2) {
+            if (suma !== 20) {
+                socket.emit('errorPersonaje', 'Los puntos deben sumar 20.');
             } else {
                 socket.emit('errorPersonaje', 'Cada estadística debe tener al menos 2 puntos.');
             }
