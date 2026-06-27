@@ -2323,7 +2323,7 @@
     });
 
     const AudioManager = {
-        _menuAudio: null, _battleAudio: null, active: null, vol: 0.35, _muted: false,
+        _menuAudio: null, _battleAudio: null, active: null, vol: 0.1, _muted: false,
         _fade(audio, targetVol, dur, done) {
             if (!audio) { if (done) done(); return; }
             const start = audio.volume, diff = targetVol - start, steps = Math.max(1, Math.floor((dur || 0.5) * 20));
