@@ -702,7 +702,7 @@
                 <div class="ornament">— — —</div>
                 <button class="main-btn" onclick="irASeleccionPJ()">JUGAR</button>
                 <div class="ornament" style="font-size:14px; margin:2px 0">— — —</div>
-                <button class="main-btn" style="font-size:14px; padding:11px 0; background:linear-gradient(180deg,#b84020 0%,#6a1808 40%,#7a1d0e 60%,#b03018 100%)">PRÁCTICA</button>
+                <button class="main-btn" onclick="iniciarPractica()" style="font-size:14px; padding:11px 0; background:linear-gradient(180deg,#b84020 0%,#6a1808 40%,#7a1d0e 60%,#b03018 100%)">PRÁCTICA</button>
                 <div class="ornament" style="font-size:13px; margin:2px 0">— — —</div>
                 <button class="main-btn" style="font-size:13px; padding:10px 0; background:linear-gradient(180deg,#a83818 0%,#601508 40%,#701a0c 60%,#a02818 100%)">EL ARENA</button>
             </div>
@@ -986,6 +986,7 @@
     let cuentaActual = null;
     let pjSeleccionado = null;
     let seccionActual = 'menu';
+    let modoPractica = false;
 
     // ── NAVEGACIÓN ──
     function mostrarPantalla(id) {
@@ -1044,6 +1045,11 @@
         }
         renderizarSeleccionPJ();
         mostrarSeccionMenu('pantallaSeleccionPJ');
+    }
+
+    function iniciarPractica() {
+        modoPractica = true;
+        irASeleccionPJ();
     }
 
     // ── TABS AUTH ──
@@ -1425,7 +1431,13 @@
             return;
         }
         mostrarSeccionMenu('pantallaEspera');
-        socket.emit('buscarPartida', { cuenta_id: cuentaActual.id, personaje: pjSeleccionado });
+        if (modoPractica) {
+            modoPractica = false;
+            document.getElementById('esperaMsg').textContent = 'Preparando práctica...';
+            socket.emit('buscarPractica', { cuenta_id: cuentaActual.id, personaje: pjSeleccionado });
+        } else {
+            socket.emit('buscarPartida', { cuenta_id: cuentaActual.id, personaje: pjSeleccionado });
+        }
     }
 
     function cancelarEspera() {
