@@ -1123,6 +1123,7 @@ io.on('connection', (socket) => {
                     accionesRestantes: esTurno ? 2 : 0,
                     skills: esTurno ? skills1 : skills2,
                     pasivas: Object.keys(esTurno ? pasivas1 : pasivas2),
+                    pasivasRival: esTurno ? Object.keys(pasivas2) : Object.keys(pasivas1),
                     recetas: MAZOS.recetas
                 });
             };

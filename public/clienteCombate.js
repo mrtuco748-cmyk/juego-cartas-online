@@ -742,6 +742,21 @@ function actualizarEscudoVisual() {
   });
 }
 
+function actualizarCardBack() {
+  ['.player-character', '.enemy-character'].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    const back = el.querySelector('.card-back');
+    if (!back) return;
+    const pasivas = sel === '.player-character' ? (misPasivas||[]) : (rivalPasivas||[]);
+    back.innerHTML = '<div class="passive-title">PASIVAS</div>' +
+      (pasivas.length > 0 ? pasivas.map(id => {
+        const d = typeof SKILL_DATA_LOOKUP_PASIVAS !== 'undefined' && SKILL_DATA_LOOKUP_PASIVAS[id];
+        return d ? `<div class="passive-item">${d.nombre}</div>` : '';
+      }).join('') : '<div class="passive-item" style="opacity:0.4">Sin pasivas</div>');
+  });
+}
+
 function estiloLog(data) {
   const estilos = {
     ataque: 'color:#e89838;font-size:11px;font-weight:600;',
@@ -1086,7 +1101,6 @@ socket.on('actualizarEstado', (datos) => {
   }
 
   if (datos.j1skills) misSkills = yoMio ? datos.j1skills : datos.j2skills;
-  if (datos.pasivasJ1) misPasivas = yoMio ? datos.pasivasJ1 : datos.pasivasJ2;
   if (datos.inventarioJ1) miPJ.inventario = yoMio ? datos.inventarioJ1 : datos.inventarioJ2;
   if (datos.equipmentJ1) miPJ.equipment = yoMio ? datos.equipmentJ1 : datos.equipmentJ2;
   miPJ.objetosRecibidos = yoMio ? (datos.objetosRecibidosJ1 || []) : (datos.objetosRecibidosJ2 || []);
@@ -1094,14 +1108,16 @@ socket.on('actualizarEstado', (datos) => {
 
   if (esPractica) {
     rivalSkills = yoMio ? (datos.j2skills || []) : (datos.j1skills || []);
-    rivalPasivas = yoMio ? (datos.pasivasJ2 || []) : (datos.pasivasJ1 || []);
   }
+  rivalPasivas = yoMio ? (datos.pasivasJ2 || []) : (datos.pasivasJ1 || []);
+  misPasivas = yoMio ? (datos.pasivasJ1 || []) : (datos.pasivasJ2 || []);
 
   if (prevMiHP === undefined) { prevMiHP = miPJ.hp || 0; prevRivalHP = rivalPJ.hp || 0; }
   actualizarHP();
   actualizarCardsSkills();
   actualizarIndicadorTurno();
   actualizarEscudoVisual();
+  actualizarCardBack();
 });
 
 function actualizarCardsSkills() {
