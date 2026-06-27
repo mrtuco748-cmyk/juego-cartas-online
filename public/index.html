@@ -883,8 +883,7 @@
                         <div class="stat-item"><span class="stat-label">Velocidad</span><input class="stat-input" type="number" id="velocidad" value="0" min="0"></div>
                         <div class="stat-item"><span class="stat-label">Magia</span><input class="stat-input" type="number" id="magia" value="0" min="0"></div>
                         <div class="stat-item"><span class="stat-label">Suerte</span><input class="stat-input" type="number" id="suerte" value="0" min="0"></div>
-                    </div>
-                    <div style="color:#9a7040; font-size:9px; text-align:right; letter-spacing:1px; margin-top:2px;">Total: <span id="totalStats">0</span>/25</div>
+                    <div style="color:#9a7040; font-size:9px; text-align:right; letter-spacing:1px; margin-top:2px;">Total: <span id="totalStats">0</span>/25 · Mín 2 c/u</div>
                     <hr class="divider">
                     <div class="campo">
                         <label>Clase</label>
@@ -1294,9 +1293,11 @@
 
     function irACrearPJ() {
         mostrarSeccionMenu('pantallaCreacion');
+        document.getElementById('formPersonaje').reset();
         document.getElementById('skillPicker').style.display = 'none';
         window._skillPickerSeleccion = [];
         document.getElementById('errorPersonaje').textContent = '';
+        document.getElementById('totalStats').textContent = '0';
     }
 
     function irASeleccionPJ() {
@@ -2098,6 +2099,10 @@
             document.getElementById('errorPersonaje').textContent = 'Los puntos deben sumar 25.';
             return;
         }
+        if (f < 2 || r < 2 || v < 2 || m < 2 || s < 2) {
+            document.getElementById('errorPersonaje').textContent = 'Cada estadística debe tener al menos 2 puntos.';
+            return;
+        }
         const activas = window._skillPickerSeleccion || [];
         if (activas.length !== 3) {
             document.getElementById('errorPersonaje').textContent = 'Seleccioná exactamente 3 activas iniciales.';
@@ -2118,7 +2123,7 @@
         cuentaActual.personajes.push(p);
         document.getElementById('errorPersonaje').textContent = '';
         document.getElementById('formPersonaje').reset();
-        document.getElementById('totalStats').textContent = '25';
+        document.getElementById('totalStats').textContent = '0';
         actualizarNotificaciones();
         irAPersonajes();
     });

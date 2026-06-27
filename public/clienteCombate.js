@@ -920,13 +920,15 @@ function agregarLog(data) {
         setTimeout(() => p.remove(), 1100);
       }
     }
-    if (/energía|energia/i.test(msg)) {
-      const m = msg.match(/\+?(\d+)\s*energ/i);
-      if (m) popPersonaje('+' + m[1] + 'E', '#40a0f0', personajeSelector(msg));
-    }
   }
 
-  /* ─── ENERGÍA ─── */
+  /* ─── ENERGÍA (general) ─── */
+  if (/energía|energia/i.test(msg)) {
+    const m = msg.match(/(?:recupera|recibe|gana|\+)?\s*(\d+)\s*energ/i);
+    if (m) popPersonaje('+' + m[1] + 'E', '#40a0f0', personajeSelector(msg));
+  }
+
+  /* ─── TIPO ENERGÍA ─── */
   if (tipo === 'energia') {
     const m = msg.match(/(\d+)\s*energ/);
     if (m) popPersonaje('+' + m[1] + 'E', '#40a0f0', personajeSelector(msg));
@@ -963,10 +965,6 @@ function agregarLog(data) {
   if (tipo === 'carta' && /escudo\s*(de|de )?(\d+)/i.test(msg)) {
     const m = msg.match(/(\d+)/);
     if (m) popPersonaje('🛡 +' + m[1], '#40b0ff', personajeSelector(msg));
-  }
-  if (tipo === 'carta' && /energía\s*extra/i.test(msg)) {
-    const m = msg.match(/(\d+)/);
-    if (m) popPersonaje('✦ +' + m[1], '#b060e0', personajeSelector(msg));
   }
   if (tipo === 'carta' && (/\bgana\s*\+/i.test(msg) || /\bgana\s*\+\d+/i.test(msg))) {
     const m = msg.match(/\+(\d+)\s*([a-záéíóú]+)/i);
