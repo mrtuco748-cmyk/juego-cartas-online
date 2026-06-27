@@ -922,15 +922,9 @@ function agregarLog(data) {
     }
   }
 
-  /* ─── ENERGÍA (general) ─── */
+  /* ─── ENERGÍA ─── */
   if (/energía|energia/i.test(msg)) {
     const m = msg.match(/(?:recupera|recibe|gana|\+)?\s*(\d+)\s*energ/i);
-    if (m) popPersonaje('+' + m[1] + 'E', '#40a0f0', personajeSelector(msg));
-  }
-
-  /* ─── TIPO ENERGÍA ─── */
-  if (tipo === 'energia') {
-    const m = msg.match(/(\d+)\s*energ/);
     if (m) popPersonaje('+' + m[1] + 'E', '#40a0f0', personajeSelector(msg));
   }
 
