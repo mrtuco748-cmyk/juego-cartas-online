@@ -856,6 +856,216 @@ class GameProcessor {
     return logs;
   }
 
+  aplicarFortuna(card, partida, jugador1, jugador2) {
+    const logs = [];
+    const hpIniciales = partida._hpIniciales || { j1: { ...jugador1 }, j2: { ...jugador2 } };
+
+    switch (card.efecto) {
+      case 'swap_heal_damage':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.swapHealDamage = true;
+        logs.push(`🔀 ¡El mundo al revés! Curar causa daño y daño cura`);
+        break;
+      case 'swap_stats':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.swapStats = card.duracion;
+        for (const s of ['fuerza','resistencia','velocidad','magia','suerte']) {
+          const tmp = jugador1.personaje[s];
+          jugador1.personaje[s] = jugador2.personaje[s];
+          jugador2.personaje[s] = tmp;
+        }
+        logs.push(`🔀 ¡Identidad robada! Stats intercambiados por ${card.duracion} turnos`);
+        break;
+      case 'reverse_passives':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.reversePassives = card.duracion;
+        logs.push(`🔀 ¡El traidor! Las pasivas trabajarán en contra por ${card.duracion} turnos`);
+        break;
+      case 'slow_fast':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.slowFast = card.duracion;
+        logs.push(`🔀 ¡Velocidad maldita! El más rápido pierde turno por ${card.duracion} turnos`);
+        break;
+      case 'anti_strength':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.antiStrength = card.duracion;
+        logs.push(`🔀 ¡Antifuerza! A más fuerza, menos daño por ${card.duracion} turnos`);
+        break;
+      case 'russian_roulette': {
+        const d1 = Math.floor(Math.random() * 6) + 1;
+        const d2 = Math.floor(Math.random() * 6) + 1;
+        partida._fortunaRolls = partida._fortunaRolls || [];
+        partida._fortunaRolls.push({ j1: d1, j2: d2 });
+        if (d1 < d2) { jugador1.hp = 0; logs.push(`💀 ${jugador1.nombre} pierde la ruleta rusa (${d1} vs ${d2})`); }
+        else if (d2 < d1) { jugador2.hp = 0; logs.push(`💀 ${jugador2.nombre} pierde la ruleta rusa (${d2} vs ${d1})`); }
+        else logs.push(`💀 Ruleta rusa: empate (${d1} vs ${d2}), nada pasa`);
+        break;
+      }
+      case 'divine_judgment': {
+        const total1 = (jugador1.fuerza||0)+(jugador1.resistencia||0)+(jugador1.velocidad||0)+(jugador1.magia||0)+(jugador1.suerte||0);
+        const total2 = (jugador2.fuerza||0)+(jugador2.resistencia||0)+(jugador2.velocidad||0)+(jugador2.magia||0)+(jugador2.suerte||0);
+        const st1 = (jugador1.personaje?.['fuerza']||0)+(jugador1.personaje?.['resistencia']||0)+(jugador1.personaje?.['velocidad']||0)+(jugador1.personaje?.['magia']||0)+(jugador1.personaje?.['suerte']||0);
+        const st2 = (jugador2.personaje?.['fuerza']||0)+(jugador2.personaje?.['resistencia']||0)+(jugador2.personaje?.['velocidad']||0)+(jugador2.personaje?.['magia']||0)+(jugador2.personaje?.['suerte']||0);
+        if (st1 > st2) { jugador1.hp = Math.floor(jugador1.hp/2); logs.push(`💀 ${jugador1.nombre} pierde mitad de HP (juicio divino)`); }
+        else if (st2 > st1) { jugador2.hp = Math.floor(jugador2.hp/2); logs.push(`💀 ${jugador2.nombre} pierde mitad de HP (juicio divino)`); }
+        else logs.push(`💀 Juicio divino: stats empatados, nada pasa`);
+        break;
+      }
+      case 'chosen_one': {
+        const objetivo = jugador1.hp <= jugador2.hp ? jugador1 : jugador2;
+        const ids = Object.keys(SKILLS_DATA.activas);
+        const ta = SKILLS_DATA.activas[ids[Math.floor(Math.random()*ids.length)]];
+        objetivo._fortunaTA = ta;
+        logs.push(`💀 ¡${objetivo.nombre} es el elegido! Recibe ${ta.nombre} permanentemente`);
+        break;
+      }
+      case 'destruct_equipment':
+        for (const j of [jugador1, jugador2]) {
+          for (const slot of Object.keys(j.equipment || {})) {
+            if (j.equipment[slot]) j.equipment[slot] = null;
+          }
+        }
+        logs.push(`💀 ¡Extinción! Todos los objetos equipados fueron destruidos`);
+        break;
+      case 'reset_hp':
+        if (hpIniciales.j1?.maxHp) jugador1.hp = hpIniciales.j1.maxHp;
+        if (hpIniciales.j2?.maxHp) jugador2.hp = hpIniciales.j2.maxHp;
+        logs.push(`💀 ¡Reset! Ambos vuelven al HP inicial`);
+        break;
+      case 'mirror_damage':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.mirrorDamage = card.duracion;
+        logs.push(`🎭 ¡Modo espejo! Daño reflejado por ${card.duracion} turnos`);
+        break;
+      case 'pacifism':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.pacifism = card.duracion;
+        logs.push(`🎭 ¡Pacifismo forzado! No se puede atacar por ${card.duracion} turnos`);
+        break;
+      case 'bloodthirsty_rest':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.bloodthirstyRest = card.duracion;
+        logs.push(`🎭 ¡Sed de sangre! Descansar daña por ${card.duracion} turnos`);
+        break;
+      case 'invert_resistance':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.invertResistance = card.duracion;
+        logs.push(`🎭 ¡Gravedad invertida! Resistencia suma daño por ${card.duracion} turnos`);
+        break;
+      case 'shared_turn':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.sharedTurn = card.duracion;
+        logs.push(`🎭 ¡Turno compartido! Ambos eligen la misma acción por ${card.duracion} turnos`);
+        break;
+      case 'god_dice': {
+        const d1 = Math.floor(Math.random() * 6) + 1;
+        const d2 = Math.floor(Math.random() * 6) + 1;
+        partida._fortunaRolls = partida._fortunaRolls || [];
+        partida._fortunaRolls.push({ j1: d1, j2: d2 });
+        const dmg1 = d1 * 10, dmg2 = d2 * 10;
+        jugador1.hp -= dmg1; jugador2.hp -= dmg2;
+        logs.push(`🎲 ¡Dado de dios! ${jugador1.nombre} recibe ${dmg1}, ${jugador2.nombre} recibe ${dmg2}`);
+        break;
+      }
+      case 'stat_lottery':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.statLottery = card.duracion;
+        logs.push(`🎲 ¡Lotería de stats! Stats redistribuidos por ${card.duracion} turnos`);
+        break;
+      case 'coin_flip': {
+        const moneda = Math.random() < 0.5;
+        const perdedor = moneda ? jugador1 : jugador2;
+        for (const s of ['fuerza','resistencia','velocidad','magia','suerte']) {
+          perdedor[s] = Math.floor((perdedor[s]||5)/2);
+          if (perdedor.personaje) perdedor.personaje[s] = Math.floor((perdedor.personaje[s]||5)/2);
+        }
+        logs.push(`🎲 ¡La moneda! ${perdedor.nombre} pierde la mitad de sus stats`);
+        break;
+      }
+      case 'beast_number':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.beastNumber = card.duracion;
+        logs.push(`🎲 ¡Número de la bestia! Sacar 6 en un dado causa 30 daño por ${card.duracion} turnos`);
+        break;
+      case 'butter_hands':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.butterHands = card.duracion;
+        logs.push(`😂 ¡Manos de manteca! Atrapar objetos falla automáticamente por ${card.duracion} turnos`);
+        break;
+      case 'clumsy':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.clumsy = card.duracion;
+        logs.push(`😂 ¡El torpe! 50% de fallar por ${card.duracion} turnos`);
+        break;
+      case 'mute':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.mute = card.duracion;
+        logs.push(`😂 ¡Mudez! No se puede negociar por ${card.duracion} turnos`);
+        break;
+      case 'waste_action':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.wasteAction = card.duracion;
+        logs.push(`😂 ¡El payaso! El más rápido desperdicia su primera acción por ${card.duracion} turnos`);
+        break;
+      case 'no_attack':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.noAttack = card.duracion;
+        logs.push(`😂 ¡Ego destruido! El más fuerte no puede atacar por ${card.duracion} turnos`);
+        break;
+      case 'war_zone':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.warZone = true;
+        logs.push(`🌍 ¡Zona de guerra! Descansar solo recupera 1 HP y 1 energía`);
+        break;
+      case 'sacred_ground':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.sacredGround = card.duracion;
+        logs.push(`🌍 ¡Tierra sagrada! Nadie puede morir por ${card.duracion} turnos`);
+        break;
+      case 'chaos_fog':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.chaosFog = card.duracion;
+        logs.push(`🌍 ¡Niebla del caos! Dados ocultos por ${card.duracion} turnos`);
+        break;
+      case 'electric_field':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.electricField = true;
+        logs.push(`🌍 ¡Campo eléctrico! Pose fallida hace 8 de daño`);
+        break;
+      case 'heavy_gravity':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.heavyGravity = true;
+        logs.push(`🌍 ¡Gravedad extrema! Lanzar objetos prohibido`);
+        break;
+      case 'possession':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.possession = card.duracion;
+        logs.push(`👻 ¡Posesión! Controlas las acciones del rival por ${card.duracion} turno(s)`);
+        break;
+      case 'clone':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.clone = card.duracion;
+        logs.push(`👻 ¡Clon! Aparecen clones que atacan automáticamente por ${card.duracion} turnos`);
+        break;
+      case 'ghost':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.ghost = card.duracion;
+        logs.push(`👻 ¡El fantasma! El de menos HP es intocable pero no ataca por ${card.duracion} turnos`);
+        break;
+      case 'time_loop':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.timeLoop = true;
+        logs.push(`👻 ¡Bucle temporal! El turno anterior se repite`);
+        break;
+      case 'amnesia':
+        partida.fortunaStatus = partida.fortunaStatus || {};
+        partida.fortunaStatus.amnesia = card.duracion;
+        logs.push(`👻 ¡Amnesia total! Stats y pasivas olvidadas por ${card.duracion} turnos`);
+        break;
+    }
+    return logs;
+  }
+
   procesarEfectosOnHit(atacante, target) {
     const logs = [];
     if (!atacante.equipment) return logs;
@@ -884,4 +1094,41 @@ class GameProcessor {
   }
 }
 
-module.exports = { GameProcessor, SKILLS_DATA, CLASS_DATA, MAZOS, aplicarModsClase, getMaxHP };
+const FORTUNE_CARDS = [
+  { id: 'mundo_al_reves', nombre: 'El mundo al revés', categoria: '🔀', desc: 'Permanente hasta la próxima fortuna: curar hace daño y el daño cura', efecto: 'swap_heal_damage' },
+  { id: 'identidad_robada', nombre: 'Identidad robada', categoria: '🔀', desc: 'Ambos jugadores intercambian todos sus stats por 5 turnos', efecto: 'swap_stats', duracion: 5 },
+  { id: 'el_traidor', nombre: 'El traidor', categoria: '🔀', desc: 'Las pasivas de ambos jugadores trabajan en contra suya por 3 turnos', efecto: 'reverse_passives', duracion: 3 },
+  { id: 'velocidad_maldita', nombre: 'Velocidad maldita', categoria: '🔀', desc: 'El jugador MÁS rápido pierde su turno por 3 turnos. El lento va primero', efecto: 'slow_fast', duracion: 3 },
+  { id: 'antifuerza', nombre: 'Antifuerza', categoria: '🔀', desc: 'Por 4 turnos, a más fuerza tengas, menos daño hacés', efecto: 'anti_strength', duracion: 4 },
+  { id: 'ruleta_rusa', nombre: 'Ruleta rusa', categoria: '💀', desc: 'Ambos tiran un dado en secreto. El que saque menos muere instantáneamente. Si empatan, nada pasa', efecto: 'russian_roulette' },
+  { id: 'juicio_divino', nombre: 'Juicio divino', categoria: '💀', desc: 'El jugador con más stats totales pierde la mitad de su HP ahora mismo', efecto: 'divine_judgment' },
+  { id: 'el_elegido', nombre: 'El elegido', categoria: '💀', desc: 'El jugador con menos HP recibe una TA aleatoria extremadamente poderosa permanentemente', efecto: 'chosen_one' },
+  { id: 'extincion', nombre: 'Extinción', categoria: '💀', desc: 'Todos los objetos equipados de ambos jugadores se destruyen para siempre', efecto: 'destruct_equipment' },
+  { id: 'reset', nombre: 'Reset', categoria: '💀', desc: 'Ambos jugadores vuelven al HP con el que empezaron la partida. Stats no cambian', efecto: 'reset_hp' },
+  { id: 'modo_espejo', nombre: 'Modo espejo', categoria: '🎭', desc: 'Por 3 turnos, cada vez que alguien recibe daño, el rival recibe exactamente lo mismo también', efecto: 'mirror_damage', duracion: 3 },
+  { id: 'pacifismo_forzado', nombre: 'Pacifismo forzado', categoria: '🎭', desc: 'Por 2 turnos nadie puede atacar directamente. Solo TAs, poses y descanso', efecto: 'pacifism', duracion: 2 },
+  { id: 'sed_de_sangre', nombre: 'Sed de sangre', categoria: '🎭', desc: 'Por 4 turnos descansar hace daño en vez de curar', efecto: 'bloodthirsty_rest', duracion: 4 },
+  { id: 'gravedad_invertida', nombre: 'Gravedad invertida', categoria: '🎭', desc: 'Por 3 turnos la resistencia suma al daño en vez de restarlo', efecto: 'invert_resistance', duracion: 3 },
+  { id: 'turno_compartido', nombre: 'Turno compartido', categoria: '🎭', desc: 'Por 2 turnos ambos jugadores deben elegir la misma acción o ninguno puede actuar', efecto: 'shared_turn', duracion: 2 },
+  { id: 'dado_de_dios', nombre: 'Dado de dios', categoria: '🎲', desc: 'Ambos tiran un dado. Multiplican su resultado por 10 y eso es el daño que reciben', efecto: 'god_dice' },
+  { id: 'loteria_de_stats', nombre: 'Lotería de stats', categoria: '🎲', desc: 'Se redistribuyen aleatoriamente todos los puntos de habilidad de ambos jugadores por 5 turnos', efecto: 'stat_lottery', duracion: 5 },
+  { id: 'la_moneda', nombre: 'La moneda', categoria: '🎲', desc: 'Se lanza una moneda. El perdedor pierde la mitad de todos sus stats para siempre', efecto: 'coin_flip' },
+  { id: 'numero_bestia', nombre: 'Número de la bestia', categoria: '🎲', desc: 'Si alguien saca 6 en cualquier dado durante los próximos 3 turnos, recibe 30 de daño instantáneo', efecto: 'beast_number', duracion: 3 },
+  { id: 'manos_manteca', nombre: 'Manos de manteca', categoria: '😂', desc: 'Por 3 turnos, cada vez que alguien intente atrapar un objeto lanzado, automáticamente falla', efecto: 'butter_hands', duracion: 3 },
+  { id: 'el_torpe', nombre: 'El torpe', categoria: '😂', desc: 'Por 2 turnos, cada acción que hagas tiene 50% de chance de fallar completamente', efecto: 'clumsy', duracion: 2 },
+  { id: 'mudez', nombre: 'Mudez', categoria: '😂', desc: 'Por 3 turnos ningún jugador puede negociar ni comunicarse para coordinar nada', efecto: 'mute', duracion: 3 },
+  { id: 'el_payaso', nombre: 'El payaso', categoria: '😂', desc: 'El jugador con más velocidad debe desperdiciar su primera acción de cada turno durante 3 turnos', efecto: 'waste_action', duracion: 3 },
+  { id: 'ego_destruido', nombre: 'Ego destruido', categoria: '😂', desc: 'El jugador con más fuerza no puede atacar directamente por 2 turnos', efecto: 'no_attack', duracion: 2 },
+  { id: 'zona_de_guerra', nombre: 'Zona de guerra', categoria: '🌍', desc: 'Permanente: descansar solo recupera 1 HP y 1 energía en vez de 5', efecto: 'war_zone' },
+  { id: 'tierra_sagrada', nombre: 'Tierra sagrada', categoria: '🌍', desc: 'Por 5 turnos nadie puede morir. Si llegan a 0 HP quedan en 1', efecto: 'sacred_ground', duracion: 5 },
+  { id: 'niebla_caos', nombre: 'Niebla del caos', categoria: '🌍', desc: 'Por 4 turnos todos los dados se tiran con los ojos cerrados y no se puede ver el resultado del rival', efecto: 'chaos_fog', duracion: 4 },
+  { id: 'campo_electrico', nombre: 'Campo eléctrico', categoria: '🌍', desc: 'Permanente hasta la próxima fortuna: cada pose fallida hace 8 de daño al que la intentó', efecto: 'electric_field' },
+  { id: 'gravedad_extrema', nombre: 'Gravedad extrema', categoria: '🌍', desc: 'Permanente: lanzar objetos está prohibido, son demasiado pesados', efecto: 'heavy_gravity' },
+  { id: 'posesion', nombre: 'Posesión', categoria: '👻', desc: 'Por 1 turno, cada jugador controla las acciones del otro', efecto: 'possession', duracion: 1 },
+  { id: 'clon', nombre: 'Clon', categoria: '👻', desc: 'Aparece un clon de ambos jugadores con la mitad de sus stats que ataca de forma automática cada turno por 3 turnos', efecto: 'clone', duracion: 3 },
+  { id: 'el_fantasma', nombre: 'El fantasma', categoria: '👻', desc: 'El jugador con menos HP se vuelve intocable por 2 turnos pero tampoco puede atacar', efecto: 'ghost', duracion: 2 },
+  { id: 'bucle_temporal', nombre: 'Bucle temporal', categoria: '👻', desc: 'El turno anterior se repite exactamente igual, con los mismos dados y las mismas acciones', efecto: 'time_loop', duracion: 1 },
+  { id: 'amnesia_total', nombre: 'Amnesia total', categoria: '👻', desc: 'Ambos jugadores olvidan sus pasivas y sus stats por 3 turnos. Combaten como personajes nivel 1 con 5 en todo', efecto: 'amnesia', duracion: 3 },
+];
+
+module.exports = { GameProcessor, SKILLS_DATA, CLASS_DATA, MAZOS, FORTUNE_CARDS, aplicarModsClase, getMaxHP };

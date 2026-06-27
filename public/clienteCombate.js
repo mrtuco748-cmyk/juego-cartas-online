@@ -784,7 +784,8 @@ function estiloLog(data) {
     energia: 'color:#60d0d0;font-size:11px;',
     carta: 'color:#d4a060;font-size:11px;font-weight:600;',
     pasiva: 'color:#50c850;font-size:10px;',
-    status: 'color:#a0a0d0;font-size:10px;'
+    status: 'color:#a0a0d0;font-size:10px;',
+    fortuna: 'color:#e0b060;font-size:13px;font-weight:700;letter-spacing:1px;background:rgba(200,140,60,0.08);padding:2px 6px;border-radius:4px;margin:2px 0;'
   };
   return estilos[data.tipo] || 'color:#9a7040;font-size:10px;';
 }
@@ -807,6 +808,8 @@ let logProcessing = false;
 let logInstantMode = false;
 let instantTimer = null;
 let ultimoTurno;
+let dicePending = 0;
+let diceBuffer = [];
 
 function mostrarDañoFlotante(valor, esCritico) {
   const popup = document.createElement('div');
@@ -1069,6 +1072,7 @@ function agregarLineaTurno() {
 }
 
 socket.on('logBatalla', (data) => {
+  if (dicePending > 0) { diceBuffer.push({ type: 'log', data }); return; }
   if (logInstantMode) {
     agregarLog(data);
     clearTimeout(instantTimer);
@@ -1080,22 +1084,55 @@ socket.on('logBatalla', (data) => {
 });
 
 socket.on('diceRoll', (data) => {
-  if (typeof rollDice !== 'undefined') rollDice(data.valor);
+  if (typeof rollDice !== 'undefined') {
+    dicePending++;
+    rollDice(data.valor).then(() => {
+      dicePending--;
+      if (dicePending <= 0) flushDiceBuffer();
+    });
+  }
 });
 
-function procesarLogQueue() {
-  if (logProcessing || logQueue.length === 0) return;
-  logProcessing = true;
-  const data = logQueue.shift();
-  agregarLog(data);
+socket.on('fortunaCard', (data) => {
+  mostrarFortuna(data);
+});
 
-  setTimeout(() => {
-    logProcessing = false;
-    procesarLogQueue();
-  }, 1200);
+function mostrarFortuna(data) {
+  const old = document.querySelector('.fortuna-overlay');
+  if (old) old.remove();
+  const div = document.createElement('div');
+  div.className = 'fortuna-overlay';
+  div.innerHTML = `<div class="fortuna-box">
+    <div class="fortuna-cat">${data.categoria}</div>
+    <div class="fortuna-title">${data.nombre}</div>
+    <div class="fortuna-desc">${data.desc}</div>
+  </div>`;
+  document.body.appendChild(div);
+  setTimeout(() => { if (div.parentNode) div.remove(); }, 5000);
+  div.addEventListener('click', () => div.remove());
 }
 
-socket.on('actualizarEstado', (datos) => {
+function flushDiceBuffer() {
+  dicePending = 0;
+  const buffer = diceBuffer.slice();
+  diceBuffer = [];
+  for (const item of buffer) {
+    if (item.type === 'log') {
+      if (logInstantMode) {
+        agregarLog(item.data);
+        clearTimeout(instantTimer);
+        instantTimer = setTimeout(() => { logInstantMode = false; }, 1500);
+      } else {
+        logQueue.push(item.data);
+      }
+    } else if (item.type === 'estado') {
+      procesarEstado(item.data);
+    }
+  }
+  if (logQueue.length > 0) procesarLogQueue();
+}
+
+function procesarEstado(datos) {
   const yoMio = datos.socketJ1 === socket.id;
   const miHP = yoMio ? datos.j1 : datos.j2;
   const rivalHP = yoMio ? datos.j2 : datos.j1;
@@ -1139,6 +1176,23 @@ socket.on('actualizarEstado', (datos) => {
   actualizarIndicadorTurno();
   actualizarEscudoVisual();
   actualizarCardBack();
+}
+
+function procesarLogQueue() {
+  if (logProcessing || logQueue.length === 0) return;
+  logProcessing = true;
+  const data = logQueue.shift();
+  agregarLog(data);
+
+  setTimeout(() => {
+    logProcessing = false;
+    procesarLogQueue();
+  }, 1200);
+}
+
+socket.on('actualizarEstado', (datos) => {
+  if (dicePending > 0) { diceBuffer.push({ type: 'estado', data: datos }); return; }
+  procesarEstado(datos);
 });
 
 function actualizarCardsSkills() {

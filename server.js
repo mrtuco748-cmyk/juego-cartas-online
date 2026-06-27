@@ -1,4 +1,4 @@
-const { GameProcessor, SKILLS_DATA, CLASS_DATA, MAZOS, aplicarModsClase, getMaxHP } = require('./gameEngine');
+const { GameProcessor, SKILLS_DATA, CLASS_DATA, MAZOS, FORTUNE_CARDS, aplicarModsClase, getMaxHP } = require('./gameEngine');
 const gp = new GameProcessor();
 
 const express = require('express');
@@ -749,6 +749,21 @@ io.on('connection', (socket) => {
             partida.turnoActual = rival.socketId;
         }
 
+        partida.turno++;
+        if (!partida._fortunaTriggered || (partida.turno > 0 && partida.turno % 7 === 0)) {
+          const card = FORTUNE_CARDS[Math.floor(Math.random() * FORTUNE_CARDS.length)];
+          const flogs = gp.aplicarFortuna(card, partida, partida.jugador1, partida.jugador2);
+          flogs.forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'fortuna' }));
+          io.to(partidaId).emit('fortunaCard', {
+            id: card.id, nombre: card.nombre, categoria: card.categoria,
+            desc: card.desc, efecto: card.efecto
+          });
+          partida._fortunaTriggered = true;
+          if (flogs.some(l => l.includes('muere') || l.includes('aniquilado'))) {
+            if (partidaCheckMuerte(partidaId, partida)) return;
+          }
+        }
+
         const jugTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador1 : partida.jugador2;
         const rivTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador2 : partida.jugador1;
 
@@ -1067,7 +1082,9 @@ io.on('connection', (socket) => {
                 accionesUsadas: [],
                 accionesMax: 2,
                 turnoMareado: null,
-                accionCancelada: false
+                accionCancelada: false,
+                fortunaStatus: {},
+                _hpIniciales: { j1: { maxHp: maxHP1 }, j2: { maxHp: maxHP2 } }
             };
 
             console.log(`${personaje1.nombre} vs ${personaje2.nombre}`);
@@ -1138,6 +1155,18 @@ io.on('connection', (socket) => {
 
             emitirRival(jugador1.socketId, partidas[partidaId].jugador1, partidas[partidaId].jugador2, esJ1Primero);
             emitirRival(jugador2.socketId, partidas[partidaId].jugador2, partidas[partidaId].jugador1, !esJ1Primero);
+
+            // Initial fortune card
+            const cardInicial = FORTUNE_CARDS[Math.floor(Math.random() * FORTUNE_CARDS.length)];
+            const flogsInicial = gp.aplicarFortuna(cardInicial, partidas[partidaId], partidas[partidaId].jugador1, partidas[partidaId].jugador2);
+            setTimeout(() => {
+                flogsInicial.forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'fortuna' }));
+                io.to(partidaId).emit('fortunaCard', {
+                    id: cardInicial.id, nombre: cardInicial.nombre, categoria: cardInicial.categoria,
+                    desc: cardInicial.desc, efecto: cardInicial.efecto
+                });
+                partidas[partidaId]._fortunaTriggered = true;
+            }, 500);
         }
     });
 
@@ -1192,7 +1221,9 @@ io.on('connection', (socket) => {
             turnoActual: turnoInicial, turno: 0,
             primerTurnoJ1: true, primerTurnoJ2: true,
             accionesUsadas: [], accionesMax: 2,
-            turnoMareado: null, accionCancelada: false, esPractica: true
+            turnoMareado: null, accionCancelada: false, esPractica: true,
+            fortunaStatus: {},
+            _hpIniciales: { j1: { maxHp: maxHPJ }, j2: { maxHp: maxHPB } }
         };
 
         const s = io.sockets.sockets.get(socket.id);
@@ -1243,6 +1274,18 @@ io.on('connection', (socket) => {
             esPractica: true,
             recetas: MAZOS.recetas
         });
+
+        // Initial fortune card
+        const cardInicial = FORTUNE_CARDS[Math.floor(Math.random() * FORTUNE_CARDS.length)];
+        const flogsInicial = gp.aplicarFortuna(cardInicial, partidas[partidaId], partidas[partidaId].jugador1, partidas[partidaId].jugador2);
+        setTimeout(() => {
+            flogsInicial.forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'fortuna' }));
+            io.to(partidaId).emit('fortunaCard', {
+                id: cardInicial.id, nombre: cardInicial.nombre, categoria: cardInicial.categoria,
+                desc: cardInicial.desc, efecto: cardInicial.efecto
+            });
+            partidas[partidaId]._fortunaTriggered = true;
+        }, 500);
     });
 
     socket.on('cancelarBusqueda', () => {
