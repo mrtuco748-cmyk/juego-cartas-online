@@ -42,7 +42,9 @@ const cuentaSchema = new mongoose.Schema({
     experiencia: { type: Number, default: 0 },
     foto: { type: String, default: '' },
     dev: { type: Boolean, default: false },
-    personajes: [personajeSchema]
+    personajes: [personajeSchema],
+    inventarioSkills: { type: [String], default: [] },
+    inventarioPasivas: { type: [String], default: [] }
 }, { timestamps: true });
 
 const Cuenta = mongoose.model('Cuenta', cuentaSchema);
@@ -124,14 +126,15 @@ const CLASS_POOL = {
     Titan: ["cataclismo", "golpe_directo", "escudo_arcano", "cubo_perfecto", "golpe_veloz", "explosion_mana", "reflejo_magico"]
 };
 
-function getSkillsParaClase(activasIniciales, skillsCompradas, activasEquipadas, equipment, claseFallback) {
+function getSkillsParaClase(activasIniciales, inventarioSkills, activasEquipadas, equipment, claseFallback) {
+    const owned = [...new Set([...(activasIniciales || []), ...(inventarioSkills || [])])];
     let equipadas;
     if (activasEquipadas && activasEquipadas.length > 0) {
         equipadas = [...activasEquipadas];
-    } else if (activasIniciales && activasIniciales.length > 0) {
-        equipadas = [...activasIniciales, ...skillsCompradas].slice(0, 5);
+    } else if (owned.length > 0) {
+        equipadas = owned.slice(0, 5);
     } else {
-        equipadas = [...(CLASS_POOL[claseFallback] || []), ...skillsCompradas].slice(0, 5);
+        equipadas = [...(CLASS_POOL[claseFallback] || [])].slice(0, 5);
     }
     if (equipment) {
         const nombresEq = Object.values(equipment).filter(Boolean).map(e => e.nombre);
@@ -140,6 +143,29 @@ function getSkillsParaClase(activasIniciales, skillsCompradas, activasEquipadas,
         }
     }
     return equipadas.filter((id, i, a) => a.indexOf(id) === i).map(id => ({ ...SKILLS_DATA.activas[id], id })).filter(Boolean);
+}
+
+function migrarInventario(cuenta) {
+    let cambiado = false;
+    if (!cuenta.inventarioSkills) { cuenta.inventarioSkills = []; cambiado = true; }
+    if (!cuenta.inventarioPasivas) { cuenta.inventarioPasivas = []; cambiado = true; }
+    for (const pj of cuenta.personajes) {
+        if (pj.skillsCompradas && pj.skillsCompradas.length > 0) {
+            for (const s of pj.skillsCompradas) {
+                if (!cuenta.inventarioSkills.includes(s)) { cuenta.inventarioSkills.push(s); cambiado = true; }
+            }
+            pj.skillsCompradas = [];
+            cambiado = true;
+        }
+        if (pj.pasivasCompradas && pj.pasivasCompradas.length > 0) {
+            for (const s of pj.pasivasCompradas) {
+                if (!cuenta.inventarioPasivas.includes(s)) { cuenta.inventarioPasivas.push(s); cambiado = true; }
+            }
+            pj.pasivasCompradas = [];
+            cambiado = true;
+        }
+    }
+    return cambiado;
 }
 
 function mezclarArray(arr) {
@@ -834,7 +860,9 @@ io.on('connection', (socket) => {
             socket.emit('cuentaCreada', {
                 id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
                 nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
+                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
+                inventarioSkills: cuenta.inventarioSkills || [],
+                inventarioPasivas: cuenta.inventarioPasivas || []
             });
         } catch (err) {
             socket.emit('errorCuenta', 'Error al crear cuenta.');
@@ -851,7 +879,9 @@ io.on('connection', (socket) => {
             socket.emit('loginExitoso', {
                 id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
                 nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
+                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
+                inventarioSkills: cuenta.inventarioSkills || [],
+                inventarioPasivas: cuenta.inventarioPasivas || []
             });
         } catch (err) {
             socket.emit('errorLogin', 'Error al iniciar sesión.');
@@ -866,7 +896,9 @@ io.on('connection', (socket) => {
             socket.emit('loginExitoso', {
                 id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
                 nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
+                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
+                inventarioSkills: cuenta.inventarioSkills || [],
+                inventarioPasivas: cuenta.inventarioPasivas || []
             });
         } catch (err) {
             socket.emit('errorReconexion', 'Error al reconectar.');
@@ -929,7 +961,9 @@ io.on('connection', (socket) => {
             socket.emit('personajeEliminado', {
                 id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
                 nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
+                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
+                inventarioSkills: cuenta.inventarioSkills || [],
+                inventarioPasivas: cuenta.inventarioPasivas || []
             });
         } catch (err) {
             socket.emit('errorPersonaje', 'Error al eliminar.');
@@ -960,7 +994,9 @@ io.on('connection', (socket) => {
             socket.emit('statsAsignados', {
                 id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
                 nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
+                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
+                inventarioSkills: cuenta.inventarioSkills || [],
+                inventarioPasivas: cuenta.inventarioPasivas || []
             });
         } catch (err) {
             socket.emit('errorPersonaje', 'Error al asignar stats.');
@@ -981,7 +1017,9 @@ io.on('connection', (socket) => {
             socket.emit('loadoutGuardado', {
                 id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
                 nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
+                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
+                inventarioSkills: cuenta.inventarioSkills,
+                inventarioPasivas: cuenta.inventarioPasivas
             });
         } catch (err) {
             socket.emit('errorPersonaje', 'Error al guardar loadout.');
@@ -1011,7 +1049,7 @@ io.on('connection', (socket) => {
                 const pj = cuenta.personajes.id(params.personaje_id);
                 if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
                 pj.experiencia = Math.max(0, (pj.experiencia || 0) + params.valor);
-                while (pj.experiencia >= pj.nivel) { pj.experiencia -= pj.nivel; pj.nivel++; pj.puntosStats = (pj.puntosStats || 0) + 3; }
+                while (pj.experiencia >= pj.nivel) { pj.experiencia -= pj.nivel; pj.nivel++; pj.puntosStats = (pj.puntosStats || 0) + 5; }
             } else if (accion === 'addPuntosStats') {
                 const pj = cuenta.personajes.id(params.personaje_id);
                 if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
@@ -1046,17 +1084,30 @@ io.on('connection', (socket) => {
             socket.emit('devResultado', {
                 id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
                 nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
+                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
+                inventarioSkills: cuenta.inventarioSkills || [],
+                inventarioPasivas: cuenta.inventarioPasivas || []
             });
         } catch (err) {
             socket.emit('errorPersonaje', 'Error al ejecutar comando.');
         }
     });
 
-    socket.on('buscarPartida', ({ cuenta_id, personaje }) => {
+    socket.on('buscarPartida', async ({ cuenta_id, personaje }) => {
         console.log('Buscando partida para:', personaje.nombre);
         colaEspera = colaEspera.filter(j => j.socketId !== socket.id);
-        colaEspera.push({ socketId: socket.id, cuenta_id, personaje });
+        try {
+            const cuenta = await Cuenta.findById(cuenta_id);
+            if (cuenta) {
+                const migrado = migrarInventario(cuenta);
+                if (migrado) await cuenta.save();
+                colaEspera.push({ socketId: socket.id, cuenta_id, personaje, _invSkills: cuenta.inventarioSkills || [], _invPas: cuenta.inventarioPasivas || [] });
+            } else {
+                colaEspera.push({ socketId: socket.id, cuenta_id, personaje, _invSkills: [], _invPas: [] });
+            }
+        } catch {
+            colaEspera.push({ socketId: socket.id, cuenta_id, personaje, _invSkills: [], _invPas: [] });
+        }
         socket.emit('esperandoRival');
 
         if (colaEspera.length >= 2) {
@@ -1076,10 +1127,10 @@ io.on('connection', (socket) => {
             ]);
             const turnoInicial = ordenTurnos[0].socketId;
 
-            const comp1 = jugador1.personaje.skillsCompradas || [];
-            const comp2 = jugador2.personaje.skillsCompradas || [];
-            const pasivasComp1 = jugador1.personaje.pasivasCompradas || [];
-            const pasivasComp2 = jugador2.personaje.pasivasCompradas || [];
+            const comp1 = jugador1._invSkills || [];
+            const comp2 = jugador2._invSkills || [];
+            const pasivasComp1 = jugador1._invPas || [];
+            const pasivasComp2 = jugador2._invPas || [];
 
             const pasivas1 = getPasivasClase(jugador1.personaje.clase, pasivasComp1);
             const pasivas2 = getPasivasClase(jugador2.personaje.clase, pasivasComp2);
@@ -1211,9 +1262,21 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('buscarPractica', ({ cuenta_id, personaje }) => {
+    socket.on('buscarPractica', async ({ cuenta_id, personaje }) => {
         const botId = 'bot-' + socket.id;
         const partidaId = socket.id + '-vs-practica';
+
+        let invSkills = [];
+        let invPas = [];
+        try {
+            const cuenta = await Cuenta.findById(cuenta_id);
+            if (cuenta) {
+                const migrado = migrarInventario(cuenta);
+                if (migrado) await cuenta.save();
+                invSkills = cuenta.inventarioSkills || [];
+                invPas = cuenta.inventarioPasivas || [];
+            }
+        } catch {}
 
         const maxHPJ = getMaxHP(personaje.clase);
         const maxHPB = getMaxHP(BOT_PRACTICA.clase);
@@ -1227,9 +1290,9 @@ io.on('connection', (socket) => {
         ]);
         const turnoInicial = orden[0].socketId;
 
-        const comp1 = pj.skillsCompradas || [];
+        const comp1 = invSkills;
         const comp2 = botPj.skillsCompradas || [];
-        const pComp1 = pj.pasivasCompradas || [];
+        const pComp1 = invPas;
         const pComp2 = botPj.pasivasCompradas || [];
 
         const pas1 = getPasivasClase(pj.clase, pComp1);
@@ -1336,36 +1399,35 @@ io.on('connection', (socket) => {
     socket.on('obtenerTienda', async ({ cuenta_id }) => {
         const cuenta = await Cuenta.findById(cuenta_id);
         if (!cuenta) return;
+        const migrado = migrarInventario(cuenta);
+        if (migrado) await cuenta.save();
         socket.emit('tiendaData', {
             skills: Object.entries(SKILLS_DATA.activas).map(([id, s]) => ({ id, ...s, precio: SKILL_PRICES.activas[id] || 500 })),
             pasivas: Object.entries(SKILLS_DATA.pasivas).map(([id, s]) => ({ id, ...s, precio: SKILL_PRICES.pasivas[id] || 800 })),
-            skillsCompradas: (cuenta.personajes.length > 0 ? cuenta.personajes.reduce((acc, p) => {
-                acc[p._id] = { skills: p.skillsCompradas || [], pasivas: p.pasivasCompradas || [] };
-                return acc;
-            }, {}) : {})
+            inventarioSkills: cuenta.inventarioSkills || [],
+            inventarioPasivas: cuenta.inventarioPasivas || []
         });
     });
 
-    socket.on('comprarCarta', async ({ cuenta_id, personaje_id, tipo, skillId }) => {
+    socket.on('comprarCarta', async ({ cuenta_id, tipo, skillId }) => {
         try {
             const cuenta = await Cuenta.findById(cuenta_id);
             if (!cuenta) { socket.emit('errorTienda', 'Cuenta no encontrada'); return; }
-            const pj = cuenta.personajes.id(personaje_id);
-            if (!pj) { socket.emit('errorTienda', 'Personaje no encontrado'); return; }
+            migrarInventario(cuenta);
 
             const precio = tipo === 'activa' ? (SKILL_PRICES.activas[skillId] || 500) : (SKILL_PRICES.pasivas[skillId] || 800);
             if (cuenta.dinero < precio) { socket.emit('errorTienda', 'No tenes suficiente oro'); return; }
 
             if (tipo === 'activa') {
-                const yaTiene = (pj.skillsCompradas || []).includes(skillId) || (pj.activasIniciales || []).includes(skillId);
+                const yaTiene = (cuenta.inventarioSkills || []).includes(skillId);
                 if (yaTiene) { socket.emit('errorTienda', 'Ya tenes esta carta'); return; }
-                if (pj.skillsCompradas) { pj.skillsCompradas.push(skillId); }
-                else { pj.skillsCompradas = [skillId]; }
+                if (cuenta.inventarioSkills) { cuenta.inventarioSkills.push(skillId); }
+                else { cuenta.inventarioSkills = [skillId]; }
             } else {
-                const yaTiene = (pj.pasivasCompradas || []).includes(skillId);
+                const yaTiene = (cuenta.inventarioPasivas || []).includes(skillId);
                 if (yaTiene) { socket.emit('errorTienda', 'Ya tenes esta pasiva'); return; }
-                if (pj.pasivasCompradas) { pj.pasivasCompradas.push(skillId); }
-                else { pj.pasivasCompradas = [skillId]; }
+                if (cuenta.inventarioPasivas) { cuenta.inventarioPasivas.push(skillId); }
+                else { cuenta.inventarioPasivas = [skillId]; }
             }
 
             cuenta.dinero -= precio;
@@ -1373,7 +1435,9 @@ io.on('connection', (socket) => {
             socket.emit('compraExitosa', {
                 id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
                 nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
+                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
+                inventarioSkills: cuenta.inventarioSkills,
+                inventarioPasivas: cuenta.inventarioPasivas
             });
         } catch (err) {
             socket.emit('errorTienda', 'Error al comprar: ' + err.message);
