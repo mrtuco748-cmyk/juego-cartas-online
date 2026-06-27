@@ -567,8 +567,11 @@ function seleccionarCarta(idx) {
   document.querySelectorAll('.carta-slot').forEach(c => c.classList.remove('selected'));
   const el = document.getElementById(`skillCard-${idx}`);
   if (el) el.classList.add('selected');
-  document.getElementById('cartaSeleccionInfo').style.display = 'block';
-  _timeoutDeselect = setTimeout(() => cancelarSeleccionCarta(), 8000);
+  if (!window._vistoArrastra) {
+    window._vistoArrastra = true;
+    document.getElementById('cartaSeleccionInfo').style.display = 'block';
+    _timeoutDeselect = setTimeout(() => cancelarSeleccionCarta(), 8000);
+  }
 }
 
 function cancelarSeleccionCarta() {
