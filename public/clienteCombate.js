@@ -184,7 +184,7 @@ function renderizarCombate() {
               <div class="passive-title">PASIVAS</div>
               ${(misPasivas||[]).length > 0 ? (misPasivas||[]).map(id => {
                 const d = typeof SKILL_DATA_LOOKUP_PASIVAS !== 'undefined' && SKILL_DATA_LOOKUP_PASIVAS[id];
-                return d ? `<div class="passive-item">${d.nombre}</div>` : '';
+                return d ? `<div class="passive-item" onclick="event.stopPropagation();mostrarDescPasiva('${id}')">${d.nombre}</div>` : '';
               }).join('') : '<div class="passive-item" style="opacity:0.4">Sin pasivas</div>'}
             </div>
           </div>
@@ -210,7 +210,7 @@ function renderizarCombate() {
               <div class="passive-title">PASIVAS</div>
               ${(rivalPasivas||[]).length > 0 ? (rivalPasivas||[]).map(id => {
                 const d = typeof SKILL_DATA_LOOKUP_PASIVAS !== 'undefined' && SKILL_DATA_LOOKUP_PASIVAS[id];
-                return d ? `<div class="passive-item">${d.nombre}</div>` : '';
+                return d ? `<div class="passive-item" onclick="event.stopPropagation();mostrarDescPasiva('${id}')">${d.nombre}</div>` : '';
               }).join('') : '<div class="passive-item" style="opacity:0.4">Sin pasivas</div>'}
             </div>
           </div>
@@ -742,6 +742,17 @@ function actualizarEscudoVisual() {
   });
 }
 
+function mostrarDescPasiva(id) {
+  const d = typeof SKILL_DATA_LOOKUP_PASIVAS !== 'undefined' && SKILL_DATA_LOOKUP_PASIVAS[id];
+  if (!d) return;
+  const popup = document.createElement('div');
+  popup.className = 'pop-desc';
+  popup.innerHTML = `<strong>${d.nombre}</strong><br><span style="font-size:0.85em;opacity:0.8">${d.desc || 'Sin descripción'}</span>`;
+  document.body.appendChild(popup);
+  popup.addEventListener('click', () => popup.remove());
+  setTimeout(() => { if (popup.parentNode) popup.remove(); }, 3000);
+}
+
 function actualizarCardBack() {
   ['.player-character', '.enemy-character'].forEach(sel => {
     const el = document.querySelector(sel);
@@ -752,7 +763,7 @@ function actualizarCardBack() {
     back.innerHTML = '<div class="passive-title">PASIVAS</div>' +
       (pasivas.length > 0 ? pasivas.map(id => {
         const d = typeof SKILL_DATA_LOOKUP_PASIVAS !== 'undefined' && SKILL_DATA_LOOKUP_PASIVAS[id];
-        return d ? `<div class="passive-item">${d.nombre}</div>` : '';
+        return d ? `<div class="passive-item" onclick="event.stopPropagation();mostrarDescPasiva('${id}')">${d.nombre}</div>` : '';
       }).join('') : '<div class="passive-item" style="opacity:0.4">Sin pasivas</div>');
   });
 }
