@@ -1,6 +1,8 @@
 let diceRenderer, diceScene, diceCam, diceMesh, diceFloor;
 let diceReady = false, diceRolling = false, diceQueue = [];
 let diceOverlay = null, diceBackdrop = null;
+let resultValue = 0;
+let showQuat, showProgress;
 
 const S = {
   vy: 0, vx: 0, vz: 0, posY: 3, angVX: 0, angVY: 0, angVZ: 0,
@@ -13,8 +15,8 @@ const FN = [
   new THREE.Vector3(0,1,0), new THREE.Vector3(0,-1,0),
   new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,-1),
 ];
-const FLOOR_TILT = -0.2;
-const FLOOR_Y = -0.25;
+const FLOOR_TILT = -0.25;
+const FLOOR_Y = -0.3;
 
 function makeFace(n) {
   const s=256, rd=30;
@@ -46,8 +48,8 @@ function makeFloorTex() {
   c.width=c.height=s;
   const ctx=c.getContext('2d');
   const g=ctx.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
-  g.addColorStop(0,'rgba(60,50,70,0.25)');
-  g.addColorStop(0.5,'rgba(40,35,50,0.12)');
+  g.addColorStop(0,'rgba(50,45,65,0.25)');
+  g.addColorStop(0.4,'rgba(40,35,55,0.10)');
   g.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=g;ctx.fillRect(0,0,s,s);
   return new THREE.CanvasTexture(c);
@@ -64,7 +66,7 @@ function initDice() {
     'backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);';
   document.body.appendChild(diceBackdrop);
 
-  const s = Math.min(window.innerWidth, 400);
+  const s = Math.min(window.innerWidth * 0.85, 420);
   diceRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   diceRenderer.setSize(s, s);
   diceRenderer.setClearColor(0x000000, 0);
@@ -73,37 +75,34 @@ function initDice() {
     'pointer-events:none;display:none;';
   document.body.appendChild(diceRenderer.domElement);
 
-  diceCam = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
-  diceCam.position.set(0, 3.2, 8);
-  diceCam.lookAt(0, 0.6, 0);
+  diceCam = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+  diceCam.position.set(0, 3.5, 8);
+  diceCam.lookAt(0, 0.2, 0);
 
   diceScene = new THREE.Scene();
   diceScene.background = null;
 
-  const amb = new THREE.AmbientLight(0x8888bb, 0.8);
-  diceScene.add(amb);
-  const key = new THREE.DirectionalLight(0xeeeeff, 1.5);
-  key.position.set(4, 8, 5);
+  diceScene.add(new THREE.AmbientLight(0x8888bb, 0.8));
+  const key = new THREE.DirectionalLight(0xeeeef8, 1.8);
+  key.position.set(4, 9, 5);
   diceScene.add(key);
   const rim = new THREE.DirectionalLight(0xff8844, 1.0);
-  rim.position.set(-5, 2, -4);
+  rim.position.set(-6, 3, -4);
   diceScene.add(rim);
   const fill = new THREE.DirectionalLight(0xaabbff, 0.4);
-  fill.position.set(-2, 1, 7);
+  fill.position.set(-2, 1, 8);
   diceScene.add(fill);
 
   diceFloor = new THREE.Mesh(
-    new THREE.CircleGeometry(3, 32),
-    new THREE.MeshLambertMaterial({ map: makeFloorTex(), transparent: true, side: THREE.DoubleSide })
+    new THREE.CircleGeometry(2.5, 24),
+    new THREE.MeshLambertMaterial({ map: makeFloorTex(), transparent: true, side: THREE.DoubleSide, depthWrite: false })
   );
   diceFloor.rotation.x = -Math.PI/2 + FLOOR_TILT;
   diceFloor.position.set(0, FLOOR_Y, 0.3);
-  diceFloor.receiveShadow = false;
   diceScene.add(diceFloor);
 
   const mats = FACES.map(n => new THREE.MeshLambertMaterial({ map: makeFace(n) }));
-  diceMesh = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.95, 0.95), mats);
-  diceMesh.castShadow = false;
+  diceMesh = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), mats);
   diceMesh.visible = false;
   diceScene.add(diceMesh);
 
@@ -149,14 +148,14 @@ function hideDiceUI() {
 function startRoll(serverVal, resolve) {
   S.phase='falling'; S.resolve=resolve; S.serverVal=serverVal;
   S.settleFrames=0; S.resultShown=false;
-  S.vx=(Math.random()-0.5)*0.18;
-  S.vy=-(0.3+Math.random()*0.6);
-  S.vz=(Math.random()-0.5)*0.12 + 0.15;
-  S.posY=2.8+Math.random()*0.6;
-  S.angVX=(Math.random()-0.5)*1.0;
-  S.angVY=(Math.random()-0.5)*1.0;
-  S.angVZ=(Math.random()-0.5)*0.7;
-  diceMesh.position.set((Math.random()-0.5)*1.5, S.posY, (Math.random()-0.5)*0.8);
+  S.vx=(Math.random()-0.5)*0.2;
+  S.vy=-(0.2+Math.random()*0.6);
+  S.vz=(Math.random()-0.5)*0.15 + 0.15;
+  S.posY=2.6+Math.random()*0.5;
+  S.angVX=(Math.random()-0.5)*1.2;
+  S.angVY=(Math.random()-0.5)*1.2;
+  S.angVZ=(Math.random()-0.5)*0.8;
+  diceMesh.position.set((Math.random()-0.5)*1.2, S.posY, (Math.random()-0.5)*0.6);
   diceMesh.rotation.set(Math.random()*Math.PI*2, Math.random()*Math.PI*2, Math.random()*Math.PI*2);
   diceMesh.visible=true;
   showDiceUI();
@@ -166,36 +165,47 @@ function tick() {
   requestAnimationFrame(tick);
 
   if(S.phase==='falling'){
-    S.vy+=-0.045;
-    S.vz+=FLOOR_TILT*0.12;
+    S.vy+=-0.048;
+    S.vz+=FLOOR_TILT*0.15;
     S.posY+=S.vy;
     diceMesh.position.x+=S.vx; diceMesh.position.y=S.posY; diceMesh.position.z+=S.vz;
     diceMesh.rotation.x+=S.angVX; diceMesh.rotation.y+=S.angVY; diceMesh.rotation.z+=S.angVZ;
-    S.vx*=0.995; S.vz*=0.995;
+    S.vx*=0.993; S.vz*=0.993;
 
     if(S.posY<=FLOOR_Y+0.05){
       S.posY=FLOOR_Y+0.05; diceMesh.position.y=FLOOR_Y+0.05;
-      S.vx*=0.5; S.vz*=0.5;
-      if(Math.abs(S.vy)>0.05){
-        S.vy=-S.vy*0.15;
-        S.angVX*=0.8; S.angVY*=0.8; S.angVZ*=0.8;
+      S.vx*=0.4; S.vz*=0.4;
+      if(Math.abs(S.vy)>0.04){
+        S.vy=-S.vy*0.12;
+        S.angVX*=0.75; S.angVY*=0.75; S.angVZ*=0.75;
       }else{
         S.vy=0;
-        S.angVX*=0.4; S.angVY*=0.4; S.angVZ*=0.4;
+        S.angVX*=0.35; S.angVY*=0.35; S.angVZ*=0.35;
         if(Math.abs(S.angVX)<0.002&&Math.abs(S.angVY)<0.002&&Math.abs(S.angVZ)<0.002){
-          diceMesh.rotation.x+=FLOOR_TILT*0.5;
-          S.phase='settled'; S.settleFrames=0;
+          resultValue = S.serverVal||getTopFace();
+          showProgress = 0;
+          showQuat = diceMesh.quaternion.clone();
+          S.phase='showing'; S.settleFrames=0;
         }
       }
     }
-  }else if(S.phase==='settled'){
-    S.settleFrames++;
-    if(!S.resultShown && S.settleFrames>12){
+  }else if(S.phase==='showing'){
+    showProgress = Math.min(1, showProgress + 0.045);
+    const t = 1 - Math.pow(1-showProgress, 3);
+    const dq = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.6, 0, 0));
+    const tq = new THREE.Quaternion().copy(showQuat).multiply(dq);
+    diceMesh.quaternion.copy(showQuat).slerp(tq, t);
+    if(!S.resultShown && showProgress>0.4){
       S.resultShown=true;
-      showResult(S.serverVal||getTopFace());
+      showResult(resultValue);
     }
+    if(showProgress>=1){
+      diceMesh.quaternion.copy(tq);
+      S.phase='done'; S.settleFrames=0;
+    }
+  }else if(S.phase==='done'){
+    S.settleFrames++;
     if(S.settleFrames>40 && S.resolve){
-      const result=S.serverVal||getTopFace();
       const r=S.resolve;
       const overlay = diceOverlay;
       S.phase='idle'; S.resolve=null;
@@ -205,7 +215,7 @@ function tick() {
         if(overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
         if(diceOverlay === overlay) diceOverlay = null;
         diceRolling=false;
-        r(result);
+        r(resultValue);
         processQueue();
       },1200);
     }
