@@ -616,10 +616,31 @@ function actualizarIndicadorTurno() {
 function agitarPersonaje(selector, intensidad) {
   const el = document.querySelector(selector);
   if (!el) return;
-  el.classList.remove('shake-heavy', 'shake-light');
-  void el.offsetWidth;
-  el.classList.add(intensidad > 0.15 ? 'shake-heavy' : 'shake-light');
-  setTimeout(() => el.classList.remove('shake-heavy', 'shake-light'), 600);
+  if (el._agitando) {
+    el._agitando = false;
+  }
+  el._agitando = true;
+
+  const magnitud = Math.min(16, Math.max(4, Math.round(Math.abs(intensidad) * 22)));
+  const totalFrames = 16;
+  let frame = 0;
+
+  function step() {
+    if (!el._agitando) return;
+    frame++;
+    const progress = frame / totalFrames;
+    if (progress >= 1) {
+      el.style.transform = '';
+      el._agitando = false;
+      return;
+    }
+    const decay = 1 - progress;
+    const offset = (Math.random() * 2 - 1) * magnitud * decay;
+    const tilt = (Math.random() * 2 - 1) * 3 * decay;
+    el.style.transform = `translateX(${offset}px) rotate(${tilt}deg)`;
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 }
 
 function actualizarHP() {
@@ -640,8 +661,16 @@ function actualizarHP() {
 
   const miPerdida = prevMiHP - (miPJ.hp || 0);
   const rivalPerdida = prevRivalHP - (rivalPJ.hp || 0);
-  if (miPerdida > 0) agitarPersonaje('.player-character', miPerdida / (miPJ.maxHp || 40));
-  if (rivalPerdida > 0) agitarPersonaje('.enemy-character', rivalPerdida / (rivalPJ.maxHp || 40));
+  if (miPerdida > 0) {
+    agitarPersonaje('.player-character', miPerdida / (miPJ.maxHp || 40));
+    const pFill = document.getElementById('pjHPFill');
+    if (pFill) { pFill.style.transition = 'none'; pFill.style.filter = 'brightness(2)'; setTimeout(() => { pFill.style.transition = ''; pFill.style.filter = ''; }, 150); }
+  }
+  if (rivalPerdida > 0) {
+    agitarPersonaje('.enemy-character', rivalPerdida / (rivalPJ.maxHp || 40));
+    const rFill = document.getElementById('rivalHPFill');
+    if (rFill) { rFill.style.transition = 'none'; rFill.style.filter = 'brightness(2)'; setTimeout(() => { rFill.style.transition = ''; rFill.style.filter = ''; }, 150); }
+  }
   prevMiHP = miPJ.hp || 0;
   prevRivalHP = rivalPJ.hp || 0;
 }
