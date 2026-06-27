@@ -177,7 +177,18 @@ function renderizarCombate() {
 
     <div class="battlefield">
       <div class="col-left">
-        <div class="player-character">${miPJ.foto ? `<img src="${miPJ.foto}">` : '?'}</div>
+        <div class="player-character" onclick="toggleFlip(this)">
+          <div class="card-inner">
+            <div class="card-front">${miPJ.foto ? `<img src="${miPJ.foto}">` : '?'}</div>
+            <div class="card-back">
+              <div class="passive-title">PASIVAS</div>
+              ${(misPasivas||[]).length > 0 ? (misPasivas||[]).map(id => {
+                const d = typeof SKILL_DATA_LOOKUP_PASIVAS !== 'undefined' && SKILL_DATA_LOOKUP_PASIVAS[id];
+                return d ? `<div class="passive-item">${d.nombre}</div>` : '';
+              }).join('') : '<div class="passive-item" style="opacity:0.4">Sin pasivas</div>'}
+            </div>
+          </div>
+        </div>
         ${sheetHTML(miPJ, 'pj')}
       </div>
 
@@ -192,7 +203,18 @@ function renderizarCombate() {
       </div>
 
       <div class="col-right">
-        <div class="enemy-character">${rivalPJ.foto ? `<img src="${rivalPJ.foto}">` : '?'}</div>
+        <div class="enemy-character" onclick="toggleFlip(this)">
+          <div class="card-inner">
+            <div class="card-front">${rivalPJ.foto ? `<img src="${rivalPJ.foto}">` : '?'}</div>
+            <div class="card-back">
+              <div class="passive-title">PASIVAS</div>
+              ${(rivalPasivas||[]).length > 0 ? (rivalPasivas||[]).map(id => {
+                const d = typeof SKILL_DATA_LOOKUP_PASIVAS !== 'undefined' && SKILL_DATA_LOOKUP_PASIVAS[id];
+                return d ? `<div class="passive-item">${d.nombre}</div>` : '';
+              }).join('') : '<div class="passive-item" style="opacity:0.4">Sin pasivas</div>'}
+            </div>
+          </div>
+        </div>
         ${sheetHTML(rivalPJ, 'rival')}
       </div>
 
@@ -1143,6 +1165,11 @@ socket.on('finPartida', (datos) => {
   actualizarIndicadorTurno();
   mostrarPantallaFinPartida(gane);
 });
+
+function toggleFlip(el) {
+  const inner = el.querySelector('.card-inner');
+  if (inner) inner.classList.toggle('flipped');
+}
 
 function mostrarPantallaFinPartida(gane) {
   const existing = document.getElementById('finPartidaOverlay');

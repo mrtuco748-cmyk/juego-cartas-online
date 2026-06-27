@@ -328,8 +328,39 @@
             border-radius: 8px;
             border: 1px solid rgba(200,160,100,0.12);
             background: linear-gradient(135deg, rgba(30,20,14,0.7), rgba(12,8,4,0.7));
+            flex-shrink: 0;
+            perspective: 600px; cursor: pointer;
+            position: relative;
+        }
+        .card-inner {
+            width: 100%; height: 100%;
+            transition: transform 0.6s ease;
+            transform-style: preserve-3d;
+            border-radius: 8px;
+        }
+        .card-inner.flipped { transform: rotateY(180deg); }
+        .card-front, .card-back {
+            position: absolute; inset: 0;
+            backface-visibility: hidden;
+            border-radius: 8px; overflow: hidden;
             display: flex; align-items: center; justify-content: center;
-            overflow: hidden; flex-shrink: 0;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+            background: rgba(20,14,10,0.95);
+            flex-direction: column; padding: 8px;
+            gap: 3px; overflow-y: auto;
+        }
+        .card-back .passive-item {
+            color: #b89870; font-size: clamp(8px,1.2vw,11px);
+            letter-spacing: 1px; text-align: center;
+            border-bottom: 1px solid rgba(200,160,100,0.08);
+            padding: 2px 0; width: 100%;
+        }
+        .card-back .passive-item:last-child { border-bottom: none; }
+        .card-back .passive-title {
+            color: #d4a060; font-size: clamp(9px,1.4vw,13px);
+            letter-spacing: 2px; margin-bottom: 4px; font-weight: 700;
         }
         .player-character img, .enemy-character img {
             width: 100%; height: 100%; object-fit: cover;
