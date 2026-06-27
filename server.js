@@ -297,11 +297,13 @@ io.on('connection', (socket) => {
                 spellLogs.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
 
                 if (result.doubleAttack && rival.hp > 0) {
+                    const pLogAtk2 = gp.processPassives(yo.pasivas, yo, rival, 'on_attack', {});
+                    pLogAtk2.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
                     const statsYo2 = gp.calcularStatsConBuffs(yo);
                     const statsRiv2 = gp.calcularStatsConBuffs(rival);
                     const dado2 = Math.floor(Math.random() * 6) + 1;
                     let danoExtra = Math.max(0, dado2 + statsYo2.fuerza - statsRiv2.resistencia);
-                    const critExtra = gp.calcularCritico(statsYo2.velocidad, statsRiv2.velocidad);
+                    const critExtra = Math.max(statsYo2.critClaseMulti || 0, gp.calcularCritico(statsYo2.velocidad, statsRiv2.velocidad) + (statsYo2.critBonus || 0));
                     danoExtra = Math.floor(danoExtra * (1 + critExtra));
                     if (rival.status && rival.status.shield > 0) {
                         const absorb = Math.min(rival.status.shield, danoExtra);
@@ -318,22 +320,29 @@ io.on('connection', (socket) => {
                 break;
             }
             case 'atacar': {
+                // Process on_attack passives FIRST so critBonus from passives applies this turn
+                const pLogAtk = gp.processPassives(yo.pasivas, yo, rival, 'on_attack', {});
+                pLogAtk.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
+
+                const statsYoAtk = gp.calcularStatsConBuffs(yo);
+                const statsRivAtk = gp.calcularStatsConBuffs(rival);
+
                 const dado = Math.floor(Math.random() * 6) + 1;
-                let danoBase = Math.max(0, dado + statsYo.fuerza - statsRival.resistencia);
-                let critMulti = Math.max(statsYo.critClaseMulti || 0, gp.calcularCritico(statsYo.velocidad, statsRival.velocidad) + (statsYo.critBonus || 0));
+                let danoBase = Math.max(0, dado + statsYoAtk.fuerza - statsRivAtk.resistencia);
+                let critMulti = Math.max(statsYoAtk.critClaseMulti || 0, gp.calcularCritico(statsYoAtk.velocidad, statsRivAtk.velocidad) + (statsYoAtk.critBonus || 0));
                 let danoFinal = Math.floor(danoBase * (1 + critMulti));
                 if (yo.enrageBonus) danoFinal += yo.enrageBonus;
 
-                let log = `${statsYo.nombre} ataca — ${dado}+F:${statsYo.fuerza}-R:${statsRival.resistencia}=${danoBase}`;
+                let log = `${statsYoAtk.nombre} ataca — ${dado}+F:${statsYoAtk.fuerza}-R:${statsRivAtk.resistencia}=${danoBase}`;
 
                 if (rival.pose) {
-                    if (rival.pose.tipo === 'esquivar' && (rival.pose.valor + (statsRival.dodgeBonus || 0)) > dado) {
+                    if (rival.pose.tipo === 'esquivar' && (rival.pose.valor + (statsRivAtk.dodgeBonus || 0)) > dado) {
                         io.to(partidaId).emit('logBatalla', { msg: `¡${rival.nombre} ESQUIVA!`, tipo: 'pose' });
                         rival.pose = null;
                         return partidaFinalizarAccion(partidaId, partida);
                     }
-                    if (rival.pose.tipo === 'parry' && rival.pose.valor === (dado + statsYo.fuerza)) {
-                        io.to(partidaId).emit('logBatalla', { msg: `¡${rival.nombre} hace PARRY! ${statsYo.nombre} pierde turno`, tipo: 'pose' });
+                    if (rival.pose.tipo === 'parry' && rival.pose.valor === (dado + statsYoAtk.fuerza)) {
+                        io.to(partidaId).emit('logBatalla', { msg: `¡${rival.nombre} hace PARRY! ${statsYoAtk.nombre} pierde turno`, tipo: 'pose' });
                         partida.turnoMareado = socket.id;
                         rival.pose = null;
                         return partidaFinalizarAccion(partidaId, partida);
@@ -363,19 +372,18 @@ io.on('connection', (socket) => {
                 rival.hp -= danoFinal;
 
                 const pLog1 = gp.processPassives(yo.pasivas, yo, rival, 'on_hit', { damage: danoFinal, target: rival });
-                const pLog3 = gp.processPassives(yo.pasivas, yo, rival, 'on_attack', {});
-                [...pLog1, ...pLog3].forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
+                [...pLog1].forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
 
                 gp.procesarEfectosOnHit(yo, rival).forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'ataque' }));
 
                 log += critMulti > 0 ? ` (Crítico x${1+critMulti}) → ${danoFinal}` : ` → ${danoFinal}`;
                 io.to(partidaId).emit('logBatalla', { msg: log, tipo: 'ataque' });
 
-                if (statsYo.ataquePenalty > 0) {
-                    for (let p = 0; p < statsYo.ataquePenalty; p++) {
+                if (statsYoAtk.ataquePenalty > 0) {
+                    for (let p = 0; p < statsYoAtk.ataquePenalty; p++) {
                         partida.accionesUsadas.push('ataque_penalizado');
                     }
-                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} pierde ${statsYo.ataquePenalty} accion(es) extra por el peso del arma`, tipo: 'ataque' });
+                    io.to(partidaId).emit('logBatalla', { msg: `${statsYoAtk.nombre} pierde ${statsYoAtk.ataquePenalty} accion(es) extra por el peso del arma`, tipo: 'ataque' });
                 }
                 break;
             }
@@ -756,6 +764,8 @@ io.on('connection', (socket) => {
         }
 
         jugTurno.critBonus = 0;
+        jugTurno.reducedCost = 0;
+        jugTurno.enrageBonus = 0;
 
         const tLogs1 = gp.processPassives(jugTurno.pasivas, jugTurno, rivTurno, 'on_turn_start', {});
         const tLogs2 = gp.processPassives(rivTurno.pasivas, rivTurno, jugTurno, 'on_turn_start', {});

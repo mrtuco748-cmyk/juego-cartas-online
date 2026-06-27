@@ -334,7 +334,7 @@ class GameProcessor {
           }
           break;
         case "survival":
-          if (trigger === "on_death_blow" && owner.hp <= 0) {
+          if (trigger === "on_death" && owner.hp <= 0) {
             owner.hp = pasiva.hp_min;
             results.push({ log: `${ownerName} sobrevive con ${pasiva.hp_min} HP (Tótem)` });
           }

@@ -727,21 +727,35 @@ function mostrarDañoFlotante(valor, esCritico) {
   setTimeout(() => popup.remove(), 1100);
 }
 
-function mostrarCuracionFlotante(valor, selector) {
-  const charEl = document.querySelector(selector);
-  if (!charEl) return;
-  const rect = charEl.getBoundingClientRect();
-  const popup = document.createElement('div');
-  popup.className = 'dmg-popup';
-  popup.style.left = rect.left + rect.width / 2 + 'px';
-  popup.style.top = rect.top + 'px';
-  popup.style.color = '#40e060';
-  popup.style.fontSize = 'clamp(22px, 4vw, 40px)';
-  popup.style.textShadow = '0 0 20px rgba(60,200,80,0.8),0 0 40px rgba(60,200,80,0.4)';
-  popup.style.animation = 'healFloat 1s ease-out forwards';
-  popup.innerHTML = `+${Math.round(valor)}`;
-  document.body.appendChild(popup);
-  setTimeout(() => popup.remove(), 1100);
+function popCentro(texto, color, tamano, sombra) {
+  const p = document.createElement('div');
+  p.className = 'pop-center';
+  p.style.color = color;
+  p.style.fontSize = tamano || 'clamp(28px,5vw,48px)';
+  p.style.textShadow = sombra || '0 0 20px rgba(200,60,30,0.7)';
+  p.innerHTML = texto;
+  document.body.appendChild(p);
+  setTimeout(() => p.remove(), 1300);
+}
+
+function popPersonaje(texto, color, selector) {
+  const el = document.querySelector(selector);
+  if (!el) return;
+  const r = el.getBoundingClientRect();
+  const p = document.createElement('div');
+  p.className = 'pop-char';
+  p.style.left = (r.left + r.width / 2) + 'px';
+  p.style.top = r.top + 'px';
+  p.style.color = color;
+  p.style.fontSize = 'clamp(20px,3.5vw,36px)';
+  p.style.textShadow = '0 0 16px currentColor';
+  p.innerHTML = texto;
+  document.body.appendChild(p);
+  setTimeout(() => p.remove(), 1100);
+}
+
+function personajeSelector(msg) {
+  return miPJ && msg.includes(miPJ.nombre) ? '.player-character' : '.enemy-character';
 }
 
 function agregarLog(data) {
@@ -753,29 +767,182 @@ function agregarLog(data) {
   el.scrollTop = el.scrollHeight;
 
   const tipo = data.tipo || '';
+
+  /* ─── ATAQUE (daño) ─── */
   if (tipo === 'ataque') {
     const nums = msg.match(/(\d+)\s*$/) || msg.match(/(\d+)(?:\s*daño)?\s*$/);
     if (nums) {
       mostrarDañoFlotante(parseInt(nums[1]), /crític|CRÍTIC/i.test(msg));
     }
-  }
-  if (tipo === 'curacion') {
-    const nums = msg.match(/\+?(\d+)\s*HP/) || msg.match(/cura\s*(\d+)\s*HP/);
-    if (nums) {
-      const esYo = miPJ && msg.includes(miPJ.nombre);
-      mostrarCuracionFlotante(parseInt(nums[1]), esYo ? '.player-character' : '.enemy-character');
+    if (/escudo/i.test(msg)) {
+      const m = msg.match(/-(\d+)/);
+      if (m) popCentro('🛡 -' + m[1], '#40b0ff', 'clamp(22px,4vw,38px)', '0 0 20px rgba(40,150,255,0.7)');
     }
   }
 
+  /* ─── CURACIÓN ─── */
+  if (tipo === 'curacion') {
+    const nums = msg.match(/\+?(\d+)\s*HP/) || msg.match(/cura\s*(\d+)\s*HP/);
+    if (nums) {
+      const sel = personajeSelector(msg);
+      const elC = document.querySelector(sel);
+      if (elC) {
+        const r = elC.getBoundingClientRect();
+        const p = document.createElement('div');
+        p.className = 'dmg-popup';
+        p.style.left = r.left + r.width / 2 + 'px';
+        p.style.top = r.top + 'px';
+        p.style.color = '#40e060';
+        p.style.fontSize = 'clamp(22px,4vw,40px)';
+        p.style.textShadow = '0 0 20px rgba(60,200,80,0.8),0 0 40px rgba(60,200,80,0.4)';
+        p.style.animation = 'healFloat 1s ease-out forwards';
+        p.innerHTML = '+' + parseInt(nums[1]);
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 1100);
+      }
+    }
+    if (/energía|energia/i.test(msg)) {
+      const m = msg.match(/\+?(\d+)\s*energ/i);
+      if (m) popPersonaje('✦ +' + m[1], '#b060e0', personajeSelector(msg));
+    }
+  }
+
+  /* ─── ENERGÍA ─── */
+  if (tipo === 'energia') {
+    const m = msg.match(/(\d+)\s*energ/);
+    if (m) popPersonaje('✦ +' + m[1], '#b060e0', personajeSelector(msg));
+  }
+
+  /* ─── POSE / DODGE / PARRY ─── */
   if (/esquiv|evadi|dodge|parr|bloque/i.test(msg)) {
-    const esYo = miPJ && msg.includes(miPJ.nombre);
-    const sel = esYo ? '.player-character' : '.enemy-character';
+    const sel = personajeSelector(msg);
     const elChar = document.querySelector(sel);
     if (elChar) {
       elChar.classList.remove('dodge-anim-l', 'dodge-anim-r');
       void elChar.offsetWidth;
-      elChar.classList.add(esYo ? 'dodge-anim-l' : 'dodge-anim-r');
+      elChar.classList.add(sel === '.player-character' ? 'dodge-anim-l' : 'dodge-anim-r');
       setTimeout(() => elChar.classList.remove('dodge-anim-l', 'dodge-anim-r'), 500);
+    }
+    if (/PARRY/i.test(msg)) {
+      popCentro('¡PARRY!', '#ffcc00', 'clamp(30px,5vw,50px)', '0 0 30px rgba(255,200,0,0.9)');
+    } else if (/ESQUIVA/i.test(msg)) {
+      popCentro('¡ESQUIVA!', '#80d0ff', 'clamp(26px,4.5vw,44px)', '0 0 20px rgba(80,180,255,0.8)');
+    }
+  }
+
+  /* ─── CARTAS / SKILLS ─── */
+  if (tipo === 'carta' && /recibe.*daño|de.*daño|drena/i.test(msg)) {
+    const m = msg.match(/(\d+)\s*de\s*daño|\+?(\d+)\s*daño/i);
+    if (m) popCentro('⚡ ' + (m[1] || m[2] || '?'), '#e08040', 'clamp(24px,4vw,40px)');
+  }
+  if (tipo === 'carta' && /paralizado|aturdido/i.test(msg)) {
+    popCentro('❄ PARALIZADO', '#60c0ff', 'clamp(26px,4.5vw,44px)', '0 0 30px rgba(60,180,255,0.7)');
+  }
+  if (tipo === 'carta' && /silenciado/i.test(msg)) {
+    popCentro('🔇 SILENCIADO', '#888', 'clamp(26px,4.5vw,44px)', '0 0 20px rgba(100,100,100,0.7)');
+  }
+  if (tipo === 'carta' && /escudo\s*(de|de )?(\d+)/i.test(msg)) {
+    const m = msg.match(/(\d+)/);
+    if (m) popPersonaje('🛡 +' + m[1], '#40b0ff', personajeSelector(msg));
+  }
+  if (tipo === 'carta' && (/\bgana\s*\+/i.test(msg) || /\bgana\s*\+\d+/i.test(msg))) {
+    const m = msg.match(/\+(\d+)\s*([a-záéíóú]+)/i);
+    if (m) popPersonaje('↑ ' + m[1] + ' ' + m[2], '#60e880', personajeSelector(msg));
+  }
+  if (tipo === 'carta' && /pierde\s*\d+/i.test(msg)) {
+    const m = msg.match(/pierde\s*(\d+)\s*([a-záéíóú]+)/i);
+    if (m) popPersonaje('↓ ' + m[1] + ' ' + (m[2] || ''), '#ff6040', personajeSelector(msg));
+  }
+
+  /* ─── PASIVAS ─── */
+  if (tipo === 'pasiva') {
+    if (/daño por veneno/i.test(msg)) {
+      const m = msg.match(/(\d+)\s*de\s*daño/);
+      if (m) popPersonaje('☠ ' + m[1], '#b040c0', personajeSelector(msg));
+    }
+    if (/contraataca/i.test(msg)) {
+      const m = msg.match(/(\d+)\s*daño/);
+      if (m) popCentro('↩ ' + m[1], '#ff7040', 'clamp(24px,4vw,40px)', '0 0 20px rgba(255,100,50,0.8)');
+    }
+    if (/espinas causan/i.test(msg) || /devuelve.*daño/i.test(msg)) {
+      const m = msg.match(/(\d+)\s*daño/);
+      if (m) popCentro('↩ ' + m[1], '#ff8040', 'clamp(24px,4vw,40px)', '0 0 20px rgba(255,120,40,0.8)');
+    }
+    if (/revive/i.test(msg)) {
+      const m = msg.match(/(\d+)\s*HP/);
+      if (m) popCentro('REVIVE +' + m[1], '#ffcc00', 'clamp(30px,5vw,50px)', '0 0 30px rgba(255,200,0,0.9)');
+    }
+    if (/sobrevive/i.test(msg)) {
+      popCentro('¡TÓTEM!', '#ff8800', 'clamp(30px,5vw,50px)', '0 0 30px rgba(255,130,0,0.9)');
+    }
+    if (/acción extra/i.test(msg)) {
+      popCentro('+1 ACCIÓN', '#ffcc00', 'clamp(26px,4.5vw,44px)', '0 0 30px rgba(255,200,0,0.8)');
+    }
+    if (/purifica/i.test(msg)) {
+      popPersonaje('PURIFICADO', '#ffffff', personajeSelector(msg));
+    }
+    if (/escudo natural/i.test(msg)) {
+      const pj = personajeSelector(msg);
+      popPersonaje('🛡 +', '#40b0ff', pj);
+    }
+    if (/concentra/i.test(msg)) {
+      popPersonaje('✦ −3', '#a060d0', personajeSelector(msg));
+    }
+    if (/reduce.*daño/i.test(msg)) {
+      popCentro('− DMG', '#60c0ff', 'clamp(22px,4vw,38px)', '0 0 20px rgba(60,180,255,0.6)');
+    }
+    if (/roba.*HP|absorbe.*HP/i.test(msg)) {
+      const m = msg.match(/(\d+)\s*HP/);
+      if (m) {
+        const sel = personajeSelector(msg);
+        const elC = document.querySelector(sel);
+        if (elC) {
+          const r = elC.getBoundingClientRect();
+          const p = document.createElement('div');
+          p.className = 'dmg-popup';
+          p.style.left = r.left + r.width / 2 + 'px';
+          p.style.top = r.top + 'px';
+          p.style.color = '#50d080';
+          p.style.fontSize = 'clamp(20px,3.5vw,36px)';
+          p.style.textShadow = '0 0 20px rgba(60,200,80,0.8)';
+          p.style.animation = 'healFloat 1s ease-out forwards';
+          p.innerHTML = '+' + m[1];
+          document.body.appendChild(p);
+          setTimeout(() => p.remove(), 1100);
+        }
+      }
+    }
+    if (/regenera\s*(\d+)\s*HP/i.test(msg)) {
+      const m = msg.match(/regenera\s*(\d+)\s*HP/i);
+      if (m) popPersonaje('+' + m[1] + ' HP', '#40e060', personajeSelector(msg));
+    }
+  }
+
+  /* ─── STATUS ─── */
+  if (tipo === 'status') {
+    if (/paralizado|aturdido|frozen/i.test(msg)) {
+      popCentro('❄ PARALIZADO', '#60c0ff', 'clamp(26px,4.5vw,44px)', '0 0 30px rgba(60,180,255,0.7)');
+    }
+    if (/sangra|sangrado|bleed/i.test(msg)) {
+      const m = msg.match(/(\d+)\s*de\s*sangrado|(\d+)t\b/);
+      if (m) popPersonaje('🩸 ' + (m[1] || m[2] || ''), '#cc3333', personajeSelector(msg));
+    }
+    if (/se desvaneció|desvaneció/i.test(msg)) {
+      popCentro('✦ TERMINADO', '#888', 'clamp(20px,3.5vw,36px)', '0 0 15px rgba(100,100,100,0.5)');
+    }
+  }
+
+  /* ─── MUERTE ─── */
+  if (tipo === 'muerte') {
+    if (/empate|empate/i.test(msg)) {
+      popCentro('¡EMPATE!', '#ffcc00', 'clamp(40px,7vw,64px)', '0 0 40px rgba(255,200,0,0.9)');
+    } else {
+      const ganador = msg.match(/(.+?)\s*gana/);
+      if (ganador) {
+        popCentro('VICTORIA', '#ffcc00', 'clamp(40px,7vw,64px)', '0 0 40px rgba(255,200,0,0.9)');
+      } else {
+        popCentro('DERROTA', '#ff3030', 'clamp(36px,6vw,60px)', '0 0 40px rgba(255,0,0,0.8)');
+      }
     }
   }
 }

@@ -398,6 +398,10 @@
         .dmg-popup { position:fixed;left:50%;top:45%;z-index:100;pointer-events:none;font-family:'Cinzel',serif;font-weight:700;text-shadow:0 0 20px rgba(200,60,30,0.8),0 0 40px rgba(200,60,30,0.4);animation:dmgFloat 1s ease-out forwards; }
         @keyframes healFloat { 0%{opacity:1;transform:translateY(0) scale(1.2)} 35%{opacity:1;transform:translateY(-10px) scale(1)} 100%{opacity:0;transform:translateY(-40px) scale(0.8)} }
         .heal-popup { position:absolute;left:50%;bottom:100%;z-index:100;pointer-events:none;font-family:'Cinzel',serif;font-weight:700;white-space:nowrap;animation:healFloat 1s ease-out forwards; }
+        @keyframes popCenter { 0%{opacity:1;transform:translate(-50%,-50%) scale(1.3)} 30%{opacity:1;transform:translate(-50%,-50%) scale(1)} 100%{opacity:0;transform:translate(-50%,-75%) scale(0.85)} }
+        .pop-center  { position:fixed;left:50%;top:40%;z-index:100;pointer-events:none;font-family:'Cinzel',serif;font-weight:700;animation:popCenter 1.2s ease-out forwards; }
+        @keyframes popChar { 0%{opacity:1;transform:translateY(0) scale(1.15)} 30%{opacity:1;transform:translateY(-6px) scale(1)} 100%{opacity:0;transform:translateY(-35px) scale(0.8)} }
+        .pop-char   { position:fixed;z-index:100;pointer-events:none;font-family:'Cinzel',serif;font-weight:700;white-space:nowrap;animation:popChar 1s ease-out forwards; }
 
         /* ── CARTAS ── */
         .active-cards {
@@ -905,7 +909,8 @@
             "rafaga": { "nombre": "Ráfaga", "coste": 20, "efecto": "damage_percent", "valor": 0.15 },
             "cataclismo": { "nombre": "Cataclismo", "coste": 80, "efecto": "damage_true", "valor": 60 },
             "bendicion": { "nombre": "Bendición", "coste": 35, "efecto": "buff_all", "valor": 2, "duracion": 2 },
-            "escarcha": { "nombre": "Escarcha", "coste": 25, "efecto": "debuff", "stat": "velocidad", "valor": 4, "duracion": 2 }
+            "escarcha": { "nombre": "Escarcha", "coste": 25, "efecto": "debuff", "stat": "velocidad", "valor": 4, "duracion": 2 },
+            "acrio": { "nombre": "Acrio", "coste": 30, "efecto": "damage_true", "valor": 15, "requiereItem": "Varita Común Nivel 3" }
         };
 
         const SKILL_DATA_LOOKUP_PASIVAS = {
