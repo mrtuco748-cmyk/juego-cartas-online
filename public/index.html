@@ -456,74 +456,28 @@
         @keyframes shieldPulse { 0%,100%{opacity:0.7;transform:scale(1)} 50%{opacity:1;transform:scale(1.15)} }
 
         /* ── EFECTOS VISUALES SOBRE PERSONAJES ── */
-        .effect-shield { box-shadow: inset 0 0 30px rgba(60,160,255,0.35), 0 0 20px rgba(60,160,255,0.25); }
-        .effect-shield::before {
-            content:'🛡'; position:absolute; top:clamp(4px,1vh,10px); left:clamp(4px,1vw,10px);
-            font-size:clamp(18px,3vw,32px); line-height:1;
-            filter:drop-shadow(0 0 6px rgba(60,160,255,0.8));
-            animation:shieldPulse 1.5s ease-in-out infinite;
+        .effect-overlays { position:absolute; inset:0; pointer-events:none; z-index:10; overflow:hidden; }
+        .effect-icon {
+            position:absolute; line-height:1;
+            font-size:clamp(16px,2.8vw,30px);
             z-index:10; pointer-events:none;
         }
-        .effect-frozen {
-            box-shadow: inset 0 0 40px rgba(100,200,255,0.25), 0 0 25px rgba(100,200,255,0.15);
-            position:relative; overflow:hidden;
-        }
-        .effect-frozen::before {
-            content:'❄'; position:absolute; top:clamp(4px,1vh,10px); right:clamp(4px,1vw,10px);
-            font-size:clamp(20px,3.5vw,36px); line-height:1;
-            filter:drop-shadow(0 0 8px rgba(100,200,255,0.9));
-            animation:frozenShimmer 2s ease-in-out infinite;
-            z-index:10; pointer-events:none;
-        }
-        .effect-frozen::after {
-            content:''; position:absolute; inset:0;
-            background: linear-gradient(135deg, rgba(100,200,255,0.08) 0%, transparent 40%, transparent 60%, rgba(100,200,255,0.05) 100%);
-            pointer-events:none; z-index:5;
-            animation:frozenShimmer 3s ease-in-out infinite;
+        .effect-icon.pos-tl { top:clamp(4px,0.8vh,8px); left:clamp(4px,0.8vw,8px); }
+        .effect-icon.pos-tr { top:clamp(4px,0.8vh,8px); right:clamp(4px,0.8vw,8px); }
+        .effect-icon.pos-bl { bottom:clamp(4px,0.8vh,8px); left:clamp(4px,0.8vw,8px); }
+        .effect-icon.pos-br { bottom:clamp(4px,0.8vh,8px); right:clamp(4px,0.8vw,8px); }
+        .effect-icon.icon-shield { filter:drop-shadow(0 0 6px rgba(60,160,255,0.8)); animation:shieldPulse 1.5s ease-in-out infinite; }
+        .effect-icon.icon-frozen { filter:drop-shadow(0 0 8px rgba(100,200,255,0.9)); animation:frozenShimmer 2s ease-in-out infinite; }
+        .effect-icon.icon-silenced { filter:drop-shadow(0 0 8px rgba(160,80,200,0.8)); animation:silencePulse 1.8s ease-in-out infinite; }
+        .effect-icon.icon-inmune { color:#ffd700; filter:drop-shadow(0 0 10px rgba(255,215,0,0.9)); animation:inmuneGlow 1.2s ease-in-out infinite; }
+        .effect-overlay-bg {
+            position:absolute; inset:0; pointer-events:none; z-index:5;
+            transition:opacity 0.3s;
         }
         @keyframes frozenShimmer { 0%,100%{opacity:0.5} 50%{opacity:1} }
-        .effect-silenced {
-            position:relative;
-        }
-        .effect-silenced::before {
-            content:'🔇'; position:absolute; top:clamp(4px,1vh,10px); right:clamp(4px,1vw,10px);
-            font-size:clamp(18px,3vw,30px); line-height:1;
-            filter:drop-shadow(0 0 8px rgba(160,80,200,0.8));
-            animation:silencePulse 1.8s ease-in-out infinite;
-            z-index:10; pointer-events:none;
-        }
         @keyframes silencePulse { 0%,100%{opacity:0.5;transform:scale(1)} 50%{opacity:1;transform:scale(1.1)} }
-        .effect-inmune {
-            box-shadow: inset 0 0 40px rgba(255,215,0,0.25), 0 0 30px rgba(255,215,0,0.2);
-            position:relative;
-        }
-        .effect-inmune::before {
-            content:'✦'; position:absolute; top:clamp(4px,1vh,10px); right:clamp(4px,1vw,10px);
-            font-size:clamp(20px,3.5vw,36px); line-height:1; color:#ffd700;
-            filter:drop-shadow(0 0 10px rgba(255,215,0,0.9));
-            animation:inmuneGlow 1.2s ease-in-out infinite;
-            z-index:10; pointer-events:none;
-        }
         @keyframes inmuneGlow { 0%,100%{opacity:0.6;text-shadow:0 0 8px gold} 50%{opacity:1;text-shadow:0 0 20px gold,0 0 40px gold} }
-        .effect-buffed {
-            position:relative; overflow:hidden;
-        }
-        .effect-buffed::after {
-            content:''; position:absolute; inset:0;
-            background: radial-gradient(ellipse at 50% 0%, rgba(80,200,80,0.1) 0%, transparent 70%);
-            pointer-events:none; z-index:5;
-            animation:buffPulse 2s ease-in-out infinite;
-        }
         @keyframes buffPulse { 0%,100%{opacity:0.3} 50%{opacity:0.7} }
-        .effect-debuffed {
-            position:relative; overflow:hidden;
-        }
-        .effect-debuffed::after {
-            content:''; position:absolute; inset:0;
-            background: radial-gradient(ellipse at 50% 100%, rgba(200,50,50,0.1) 0%, transparent 70%);
-            pointer-events:none; z-index:5;
-            animation:debuffPulse 2s ease-in-out infinite;
-        }
         @keyframes debuffPulse { 0%,100%{opacity:0.3} 50%{opacity:0.6} }
 
         /* ── CARTA DE INVOCACIÓN ── */

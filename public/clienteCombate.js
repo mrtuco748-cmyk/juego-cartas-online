@@ -904,13 +904,63 @@ function actualizarEfectosVisuales() {
     const pj = sel === '.player-character' ? miPJ : rivalPJ;
     if (!pj) return;
     const status = pj.status || {};
-    el.classList.remove('effect-frozen', 'effect-silenced', 'effect-inmune', 'effect-buffed', 'effect-debuffed', 'effect-shield');
-    if (status.shield > 0) el.classList.add('effect-shield');
-    if (status.frozen > 0) el.classList.add('effect-frozen');
-    if (status.silenced > 0) el.classList.add('effect-silenced');
-    if (status.inmune) el.classList.add('effect-inmune');
-    if (status.buffs && Object.keys(status.buffs).length > 0) el.classList.add('effect-buffed');
-    if (status.debuffs && Object.keys(status.debuffs).length > 0) el.classList.add('effect-debuffed');
+
+    el.style.position = 'relative';
+
+    const shadows = [];
+    if (status.shield > 0) shadows.push('inset 0 0 30px rgba(60,160,255,0.35)', '0 0 20px rgba(60,160,255,0.25)');
+    if (status.frozen > 0) shadows.push('inset 0 0 40px rgba(100,200,255,0.25)', '0 0 25px rgba(100,200,255,0.15)');
+    if (status.inmune) shadows.push('inset 0 0 40px rgba(255,215,0,0.25)', '0 0 30px rgba(255,215,0,0.2)');
+    el.style.boxShadow = shadows.length ? shadows.join(',') : '';
+
+    let overlay = el.querySelector('.effect-overlays');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.className = 'effect-overlays';
+      el.appendChild(overlay);
+    }
+    overlay.innerHTML = '';
+
+    const icons = [
+      { cond: status.shield > 0, icon: '🛡', cls: 'icon-shield', pos: 'pos-tl' },
+      { cond: status.frozen > 0, icon: '❄', cls: 'icon-frozen', pos: 'pos-tr' },
+      { cond: status.silenced > 0, icon: '🔇', cls: 'icon-silenced', pos: 'pos-bl' },
+      { cond: status.inmune, icon: '✦', cls: 'icon-inmune', pos: 'pos-br' }
+    ];
+    icons.forEach(ic => {
+      if (!ic.cond) return;
+      const span = document.createElement('span');
+      span.className = `effect-icon ${ic.cls} ${ic.pos}`;
+      span.textContent = ic.icon;
+      overlay.appendChild(span);
+    });
+
+    const hasBuff = status.buffs && Object.keys(status.buffs).length > 0;
+    const hasDebuff = status.debuffs && Object.keys(status.debuffs).length > 0;
+    const isFrozen = status.frozen > 0;
+
+    let bgLayers = [];
+    if (isFrozen) bgLayers.push('linear-gradient(135deg, rgba(100,200,255,0.08) 0%, transparent 40%, transparent 60%, rgba(100,200,255,0.05) 100%)');
+    if (hasBuff) bgLayers.push('radial-gradient(ellipse at 50% 0%, rgba(80,200,80,0.1) 0%, transparent 70%)');
+    if (hasDebuff) bgLayers.push('radial-gradient(ellipse at 50% 100%, rgba(200,50,50,0.1) 0%, transparent 70%)');
+
+    if (bgLayers.length) {
+      let bgEl = overlay.querySelector('.effect-overlay-bg');
+      if (!bgEl) {
+        bgEl = document.createElement('div');
+        bgEl.className = 'effect-overlay-bg';
+        overlay.appendChild(bgEl);
+      }
+      bgEl.style.background = bgLayers.join(',');
+      const anims = [];
+      if (isFrozen) anims.push('frozenShimmer 3s ease-in-out infinite');
+      if (hasBuff) anims.push('buffPulse 2s ease-in-out infinite');
+      if (hasDebuff) anims.push('debuffPulse 2s ease-in-out infinite');
+      bgEl.style.animation = anims.length ? anims.join(',') : 'none';
+    } else {
+      const bgEl = overlay.querySelector('.effect-overlay-bg');
+      if (bgEl) bgEl.remove();
+    }
   });
 }
 
