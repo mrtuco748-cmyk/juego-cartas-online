@@ -14,7 +14,7 @@ const SKILLS_DATA = {
     reflejo_magico: { nombre: "Reflejo Mágico", coste: 40, efecto: "reflect", valor: 0.50, duracion: 2 },
     tormenta: { nombre: "Tormenta", coste: 45, efecto: "aoe_damage", valor: 0.20 },
     sello_silencio: { nombre: "Sello de Silencio", coste: 30, efecto: "silence", duracion: 2 },
-    sacrificio: { nombre: "Sacrificio", coste: 10, efecto: "sacrifice", valor: 0.30 },
+    sacrificio: { nombre: "Sacrificio", coste: 10, efecto: "sacrifice", valor: 0.35 },
     invocacion: { nombre: "Invocación Menor", coste: 55, efecto: "summon", valor: 0.25 },
     rafaga: { nombre: "Ráfaga", coste: 20, efecto: "damage_percent", valor: 0.15 },
     cataclismo: { nombre: "Cataclismo", coste: 80, efecto: "damage_true", valor: 60 },
@@ -274,8 +274,8 @@ class GameProcessor {
       sacrifice: (target, card, ctx) => {
         const hpCost = Math.floor(ctx.source.maxHp * card.valor);
         ctx.source.hp -= hpCost;
-        ctx.source.energia = Math.min(100, ctx.source.energia + 40);
-        return { log: `${ctx.source.nombre} sacrifica ${hpCost} HP y recupera 40 energía` };
+        ctx.source.energia = Math.min(100, ctx.source.energia + 35);
+        return { log: `${ctx.source.nombre} sacrifica ${hpCost} HP y recupera 35 energía` };
       },
       summon: (target, card, ctx) => {
         ctx.summonHp = Math.floor(ctx.source.maxHp * card.valor);

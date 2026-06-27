@@ -914,7 +914,7 @@
             "reflejo_magico": { "nombre": "Reflejo Mágico", "coste": 40, "efecto": "reflect", "valor": 0.50, "duracion": 2 },
             "tormenta": { "nombre": "Tormenta", "coste": 45, "efecto": "aoe_damage", "valor": 0.20 },
             "sello_silencio": { "nombre": "Sello de Silencio", "coste": 30, "efecto": "silence", "duracion": 2 },
-            "sacrificio": { "nombre": "Sacrificio", "coste": 10, "efecto": "sacrifice", "valor": 0.30 },
+            "sacrificio": { "nombre": "Sacrificio", "coste": 10, "efecto": "sacrifice", "valor": 0.35 },
             "invocacion": { "nombre": "Invocación Menor", "coste": 55, "efecto": "summon", "valor": 0.25 },
             "rafaga": { "nombre": "Ráfaga", "coste": 20, "efecto": "damage_percent", "valor": 0.15 },
             "cataclismo": { "nombre": "Cataclismo", "coste": 80, "efecto": "damage_true", "valor": 60 },
@@ -961,7 +961,7 @@
                 reflect: `Refleja ${skill.valor * 100}% del daño por ${skill.duracion} turnos`,
                 aoe_damage: `Causa ${Math.floor(skill.valor * 100)}% de daño a todos`,
                 silence: `Silencia al rival por ${skill.duracion} turnos`,
-                sacrifice: `Sacrifica ${Math.floor(skill.valor * 100)}% HP para recuperar 40 energía`,
+                sacrifice: `Sacrifica ${Math.floor(skill.valor * 100)}% HP para recuperar 35 energía`,
                 summon: `Invoca un aliado con ${Math.floor(skill.valor * 100)}% de tu HP`,
                 buff_all: `+${skill.valor} a todas las stats por ${skill.duracion} turnos`
             };
