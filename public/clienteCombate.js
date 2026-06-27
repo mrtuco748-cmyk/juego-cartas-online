@@ -61,6 +61,7 @@ socket.on('rivalEncontrado', (data) => {
 function mostrarPantallaCombate() {
   document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
   document.getElementById('pantallaCombate').classList.add('activa');
+  if (typeof AudioManager !== 'undefined') AudioManager.startBattle();
 }
 
 const CLASS_MODS = {
@@ -199,6 +200,7 @@ function renderizarCombate() {
   combateEl.innerHTML = `
     <div class="topbar">
       <div class="orb"></div>
+      <button class="btn-mute" onclick="AudioManager.toggle()" id="btnMute">♪</button>
     </div>
 
     <div class="battlefield">

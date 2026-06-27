@@ -305,6 +305,12 @@
             background: radial-gradient(circle at 35% 35%, #ffeecc, #c89000 60%, #8a6000);
             box-shadow: 0 0 8px rgba(200,150,0,0.4);
         }
+        .btn-mute {
+            margin-left:auto; background:none; border:1px solid #4a3018; border-radius:4px;
+            color:#a08060; font-size:14px; cursor:pointer; padding:2px 8px; line-height:1;
+            transition:all 0.2s;
+        }
+        .btn-mute:hover { color:#e0b060; border-color:#8a6030; background:rgba(200,160,60,0.08); }
 
         /* ══════════════════════════════
            BATTLEFIELD — PC: 3 columnas
@@ -2316,7 +2322,93 @@
         document.getElementById(id).addEventListener('input', actualizarTotal);
     });
 
+    const AudioManager = {
+        ctx: null, menuNodes: [], battleNodes: [], active: null, vol: 0.25, _muted: false,
+        init() {
+            if (this.ctx) return;
+            try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+        },
+        _createDrone(freq, type, gainVal, detune) {
+            if (!this.ctx) return null;
+            const osc = this.ctx.createOscillator();
+            osc.type = type;
+            osc.frequency.value = freq;
+            if (detune) osc.detune.value = detune;
+            const gain = this.ctx.createGain();
+            gain.gain.value = 0;
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 500;
+            filter.Q.value = 1;
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+            return { osc, gain, filter, targetGain: gainVal };
+        },
+        _fadeTo(nodes, target, dur) {
+            nodes.forEach(n => {
+                if (n && n.gain) {
+                    n.gain.gain.linearRampToValueAtTime(n.targetGain * target, this.ctx.currentTime + dur);
+                }
+            });
+        },
+        _fadeOut(nodes, dur) {
+            nodes.forEach(n => {
+                if (n && n.gain) {
+                    n.gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + dur);
+                }
+            });
+        },
+        startMenu() {
+            if (this._muted) return;
+            this.init();
+            if (this.active === 'menu') return;
+            this.stop(0.3);
+            this.active = 'menu';
+            this.menuNodes = [
+                this._createDrone(65.4, 'sawtooth', 0.08, 0),
+                this._createDrone(98, 'triangle', 0.05, 0),
+                this._createDrone(130.8, 'sine', 0.03, 1)
+            ];
+            this._fadeTo(this.menuNodes, this.vol, 1);
+        },
+        startBattle() {
+            if (this._muted) return;
+            this.init();
+            if (this.active === 'battle') return;
+            this.stop(0.3);
+            this.active = 'battle';
+            this.battleNodes = [
+                this._createDrone(55, 'sawtooth', 0.12, 0),
+                this._createDrone(82.5, 'square', 0.04, 0),
+                this._createDrone(110, 'triangle', 0.06, 2),
+                this._createDrone(165, 'sine', 0.02, -1)
+            ];
+            this._fadeTo(this.battleNodes, this.vol * 1.3, 0.8);
+        },
+        stop(dur) {
+            const t = (dur || 0.3) * 1000 + 100;
+            if (this.menuNodes.length) { const nodes = this.menuNodes; this.menuNodes = []; this._fadeOut(nodes, dur || 0.3); setTimeout(() => { nodes.forEach(n => { try { n.osc.stop(); } catch(e) {} }); }, t); }
+            if (this.battleNodes.length) { const nodes = this.battleNodes; this.battleNodes = []; this._fadeOut(nodes, dur || 0.3); setTimeout(() => { nodes.forEach(n => { try { n.osc.stop(); } catch(e) {} }); }, t); }
+            this.active = null;
+        },
+        toggle() {
+            if (this._muted) { this._muted = false; const b = document.getElementById('btnMute'); if (b) b.textContent = '♫'; document.querySelector('.pantalla.activa')?.id === 'pantallaCombate' ? this.startBattle() : this.startMenu(); }
+            else { this._muted = true; this.stop(0.3); const b = document.getElementById('btnMute'); if (b) b.textContent = '♪'; }
+        }
+    };
+    document.addEventListener('click', () => { if (!AudioManager.active && AudioManager.ctx) AudioManager.startMenu(); }, { once: true });
 
+    function mostrarPantalla(id) {
+        document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
+        document.getElementById(id).classList.add('activa');
+        if (id === 'pantallaCombate') AudioManager.startBattle();
+        else {
+            if (AudioManager.active === 'battle') AudioManager.stop(0.5);
+            if (!AudioManager.active) AudioManager.startMenu();
+        }
+    }
 </script>
     <script src="clienteCombate.js"></script>
 </body>
