@@ -25,6 +25,8 @@ const personajeSchema = new mongoose.Schema({
     nivel: { type: Number, default: 1 },
     experiencia: { type: Number, default: 0 },
     puntosStats: { type: Number, default: 0 },
+    activasIniciales: { type: [String], default: [] },
+    activasEquipadas: { type: [String], default: [] },
     tas: { type: Array, default: [] },
     tps: { type: Array, default: [] },
     skillsCompradas: { type: [String], default: [] },
@@ -101,36 +103,52 @@ const BOT_PRACTICA = {
     pasivasCompradas: ["regeneracion", "fortaleza", "vampirismo"]
 };
 
-function getSkillsParaClase(clase, compradas = [], equipment = null) {
-    const skillsPorClase = {
-        Chaman: ["golpe_directo", "curacion_divina", "escudo_arcano", "drenar_vida"],
-        Sacerdote: ["curacion_divina", "bendicion", "sello_silencio", "escudo_arcano"],
-        Druida: ["rafaga", "drenar_vida", "escudo_arcano", "escarcha"],
-        Guerrero: ["golpe_directo", "golpe_veloz", "furia_berserker", "explosion_mana"],
-        Paladin: ["golpe_directo", "escudo_arcano", "curacion_divina", "bendicion"],
-        Berserker: ["golpe_directo", "furia_berserker", "golpe_veloz", "sacrificio"],
-        Acorazado: ["escudo_arcano", "cubo_perfecto", "golpe_directo", "reflejo_magico"],
-        Ogro: ["golpe_directo", "golpe_veloz", "tormenta", "sacrificio"],
-        Golem: ["escudo_arcano", "cubo_perfecto", "golpe_directo", "explosion_mana"],
-        Picaro: ["golpe_veloz", "golpe_directo", "drenar_vida", "cubo_perfecto"],
-        Ninja: ["golpe_veloz", "golpe_directo", "drenar_vida", "sello_silencio"],
-        Cazador: ["golpe_directo", "golpe_veloz", "rafaga", "escarcha"],
-        Mago: ["explosion_mana", "tormenta", "escarcha", "drenar_vida"],
-        MagoMaestro: ["explosion_mana", "tormenta", "cataclismo", "sello_silencio"],
-        MagoGuerrero: ["golpe_directo", "explosion_mana", "escudo_arcano", "golpe_veloz"],
-        SemiDios: ["cataclismo", "curacion_divina", "bendicion", "invocacion"],
-        Demonio: ["sacrificio", "maldicion", "drenar_vida", "tormenta"],
-        Titan: ["cataclismo", "golpe_directo", "escudo_arcano", "cubo_perfecto"]
-    };
-    const baseSkills = skillsPorClase[clase] || ["golpe_directo", "golpe_veloz", "curacion_divina", "escudo_arcano"];
-    const todas = [...new Set([...baseSkills, ...compradas])];
+const CLASS_POOL = {
+    Chaman: ["golpe_directo", "curacion_divina", "escudo_arcano", "drenar_vida", "bendicion", "maldicion", "reflejo_magico"],
+    Sacerdote: ["curacion_divina", "bendicion", "sello_silencio", "escudo_arcano", "drenar_vida", "sacrificio", "reflejo_magico"],
+    Druida: ["rafaga", "drenar_vida", "escudo_arcano", "escarcha", "bendicion", "curacion_divina", "golpe_directo"],
+    Guerrero: ["golpe_directo", "golpe_veloz", "furia_berserker", "explosion_mana", "cubo_perfecto", "sacrificio", "escudo_arcano"],
+    Paladin: ["golpe_directo", "escudo_arcano", "curacion_divina", "bendicion", "cubo_perfecto", "drenar_vida", "golpe_veloz"],
+    Berserker: ["golpe_directo", "furia_berserker", "golpe_veloz", "sacrificio", "maldicion", "drenar_vida", "tormenta"],
+    Acorazado: ["escudo_arcano", "cubo_perfecto", "golpe_directo", "reflejo_magico", "golpe_veloz", "drenar_vida", "sacrificio"],
+    Ogro: ["golpe_directo", "golpe_veloz", "tormenta", "sacrificio", "furia_berserker", "maldicion", "cubo_perfecto"],
+    Golem: ["escudo_arcano", "cubo_perfecto", "golpe_directo", "explosion_mana", "reflejo_magico", "sacrificio", "drenar_vida"],
+    Picaro: ["golpe_veloz", "golpe_directo", "drenar_vida", "cubo_perfecto", "paralisis", "reflejo_magico", "maldicion"],
+    Ninja: ["golpe_veloz", "golpe_directo", "drenar_vida", "sello_silencio", "paralisis", "reflejo_magico", "cubo_perfecto"],
+    Cazador: ["golpe_directo", "golpe_veloz", "rafaga", "escarcha", "paralisis", "drenar_vida", "tormenta"],
+    Mago: ["explosion_mana", "tormenta", "escarcha", "drenar_vida", "cubo_perfecto", "rafaga", "escudo_arcano"],
+    MagoMaestro: ["explosion_mana", "tormenta", "cataclismo", "sello_silencio", "escarcha", "reflejo_magico", "bendicion"],
+    MagoGuerrero: ["golpe_directo", "explosion_mana", "escudo_arcano", "golpe_veloz", "cubo_perfecto", "furia_berserker", "drenar_vida"],
+    SemiDios: ["cataclismo", "curacion_divina", "bendicion", "invocacion", "escudo_arcano", "reflejo_magico", "tormenta"],
+    Demonio: ["sacrificio", "maldicion", "drenar_vida", "tormenta", "furia_berserker", "cataclismo", "golpe_directo"],
+    Titan: ["cataclismo", "golpe_directo", "escudo_arcano", "cubo_perfecto", "golpe_veloz", "explosion_mana", "reflejo_magico"]
+};
+
+function getSkillsParaClase(activasIniciales, skillsCompradas, activasEquipadas, equipment, claseFallback) {
+    let equipadas;
+    if (activasEquipadas && activasEquipadas.length > 0) {
+        equipadas = [...activasEquipadas];
+    } else if (activasIniciales && activasIniciales.length > 0) {
+        equipadas = [...activasIniciales, ...skillsCompradas].slice(0, 5);
+    } else {
+        equipadas = [...(CLASS_POOL[claseFallback] || []), ...skillsCompradas].slice(0, 5);
+    }
     if (equipment) {
         const nombresEq = Object.values(equipment).filter(Boolean).map(e => e.nombre);
         if (nombresEq.includes("Varita Común Nivel 3") && SKILLS_DATA.activas.acrio) {
-            todas.push("acrio");
+            if (!equipadas.includes("acrio")) equipadas.push("acrio");
         }
     }
-    return todas.map(id => ({ ...SKILLS_DATA.activas[id], id })).filter(Boolean);
+    return equipadas.filter((id, i, a) => a.indexOf(id) === i).map(id => ({ ...SKILLS_DATA.activas[id], id })).filter(Boolean);
+}
+
+function mezclarArray(arr) {
+    const m = [...arr];
+    for (let i = m.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [m[i], m[j]] = [m[j], m[i]];
+    }
+    return m;
 }
 
 function getPasivasClase(clase, compradas = []) {
@@ -160,7 +178,7 @@ async function otorgarXP(cuentaId, personajeId, xp) {
         while (pj.experiencia >= pj.nivel) {
             pj.experiencia -= pj.nivel;
             pj.nivel++;
-            pj.puntosStats = (pj.puntosStats || 0) + 3;
+            pj.puntosStats = (pj.puntosStats || 0) + 5;
         }
         await cuenta.save();
         return cuenta;
@@ -186,8 +204,9 @@ function shuffleArray(arr) {
 }
 
 function partidaEmitirEstado(partidaId, partida) {
-    const j1s = getSkillsParaClase(partida.jugador1.personaje.clase, partida.jugador1.skillsCompradas || [], partida.jugador1.equipment);
-    const j2s = getSkillsParaClase(partida.jugador2.personaje.clase, partida.jugador2.skillsCompradas || [], partida.jugador2.equipment);
+    const p1 = partida.jugador1, p2 = partida.jugador2;
+    const j1s = getSkillsParaClase(p1.personaje?.activasIniciales, p1.skillsCompradas || [], p1.personaje?.activasEquipadas, p1.equipment, p1.personaje?.clase);
+    const j2s = getSkillsParaClase(p2.personaje?.activasIniciales, p2.skillsCompradas || [], p2.personaje?.activasEquipadas, p2.equipment, p2.personaje?.clase);
 
     const j1m = getMazosCliente(partida.jugador1);
     const j2m = getMazosCliente(partida.jugador2);
@@ -870,8 +889,8 @@ io.on('connection', (socket) => {
 
     socket.on('guardarPersonaje', async (datos) => {
         const suma = datos.fuerza + datos.resistencia + datos.velocidad + datos.magia + datos.suerte;
-        if (suma !== 25 || datos.fuerza < 2 || datos.resistencia < 2 || datos.velocidad < 2 || datos.magia < 2 || datos.suerte < 2) {
-            socket.emit('errorPersonaje', 'Los puntos deben sumar 25 (mínimo 2 por categoría).');
+        if (suma !== 25 || datos.fuerza < 0 || datos.resistencia < 0 || datos.velocidad < 0 || datos.magia < 0 || datos.suerte < 0) {
+            socket.emit('errorPersonaje', 'Los puntos deben sumar 25.');
             return;
         }
         const mods = CLASS_DATA[datos.clase];
@@ -890,7 +909,8 @@ io.on('connection', (socket) => {
                 suerte: finales.suerte,
                 hp: maxHP,
                 energia: 100,
-                foto: datos.foto || ''
+                foto: datos.foto || '',
+                activasIniciales: datos.activasIniciales || []
             });
             await cuenta.save();
             const nuevoPJ = cuenta.personajes[cuenta.personajes.length - 1];
@@ -927,8 +947,8 @@ io.on('connection', (socket) => {
                            (stats.velocidad - pj.velocidad) + (stats.magia - pj.magia) +
                            (stats.suerte - pj.suerte);
             if (usados > pts) { socket.emit('errorPersonaje', 'No tenés suficientes puntos.'); return; }
-            if (stats.fuerza < 2 || stats.resistencia < 2 || stats.velocidad < 2 || stats.magia < 2 || stats.suerte < 2) {
-                socket.emit('errorPersonaje', 'Mínimo 2 puntos por estadística.'); return;
+            if (stats.fuerza < 0 || stats.resistencia < 0 || stats.velocidad < 0 || stats.magia < 0 || stats.suerte < 0) {
+                socket.emit('errorPersonaje', 'Mínimo 0 puntos por estadística.'); return;
             }
             pj.fuerza = stats.fuerza;
             pj.resistencia = stats.resistencia;
@@ -944,6 +964,27 @@ io.on('connection', (socket) => {
             });
         } catch (err) {
             socket.emit('errorPersonaje', 'Error al asignar stats.');
+        }
+    });
+
+    socket.on('guardarLoadout', async ({ cuenta_id, personaje_id, activas }) => {
+        try {
+            if (!Array.isArray(activas) || activas.length > 5) {
+                socket.emit('errorPersonaje', 'Máximo 5 activas equipadas.'); return;
+            }
+            const cuenta = await Cuenta.findById(cuenta_id);
+            if (!cuenta) { socket.emit('errorPersonaje', 'Cuenta no encontrada.'); return; }
+            const pj = cuenta.personajes.id(personaje_id);
+            if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
+            pj.activasEquipadas = activas;
+            await cuenta.save();
+            socket.emit('loadoutGuardado', {
+                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
+                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
+                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes
+            });
+        } catch (err) {
+            socket.emit('errorPersonaje', 'Error al guardar loadout.');
         }
     });
 
@@ -1109,8 +1150,8 @@ io.on('connection', (socket) => {
             gp.aplicarCritClase(pRiv);
 
             const esJ1Primero = turnoInicial === jugador1.socketId;
-            const skills1 = getSkillsParaClase(personaje1.clase, comp1, partidas[partidaId].jugador1.equipment);
-            const skills2 = getSkillsParaClase(personaje2.clase, comp2, partidas[partidaId].jugador2.equipment);
+            const skills1 = getSkillsParaClase(personaje1.activasIniciales, comp1, personaje1.activasEquipadas, partidas[partidaId].jugador1.equipment, personaje1.clase);
+            const skills2 = getSkillsParaClase(personaje2.activasIniciales, comp2, personaje2.activasEquipadas, partidas[partidaId].jugador2.equipment, personaje2.clase);
 
             const emitirRival = (socketId, yoPj, rivalPj, esTurno) => {
                 io.to(socketId).emit('rivalEncontrado', {
@@ -1239,8 +1280,8 @@ io.on('connection', (socket) => {
         gp.aplicarCritClase(pRiv);
 
         const esJugPrimero = turnoInicial === socket.id;
-        const sJug = getSkillsParaClase(pj.clase, comp1, partidas[partidaId].jugador1.equipment);
-        const sRival = getSkillsParaClase(botPj.clase, comp2, partidas[partidaId].jugador2.equipment);
+        const sJug = getSkillsParaClase(pj.activasIniciales, comp1, pj.activasEquipadas, partidas[partidaId].jugador1.equipment, pj.clase);
+        const sRival = getSkillsParaClase(botPj.activasIniciales, comp2, botPj.activasEquipadas, partidas[partidaId].jugador2.equipment, botPj.clase);
 
         socket.emit('rivalEncontrado', {
             partidaId,
@@ -1316,7 +1357,7 @@ io.on('connection', (socket) => {
             if (cuenta.dinero < precio) { socket.emit('errorTienda', 'No tenes suficiente oro'); return; }
 
             if (tipo === 'activa') {
-                const yaTiene = (pj.skillsCompradas || []).includes(skillId);
+                const yaTiene = (pj.skillsCompradas || []).includes(skillId) || (pj.activasIniciales || []).includes(skillId);
                 if (yaTiene) { socket.emit('errorTienda', 'Ya tenes esta carta'); return; }
                 if (pj.skillsCompradas) { pj.skillsCompradas.push(skillId); }
                 else { pj.skillsCompradas = [skillId]; }

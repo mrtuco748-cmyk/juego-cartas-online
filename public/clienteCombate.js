@@ -922,14 +922,14 @@ function agregarLog(data) {
     }
     if (/energía|energia/i.test(msg)) {
       const m = msg.match(/\+?(\d+)\s*energ/i);
-      if (m) popPersonaje('✦ +' + m[1], '#b060e0', personajeSelector(msg));
+      if (m) popPersonaje('+' + m[1] + 'E', '#40a0f0', personajeSelector(msg));
     }
   }
 
   /* ─── ENERGÍA ─── */
   if (tipo === 'energia') {
     const m = msg.match(/(\d+)\s*energ/);
-    if (m) popPersonaje('✦ +' + m[1], '#b060e0', personajeSelector(msg));
+    if (m) popPersonaje('+' + m[1] + 'E', '#40a0f0', personajeSelector(msg));
   }
 
   /* ─── POSE / DODGE / PARRY ─── */

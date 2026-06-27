@@ -70,7 +70,7 @@ function aplicarModsClase(clase, statsBase) {
   if (!info) return statsBase;
   const finales = {};
   for (const s of ["fuerza", "resistencia", "velocidad", "magia", "suerte"]) {
-    finales[s] = Math.max(1, (statsBase[s] || 5) + (info.mods[s] || 0));
+    finales[s] = Math.max(1, (statsBase[s] || 0) + (info.mods[s] || 0));
   }
   return finales;
 }
