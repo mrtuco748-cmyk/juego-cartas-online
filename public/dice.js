@@ -174,7 +174,7 @@ function tick() {
 
     if(S.posY<=FLOOR_Y+0.05){
       S.posY=FLOOR_Y+0.05; diceMesh.position.y=FLOOR_Y+0.05;
-      S.vx*=0.4; S.vz*=0.4;
+      S.vx=0; S.vz=0;
       if(Math.abs(S.vy)>0.04){
         S.vy=-S.vy*0.12;
         S.angVX*=0.75; S.angVY*=0.75; S.angVZ*=0.75;
