@@ -845,6 +845,10 @@ function agregarLog(data) {
     const m = msg.match(/(\d+)/);
     if (m) popPersonaje('🛡 +' + m[1], '#40b0ff', personajeSelector(msg));
   }
+  if (tipo === 'carta' && /energía\s*extra/i.test(msg)) {
+    const m = msg.match(/(\d+)/);
+    if (m) popPersonaje('✦ +' + m[1], '#b060e0', personajeSelector(msg));
+  }
   if (tipo === 'carta' && (/\bgana\s*\+/i.test(msg) || /\bgana\s*\+\d+/i.test(msg))) {
     const m = msg.match(/\+(\d+)\s*([a-záéíóú]+)/i);
     if (m) popPersonaje('↑ ' + m[1] + ' ' + m[2], '#60e880', personajeSelector(msg));
@@ -911,6 +915,10 @@ function agregarLog(data) {
           setTimeout(() => p.remove(), 1100);
         }
       }
+    }
+    if (/recupera\s*\d+\s*energía/i.test(msg)) {
+      const m = msg.match(/(\d+)\s*energía/);
+      if (m) popPersonaje('✦ +' + m[1], '#b060e0', personajeSelector(msg));
     }
     if (/regenera\s*(\d+)\s*HP/i.test(msg)) {
       const m = msg.match(/regenera\s*(\d+)\s*HP/i);
