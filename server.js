@@ -394,8 +394,9 @@ io.on('connection', (socket) => {
                 break;
             }
             case 'pose': {
+                const tipoPose = (accionData && accionData.tipo) || (statsYo.resistencia > statsRival.fuerza ? 'parry' : 'esquivar');
                 const dadoPose = Math.floor(Math.random() * 6) + 1;
-                if (statsYo.resistencia > statsRival.fuerza) {
+                if (tipoPose === 'parry') {
                     yo.pose = { tipo: 'parry', valor: dadoPose + statsYo.resistencia };
                     io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} prepara PARRY (${dadoPose}+R)`, tipo: 'pose' });
                 } else {

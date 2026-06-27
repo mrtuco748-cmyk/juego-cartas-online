@@ -250,7 +250,8 @@ function renderizarCombate() {
         <div class="actions">
           <button class="btn-atk" onclick="enviarAccion('atacar')">ATACAR</button>
           <button class="btn-rest" onclick="enviarAccion('descansar')">DESCANSAR</button>
-          <button class="btn-pose" onclick="enviarAccion('pose')">POSE</button>
+          <button class="btn-esq" onclick="enviarAccion('pose', null, { tipo: 'esquivar' })">ESQUIVA</button>
+          <button class="btn-parry" onclick="enviarAccion('pose', null, { tipo: 'parry' })">PARRY</button>
           <button class="btn-extra" onclick="mostrarAccionesExtra()">EXTRA</button>
         </div>
       </div>
@@ -270,7 +271,7 @@ function renderizarCombate() {
         <button class="central-btn" onclick="cerrarRadial()">CERRAR</button>
         <button class="radial-btn" id="btnAtakar" onclick="enviarAccion('atacar');cerrarRadial()">ATACAR</button>
         <button class="radial-btn" id="btnDescansar" onclick="enviarAccion('descansar');cerrarRadial()">DESCANSAR</button>
-        <button class="radial-btn" id="btnPose" onclick="enviarAccion('pose');cerrarRadial()">POSE</button>
+        <button class="radial-btn" id="btnPose" onclick="cerrarRadial();mostrarOpcionesPose()">POSE</button>
         <button class="radial-btn" id="btnCarta" onclick="usarCartaSeleccionada();cerrarRadial()">CARTA</button>
         <button class="radial-btn" id="btnExtra2" onclick="cerrarRadial();mostrarAccionesExtra()">EXTRA</button>
       </div>
@@ -310,6 +311,21 @@ function mostrarAccionesExtra() {
       `).join('')}
     </div>
     <button onclick="document.getElementById('panelAccionesExtra').style.display='none'" style="display:block;margin:8px auto 0;padding:6px 20px;border:none;border-radius:6px;background:#555;color:white;font-weight:bold;cursor:pointer;">CERRAR</button>
+  `;
+}
+
+function mostrarOpcionesPose() {
+  const panel = document.getElementById('panelAccionesExtra');
+  if (!panel) return;
+  if (!esMiTurno || accionesRestantes <= 0) return;
+  panel.style.display = 'block';
+  panel.innerHTML = `
+    <div style="color:#9a7040;font-size:9px;letter-spacing:2px;text-align:center;margin-bottom:6px;">SELECCIONAR POSE</div>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button onclick="enviarAccion('pose',null,{tipo:'esquivar'});document.getElementById('panelAccionesExtra').style.display='none'" style="padding:10px 20px;border:none;border-radius:6px;background:linear-gradient(180deg,#30a070,#186048);color:#fff;font-weight:bold;cursor:pointer;font-size:12px;">ESQUIVAR</button>
+      <button onclick="enviarAccion('pose',null,{tipo:'parry'});document.getElementById('panelAccionesExtra').style.display='none'" style="padding:10px 20px;border:none;border-radius:6px;background:linear-gradient(180deg,#c89820,#806010);color:#fff;font-weight:bold;cursor:pointer;font-size:12px;">PARRY</button>
+    </div>
+    <button onclick="document.getElementById('panelAccionesExtra').style.display='none'" style="display:block;margin:8px auto 0;padding:6px 20px;border:none;border-radius:6px;background:#555;color:white;font-weight:bold;cursor:pointer;">CANCELAR</button>
   `;
 }
 

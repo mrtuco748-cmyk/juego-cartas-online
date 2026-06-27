@@ -201,9 +201,10 @@ class GameProcessor {
         return { damage: card.valor, log: `${target.nombre} recibe ${card.valor} de daño verdadero` };
       },
       heal_percent: (target, card, ctx) => {
-        const healed = Math.floor(target.maxHp * card.valor);
-        target.hp = Math.min(target.maxHp + (target.hpOverflow || 0), target.hp + healed);
-        return { healing: healed, log: `${target.nombre} se cura ${healed} HP` };
+        const src = ctx.source;
+        const healed = Math.floor(src.maxHp * card.valor);
+        src.hp = Math.min(src.maxHp + (src.hpOverflow || 0), src.hp + healed);
+        return { healing: healed, log: `${src.nombre} se cura ${healed} HP` };
       },
       stun: (target, card) => {
         target.status = target.status || {};
@@ -228,12 +229,13 @@ class GameProcessor {
         src.status.shield = (src.status.shield || 0) + Math.floor(src.maxHp * card.valor);
         return { log: `${src.nombre} obtiene escudo de ${Math.floor(src.maxHp * card.valor)}` };
       },
-      buff: (target, card) => {
-        target.status = target.status || {};
-        target.status.buffs = target.status.buffs || {};
-        target.status.buffs[card.stat] = { valor: card.valor, restante: card.duracion };
+      buff: (target, card, ctx) => {
+        const src = ctx.source;
+        src.status = src.status || {};
+        src.status.buffs = src.status.buffs || {};
+        src.status.buffs[card.stat] = { valor: card.valor, restante: card.duracion };
         const statNom = { fuerza: "FUE", resistencia: "RES", velocidad: "VEL", magia: "MAG", suerte: "SUE" }[card.stat] || card.stat;
-        return { log: `${target.nombre} gana +${card.valor} ${statNom} por ${card.duracion} turnos` };
+        return { log: `${src.nombre} gana +${card.valor} ${statNom} por ${card.duracion} turnos` };
       },
       debuff: (target, card) => {
         target.status = target.status || {};
@@ -279,14 +281,15 @@ class GameProcessor {
         ctx.summonHp = Math.floor(ctx.source.maxHp * card.valor);
         return { log: `${ctx.source.nombre} invoca un aliado con ${ctx.summonHp} HP` };
       },
-      buff_all: (target, card) => {
+      buff_all: (target, card, ctx) => {
+        const src = ctx.source;
         const stats = ["fuerza", "resistencia", "velocidad", "magia"];
-        target.status = target.status || {};
-        target.status.buffs = target.status.buffs || {};
+        src.status = src.status || {};
+        src.status.buffs = src.status.buffs || {};
         stats.forEach(s => {
-          target.status.buffs[s] = { valor: card.valor, restante: card.duracion };
+          src.status.buffs[s] = { valor: card.valor, restante: card.duracion };
         });
-        return { log: `${target.nombre} recibe +${card.valor} a todas las stats por ${card.duracion} turnos` };
+        return { log: `${src.nombre} recibe +${card.valor} a todas las stats por ${card.duracion} turnos` };
       }
     };
   }
