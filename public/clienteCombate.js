@@ -121,13 +121,14 @@ function renderizarCombate() {
   prevRivalHP = rivalPJ.hp || 0;
 
   const statusBadge = (pj) => {
-    if (!pj.status) return '';
     const parts = [];
-    if (pj.status.frozen && pj.status.frozen > 0) parts.push(`[CONGELADO ${pj.status.frozen}t]`);
-    if (pj.status.silenced && pj.status.silenced > 0) parts.push(`[SILENCIADO ${pj.status.silenced}t]`);
-    if (pj.status.shield && pj.status.shield > 0) parts.push(`[ESCUDO ${pj.status.shield}]`);
-    if (pj.status.inmune) parts.push(`[INMUNE]`);
-    return parts.length ? `<div class="sheet-status">${parts.join(' ')}</div>` : '';
+    if (pj.status) {
+      if (pj.status.frozen && pj.status.frozen > 0) parts.push(`[CONGELADO ${pj.status.frozen}t]`);
+      if (pj.status.silenced && pj.status.silenced > 0) parts.push(`[SILENCIADO ${pj.status.silenced}t]`);
+      if (pj.status.shield && pj.status.shield > 0) parts.push(`[ESCUDO ${pj.status.shield}]`);
+      if (pj.status.inmune) parts.push(`[INMUNE]`);
+    }
+    return `<div class="sheet-status">${parts.join(' ')}</div>`;
   };
 
   const statLine = (label, stat, c) => {
@@ -682,6 +683,27 @@ function actualizarHP() {
   prevRivalHP = rivalPJ.hp || 0;
 }
 
+function actualizarEscudoVisual() {
+  const pjEl = document.querySelector('.player-character');
+  const rivEl = document.querySelector('.enemy-character');
+  [pjEl, rivEl].forEach(el => { if (el) el.classList.remove('shield-active'); });
+  if (miPJ.status && miPJ.status.shield > 0 && pjEl) pjEl.classList.add('shield-active');
+  if (rivalPJ.status && rivalPJ.status.shield > 0 && rivEl) rivEl.classList.add('shield-active');
+  ['.col-left .sheet-status', '.col-right .sheet-status'].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    const pj = sel.startsWith('.col-left') ? miPJ : rivalPJ;
+    const parts = [];
+    if (pj.status) {
+      if (pj.status.frozen && pj.status.frozen > 0) parts.push(`[CONGELADO ${pj.status.frozen}t]`);
+      if (pj.status.silenced && pj.status.silenced > 0) parts.push(`[SILENCIADO ${pj.status.silenced}t]`);
+      if (pj.status.shield && pj.status.shield > 0) parts.push(`[ESCUDO ${pj.status.shield}]`);
+      if (pj.status.inmune) parts.push(`[INMUNE]`);
+    }
+    el.textContent = parts.join(' ');
+  });
+}
+
 function estiloLog(data) {
   const estilos = {
     ataque: 'color:#e89838;font-size:11px;font-weight:600;',
@@ -891,8 +913,9 @@ function agregarLog(data) {
       popPersonaje('PURIFICADO', '#ffffff', personajeSelector(msg));
     }
     if (/escudo natural/i.test(msg)) {
+      const m = msg.match(/\+(\d+)/);
       const pj = personajeSelector(msg);
-      popPersonaje('🛡 +', '#40b0ff', pj);
+      popPersonaje('🛡 +' + (m ? m[1] : ''), '#40b0ff', pj);
     }
     if (/concentra/i.test(msg)) {
       popPersonaje('✦ −3', '#a060d0', personajeSelector(msg));
@@ -1040,6 +1063,7 @@ socket.on('actualizarEstado', (datos) => {
   actualizarHP();
   actualizarCardsSkills();
   actualizarIndicadorTurno();
+  actualizarEscudoVisual();
 });
 
 function actualizarCardsSkills() {

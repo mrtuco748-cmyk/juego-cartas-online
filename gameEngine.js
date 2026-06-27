@@ -222,10 +222,11 @@ class GameProcessor {
         }
         return { log: `Jackpot falló (dado: ${roll})` };
       },
-      shield: (target, card) => {
-        target.status = target.status || {};
-        target.status.shield = (target.status.shield || 0) + Math.floor(target.maxHp * card.valor);
-        return { log: `${target.nombre} obtiene escudo de ${Math.floor(target.maxHp * card.valor)}` };
+      shield: (target, card, ctx) => {
+        const src = ctx.source;
+        src.status = src.status || {};
+        src.status.shield = (src.status.shield || 0) + Math.floor(src.maxHp * card.valor);
+        return { log: `${src.nombre} obtiene escudo de ${Math.floor(src.maxHp * card.valor)}` };
       },
       buff: (target, card) => {
         target.status = target.status || {};
@@ -406,8 +407,9 @@ class GameProcessor {
         case "auto_shield":
           if (trigger === "on_turn_start") {
             owner.status = owner.status || {};
-            owner.status.shield = (owner.status.shield || 0) + Math.floor(owner.maxHp * pasiva.valor);
-            results.push({ log: `${ownerName} obtiene escudo natural` });
+            const val = Math.floor(owner.maxHp * pasiva.valor);
+            owner.status.shield = (owner.status.shield || 0) + val;
+            results.push({ log: `${ownerName} obtiene escudo natural +${val}` });
           }
           break;
         case "enrage":
