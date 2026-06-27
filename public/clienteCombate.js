@@ -110,7 +110,7 @@ function calcularStatsConBuffsCliente(pj) {
   return { total, permanent, buffMod };
 }
 
-let prevMiHP = 0, prevRivalHP = 0;
+let prevMiHP, prevRivalHP;
 
 function renderizarCombate() {
   const rivalHPct = Math.max(0, Math.round((rivalPJ.hp || 0) / (rivalPJ.maxHp || 40) * 100));
@@ -616,22 +616,20 @@ function actualizarIndicadorTurno() {
 function agitarPersonaje(selector, intensidad) {
   const el = document.querySelector(selector);
   if (!el) return;
-  if (el._agitando) {
-    el._agitando = false;
-  }
-  el._agitando = true;
 
-  const magnitud = Math.min(16, Math.max(4, Math.round(Math.abs(intensidad) * 22)));
-  const totalFrames = 16;
+  const token = {};
+  el._shakeToken = token;
+
+  const magnitud = Math.min(20, Math.max(6, Math.round(Math.abs(intensidad) * 26)));
+  const totalFrames = 10;
   let frame = 0;
 
   function step() {
-    if (!el._agitando) return;
+    if (el._shakeToken !== token) return;
     frame++;
     const progress = frame / totalFrames;
     if (progress >= 1) {
       el.style.transform = '';
-      el._agitando = false;
       return;
     }
     const decay = 1 - progress;
@@ -665,11 +663,15 @@ function actualizarHP() {
     agitarPersonaje('.player-character', miPerdida / (miPJ.maxHp || 40));
     const pFill = document.getElementById('pjHPFill');
     if (pFill) { pFill.style.transition = 'none'; pFill.style.filter = 'brightness(2)'; setTimeout(() => { pFill.style.transition = ''; pFill.style.filter = ''; }, 150); }
+  } else if (miPerdida < 0) {
+    prevMiHP = miPJ.hp || 0; // HP increased (heal), just sync
   }
   if (rivalPerdida > 0) {
     agitarPersonaje('.enemy-character', rivalPerdida / (rivalPJ.maxHp || 40));
     const rFill = document.getElementById('rivalHPFill');
     if (rFill) { rFill.style.transition = 'none'; rFill.style.filter = 'brightness(2)'; setTimeout(() => { rFill.style.transition = ''; rFill.style.filter = ''; }, 150); }
+  } else if (rivalPerdida < 0) {
+    prevRivalHP = rivalPJ.hp || 0; // HP increased (heal), just sync
   }
   prevMiHP = miPJ.hp || 0;
   prevRivalHP = rivalPJ.hp || 0;
@@ -769,6 +771,7 @@ socket.on('actualizarEstado', (datos) => {
     rivalPasivas = yoMio ? (datos.pasivasJ2 || []) : (datos.pasivasJ1 || []);
   }
 
+  if (prevMiHP === undefined) { prevMiHP = miPJ.hp || 0; prevRivalHP = rivalPJ.hp || 0; }
   actualizarHP();
   actualizarCardsSkills();
   actualizarIndicadorTurno();
