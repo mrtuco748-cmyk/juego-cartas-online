@@ -808,8 +808,6 @@ let logProcessing = false;
 let logInstantMode = false;
 let instantTimer = null;
 let ultimoTurno;
-let dicePending = 0;
-let diceBuffer = [];
 
 function mostrarDañoFlotante(valor, esCritico) {
   const popup = document.createElement('div');
@@ -1072,7 +1070,6 @@ function agregarLineaTurno() {
 }
 
 socket.on('logBatalla', (data) => {
-  if (dicePending > 0) { diceBuffer.push({ type: 'log', data }); return; }
   if (logInstantMode) {
     agregarLog(data);
     clearTimeout(instantTimer);
@@ -1084,13 +1081,7 @@ socket.on('logBatalla', (data) => {
 });
 
 socket.on('diceRoll', (data) => {
-  if (typeof rollDice !== 'undefined') {
-    dicePending++;
-    rollDice(data.valor).then(() => {
-      dicePending--;
-      if (dicePending <= 0) flushDiceBuffer();
-    });
-  }
+  // dice removed
 });
 
 socket.on('fortunaCard', (data) => {
@@ -1112,27 +1103,19 @@ function mostrarFortuna(data) {
   div.addEventListener('click', () => div.remove());
 }
 
-function flushDiceBuffer() {
-  dicePending = 0;
-  const buffer = diceBuffer.slice();
-  diceBuffer = [];
-  for (const item of buffer) {
-    if (item.type === 'log') {
-      if (logInstantMode) {
-        agregarLog(item.data);
-        clearTimeout(instantTimer);
-        instantTimer = setTimeout(() => { logInstantMode = false; }, 1500);
-      } else {
-        logQueue.push(item.data);
-      }
-    } else if (item.type === 'estado') {
-      procesarEstado(item.data);
-    }
-  }
-  if (logQueue.length > 0) procesarLogQueue();
+function procesarLogQueue() {
+  if (logProcessing || logQueue.length === 0) return;
+  logProcessing = true;
+  const data = logQueue.shift();
+  agregarLog(data);
+
+  setTimeout(() => {
+    logProcessing = false;
+    procesarLogQueue();
+  }, 1200);
 }
 
-function procesarEstado(datos) {
+socket.on('actualizarEstado', (datos) => {
   const yoMio = datos.socketJ1 === socket.id;
   const miHP = yoMio ? datos.j1 : datos.j2;
   const rivalHP = yoMio ? datos.j2 : datos.j1;
@@ -1176,23 +1159,6 @@ function procesarEstado(datos) {
   actualizarIndicadorTurno();
   actualizarEscudoVisual();
   actualizarCardBack();
-}
-
-function procesarLogQueue() {
-  if (logProcessing || logQueue.length === 0) return;
-  logProcessing = true;
-  const data = logQueue.shift();
-  agregarLog(data);
-
-  setTimeout(() => {
-    logProcessing = false;
-    procesarLogQueue();
-  }, 1200);
-}
-
-socket.on('actualizarEstado', (datos) => {
-  if (dicePending > 0) { diceBuffer.push({ type: 'estado', data: datos }); return; }
-  procesarEstado(datos);
 });
 
 function actualizarCardsSkills() {
