@@ -446,9 +446,11 @@ io.on('connection', (socket) => {
                 break;
             }
             case 'descansar': {
-                yo.hp = Math.min(yo.maxHp + (yo.hpOverflow || 0), yo.hp + 5);
-                yo.energia = Math.min(100, yo.energia + 5);
-                io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} descansa → +5 HP, +5 energía`, tipo: 'curacion' });
+                const hpGain = Math.floor(Math.random() * 5) + 1;
+                const enGain = Math.floor(Math.random() * 5) + 1;
+                yo.hp = Math.min(yo.maxHp + (yo.hpOverflow || 0), yo.hp + hpGain);
+                yo.energia = Math.min(100, yo.energia + enGain);
+                io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} descansa → +${hpGain} HP, +${enGain} energía`, tipo: 'curacion' });
                 break;
             }
             case 'pose': {
