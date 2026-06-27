@@ -853,6 +853,8 @@
         <div class="campo"><label>URL de foto de perfil (debe ser una URL de imagen)</label><input type="text" id="configFotoUrl" placeholder="https://i.imgur.com/..."></div>
         <div class="campo"><label>Nuevo nombre de usuario</label><input type="text" id="configNombre" placeholder="Dejar vacío para no cambiar"></div>
         <div class="campo"><label>Nueva contraseña</label><input type="password" id="configPass" placeholder="Dejar vacío para no cambiar"></div>
+        <hr class="divider">
+        <div class="campo"><label>URL de fondo de combate (imagen de fondo)</label><input type="text" id="configBgUrl" placeholder="https://i.imgur.com/..."></div>
         <div class="msg-error" id="errorConfig"></div>
         <div class="msg-ok" id="okConfig"></div>
         <button class="main-btn" style="font-size:12px; padding:10px 0; margin-top:6px" onclick="guardarConfig()">GUARDAR CAMBIOS</button>
@@ -1624,12 +1626,15 @@
     }
 
     // ── CONFIG ──
+    const BG_KEY = 'loop_fondo_combate';
+
     function abrirConfig() {
         document.getElementById('errorConfig').textContent = '';
         document.getElementById('okConfig').textContent = '';
         document.getElementById('configFotoUrl').value = cuentaActual.foto || '';
         document.getElementById('configNombre').value = '';
         document.getElementById('configPass').value = '';
+        document.getElementById('configBgUrl').value = localStorage.getItem(BG_KEY) || '';
         const preview = document.getElementById('configFotoPreview');
         if (cuentaActual.foto) {
             preview.innerHTML = `<img src="${cuentaActual.foto}" style="width:100%;height:100%;object-fit:cover;">`;
@@ -1645,9 +1650,12 @@
         const foto = document.getElementById('configFotoUrl').value.trim();
         const nombre = document.getElementById('configNombre').value.trim();
         const password = document.getElementById('configPass').value;
+        const bgUrl = document.getElementById('configBgUrl').value.trim();
         const err = document.getElementById('errorConfig');
         if (foto && !foto.startsWith('http')) { err.textContent = 'La foto debe ser una URL válida (debe empezar con http).'; return; }
+        if (bgUrl && !bgUrl.startsWith('http')) { err.textContent = 'El fondo debe ser una URL válida (debe empezar con http).'; return; }
         err.textContent = '';
+        if (bgUrl) localStorage.setItem(BG_KEY, bgUrl); else localStorage.removeItem(BG_KEY);
         socket.emit('actualizarPerfil', { cuenta_id: cuentaActual.id, nombre, password, foto });
     }
 

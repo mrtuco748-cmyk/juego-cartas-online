@@ -166,7 +166,10 @@ function renderizarCombate() {
   const angleStep = totalCards > 1 ? Math.min(8, 40 / totalCards) : 0;
   const startAngle = -((totalCards - 1) * angleStep) / 2;
 
-  document.getElementById('pantallaCombate').innerHTML = `
+  const combateEl = document.getElementById('pantallaCombate');
+  const bgSaved = localStorage.getItem('loop_fondo_combate');
+  combateEl.style.background = bgSaved ? `radial-gradient(ellipse at 50% 30%, rgba(26,18,16,0.7) 0%, rgba(8,6,6,0.85) 100%), url("${bgSaved}") center/cover no-repeat` : '';
+  combateEl.innerHTML = `
     <div class="topbar">
       <div class="orb"></div>
     </div>
