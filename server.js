@@ -216,6 +216,8 @@ function partidaEmitirEstado(partidaId, partida) {
     });
 }
 
+const socketNombres = new Map();
+
 io.on('connection', (socket) => {
     console.log('Cliente conectado:', socket.id);
 
@@ -258,7 +260,7 @@ io.on('connection', (socket) => {
                 return;
             }
             if (tipo !== 'carta' && tipo !== 'ataque_penalizado' && partida.accionesUsadas.includes(tipo)) {
-                socket.emit('errorAccion', 'Ya usaste esa acción este turno.');
+                socket.emit('errorAccion', `${socketNombres.get(socket.id) || yo.nombre}: no se pueden repetir acciones en el mismo turno.`);
                 return;
             }
             partida.accionesUsadas.push(tipo);
@@ -792,6 +794,7 @@ io.on('connection', (socket) => {
             if (!cuenta) { socket.emit('errorLogin', 'Cuenta no encontrada.'); return; }
             const valida = bcrypt.compareSync(password, cuenta.password);
             if (!valida) { socket.emit('errorLogin', 'Contraseña incorrecta.'); return; }
+            socketNombres.set(socket.id, cuenta.nombre);
             socket.emit('loginExitoso', {
                 id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
                 nivel: cuenta.nivel, experiencia: cuenta.experiencia,
@@ -806,6 +809,7 @@ io.on('connection', (socket) => {
         try {
             const cuenta = await Cuenta.findById(cuenta_id);
             if (!cuenta) { socket.emit('errorReconexion', 'Cuenta no encontrada.'); return; }
+            socketNombres.set(socket.id, cuenta.nombre);
             socket.emit('loginExitoso', {
                 id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
                 nivel: cuenta.nivel, experiencia: cuenta.experiencia,
@@ -1285,6 +1289,7 @@ io.on('connection', (socket) => {
             }
         }
         colaEspera = colaEspera.filter(j => j.socketId !== socket.id);
+        socketNombres.delete(socket.id);
         console.log('Desconectado:', socket.id);
     });
 });
