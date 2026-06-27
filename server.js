@@ -96,7 +96,7 @@ const BOT_PRACTICA = {
     nombre: "Entrenador",
     clase: "Berserker",
     fuerza: 8, resistencia: 6, velocidad: 4, magia: 2, suerte: 2,
-    nivel: 1, foto: '',
+    nivel: 1, foto: 'https://i.pinimg.com/736x/45/b2/30/45b230b59b7e2d215841743a47c0cf07.jpg',
     skillsCompradas: ["furia_berserker", "escudo_arcano"],
     pasivasCompradas: ["regeneracion", "fortaleza", "vampirismo"]
 };

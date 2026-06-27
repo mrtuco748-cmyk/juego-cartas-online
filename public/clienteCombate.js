@@ -795,7 +795,8 @@ socket.on('finPartida', (datos) => {
   const gane = datos.ganador === socket.id;
   const logBatch = document.getElementById('logBatch');
   if (logBatch) {
-    logBatch.innerHTML += `<div style="color:${gane ? '#60d060' : '#c85030'};font-size:13px;text-align:center;margin-top:10px;letter-spacing:2px;">${gane ? 'VICTORIA!' : 'DERROTA'}</div>`;
+    const msg = esPractica ? 'ENTRENAMIENTO TERMINADO' : (gane ? 'VICTORIA!' : 'DERROTA');
+    logBatch.innerHTML += `<div style="color:#e0b060;font-size:13px;text-align:center;margin-top:10px;letter-spacing:2px;">${msg}</div>`;
     logBatch.scrollTop = logBatch.scrollHeight;
   }
   esMiTurno = false;
@@ -811,13 +812,22 @@ function mostrarPantallaFinPartida(gane) {
   const overlay = document.createElement('div');
   overlay.id = 'finPartidaOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);';
-  overlay.innerHTML = `
-    <div style="width:300px;padding:30px 20px;background:radial-gradient(ellipse at center top,#1a0e08 0%,#0a0604 100%);border:3px solid ${gane ? '#c85030' : '#4a3010'};border-radius:8px;text-align:center;">
-      <div style="font-size:22px;letter-spacing:4px;color:${gane ? '#60d060' : '#c85030'};margin-bottom:6px;font-family:'Cinzel',serif;font-weight:700;">${gane ? 'VICTORIA' : 'DERROTA'}</div>
-      <div style="color:#6a4018;font-size:10px;letter-spacing:2px;margin-bottom:20px;">${gane ? '+1 XP' : '+0.5 XP'}</div>
-      <button onclick="volverAlMenuDesdeCombate()" style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;letter-spacing:3px;color:#fffbe8;cursor:pointer;border:none;padding:11px 30px;background:linear-gradient(180deg,#c85030 0%,#7a2010 40%,#8a2515 60%,#c04020 100%);clip-path:polygon(12px 0%,calc(100% - 12px) 0%,100% 50%,calc(100% - 12px) 100%,12px 100%,0% 50%);">VOLVER AL MENU</button>
-    </div>
-  `;
+  if (esPractica) {
+    overlay.innerHTML = `
+      <div style="width:300px;padding:30px 20px;background:radial-gradient(ellipse at center top,#1a0e08 0%,#0a0604 100%);border:3px solid #8a6030;border-radius:8px;text-align:center;">
+        <div style="font-size:22px;letter-spacing:4px;color:#e0b060;margin-bottom:20px;font-family:'Cinzel',serif;font-weight:700;">ENTRENAMIENTO TERMINADO</div>
+        <button onclick="volverAlMenuDesdeCombate()" style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;letter-spacing:3px;color:#fffbe8;cursor:pointer;border:none;padding:11px 30px;background:linear-gradient(180deg,#c85030 0%,#7a2010 40%,#8a2515 60%,#c04020 100%);clip-path:polygon(12px 0%,calc(100% - 12px) 0%,100% 50%,calc(100% - 12px) 100%,12px 100%,0% 50%);">VOLVER AL MENU</button>
+      </div>
+    `;
+  } else {
+    overlay.innerHTML = `
+      <div style="width:300px;padding:30px 20px;background:radial-gradient(ellipse at center top,#1a0e08 0%,#0a0604 100%);border:3px solid ${gane ? '#c85030' : '#4a3010'};border-radius:8px;text-align:center;">
+        <div style="font-size:22px;letter-spacing:4px;color:${gane ? '#60d060' : '#c85030'};margin-bottom:6px;font-family:'Cinzel',serif;font-weight:700;">${gane ? 'VICTORIA' : 'DERROTA'}</div>
+        <div style="color:#6a4018;font-size:10px;letter-spacing:2px;margin-bottom:20px;">${gane ? '+1 XP' : '+0.5 XP'}</div>
+        <button onclick="volverAlMenuDesdeCombate()" style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;letter-spacing:3px;color:#fffbe8;cursor:pointer;border:none;padding:11px 30px;background:linear-gradient(180deg,#c85030 0%,#7a2010 40%,#8a2515 60%,#c04020 100%);clip-path:polygon(12px 0%,calc(100% - 12px) 0%,100% 50%,calc(100% - 12px) 100%,12px 100%,0% 50%);">VOLVER AL MENU</button>
+      </div>
+    `;
+  }
   document.body.appendChild(overlay);
 }
 
