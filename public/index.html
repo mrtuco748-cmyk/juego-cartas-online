@@ -1570,6 +1570,7 @@
                 <input type="text" id="devBuscarInput" placeholder="Nombre de usuario" style="flex:1;background:rgba(0,0,0,0.5);border:1px solid #4a3010;border-radius:3px;color:#d4b060;font-family:'Cinzel',serif;font-size:10px;padding:6px 8px;outline:none;">
                 <button onclick="devBuscarUsuario()" style="font-family:'Cinzel',serif;font-size:10px;padding:4px 10px;background:#1a0e08;border:1px solid #4a3010;color:#d4a060;cursor:pointer;">BUSCAR</button>
             </div>
+            <button onclick="devListarUsuarios()" style="font-family:'Cinzel',serif;font-size:10px;padding:6px 0;background:#1a0e08;border:1px solid #4a3010;color:#c8a040;cursor:pointer;width:100%;margin-top:6px;">LISTAR TODAS LAS CUENTAS</button>
             <div id="devResultadoBusqueda" style="margin-top:6px;"></div>
             <div class="msg-error" id="errorDev"></div>
         `;
@@ -1582,8 +1583,14 @@
     function devStats(id, n) { emitirDev('addPuntosStats', { personaje_id: id, valor: n }); }
     function devNivel(id, n) { emitirDev('setNivel', { personaje_id: id, valor: n }); }
     function devDinero(n) { emitirDev('addDinero', { valor: n }); }
+    function devListarUsuarios() { emitirDev('listarUsuarios', {}); }
 
     let devUsuarioTarget = null;
+
+    function devObtenerUsuario(id) {
+        document.getElementById('devResultadoBusqueda').innerHTML = '<div style="color:#6a4018;font-size:9px;text-align:center;">Cargando...</div>';
+        emitirDev('obtenerUsuario', { userId: id });
+    }
 
     function devBuscarUsuario() {
         const username = document.getElementById('devBuscarInput').value.trim();
@@ -1677,6 +1684,23 @@
             if (document.getElementById('listaPJs')) renderizarPersonajes();
             abrirDevPanel();
         }
+    });
+
+    socket.on('devListaUsuarios', (lista) => {
+        const div = document.getElementById('devResultadoBusqueda');
+        if (!div) return;
+        if (lista.length === 0) { div.innerHTML = '<div class="vacio-msg">No hay cuentas.</div>'; return; }
+        div.innerHTML = `
+            <div style="color:#9a7040;font-size:9px;letter-spacing:2px;text-align:center;margin:6px 0;">TOTAL: ${lista.length} cuentas</div>
+            <div style="max-height:250px;overflow-y:auto;">
+            ${lista.map(u => `
+                <div onclick="devObtenerUsuario('${u.id}')" style="background:rgba(0,0,0,0.4);border:1px solid #3a2008;border-radius:4px;padding:6px 8px;margin-bottom:4px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="color:#d4a060;font-size:10px;letter-spacing:1px;">${u.nombre}</span>
+                    <span style="color:#6a4018;font-size:9px;">Lv.${u.nivel} · $${u.dinero} · ${u.personajesCount} pjs</span>
+                </div>
+            `).join('')}
+            </div>
+        `;
     });
 
     socket.on('devUsuarioEncontrado', (cuenta) => {

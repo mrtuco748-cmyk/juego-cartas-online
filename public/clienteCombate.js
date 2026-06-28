@@ -1207,6 +1207,12 @@ function agregarLog(data) {
     }
   }
 
+  /* ─── MAREO ─── */
+  if (tipo === 'marea') {
+    popCentro('¡MAREO!', '#ffaa00', 'clamp(26px,4.5vw,44px)', '0 0 25px rgba(255,160,0,0.8)');
+    if (typeof AudioManager !== 'undefined') AudioManager.playSFX('spell', 0.5);
+  }
+
   /* ─── MUERTE ─── */
   if (tipo === 'muerte') {
     if (/empate|empate/i.test(msg)) {

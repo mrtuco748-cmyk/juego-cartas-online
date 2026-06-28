@@ -399,9 +399,11 @@ io.on('connection', (socket) => {
                         rival.pose = null;
                         return partidaFinalizarAccion(partidaId, partida);
                     }
-                    if (rival.pose.tipo === 'parry' && rival.pose.valor === (dado + statsYoAtk.fuerza)) {
-                        io.to(partidaId).emit('logBatalla', { msg: `¡${rival.nombre} hace PARRY! ${statsYoAtk.nombre} pierde turno`, tipo: 'pose' });
-                        partida.turnoMareado = socket.id;
+                    if (rival.pose.tipo === 'parry' && dado >= rival.pose.min && dado <= rival.pose.max) {
+                        const reflectedDmg = Math.max(1, Math.floor(statsRivAtk.resistencia * 0.5));
+                        yo.hp -= reflectedDmg;
+                        yo.mareado = true;
+                        io.to(partidaId).emit('logBatalla', { msg: `¡${rival.nombre} hace PARRY! ${statsYoAtk.nombre} recibe ${reflectedDmg} de contraataque y queda mareado`, tipo: 'pose' });
                         rival.pose = null;
                         return partidaFinalizarAccion(partidaId, partida);
                     }
@@ -458,8 +460,12 @@ io.on('connection', (socket) => {
                 const dadoPose = Math.floor(Math.random() * 6) + 1;
                 io.to(partidaId).emit('diceRoll', { valor: dadoPose });
                 if (tipoPose === 'parry') {
-                    yo.pose = { tipo: 'parry', valor: dadoPose + statsYo.resistencia };
-                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} prepara PARRY (${dadoPose}+R)`, tipo: 'pose' });
+                    const maxDado = 6;
+                    const rangoParry = 2;
+                    const minRango = dadoPose;
+                    const maxRango = Math.min(dadoPose + rangoParry, maxDado);
+                    yo.pose = { tipo: 'parry', min: minRango, max: maxRango };
+                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} prepara PARRY [${minRango}-${maxRango}]`, tipo: 'pose' });
                 } else {
                     yo.pose = { tipo: 'esquivar', valor: dadoPose };
                     io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} prepara ESQUIVE (${dadoPose})`, tipo: 'pose' });
@@ -813,11 +819,7 @@ io.on('connection', (socket) => {
         });
         peLogs.forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'curacion' }));
 
-        if (partida.turnoMareado) {
-            partida.turnoActual = partida.turnoMareado === partida.jugador1.socketId ? partida.jugador2.socketId : partida.jugador1.socketId;
-            partida.turnoMareado = null;
-            io.to(partidaId).emit('logBatalla', { msg: `Turno saltado por mareo`, tipo: 'marea' });
-        } else if (yo.status && yo.status.frozen > 0) {
+        if (yo.status && yo.status.frozen > 0) {
             partida.turnoActual = rival.socketId;
             io.to(partidaId).emit('logBatalla', { msg: `${yo.nombre} salta turno por paralisis`, tipo: 'status' });
         } else {
@@ -872,6 +874,11 @@ io.on('connection', (socket) => {
 
         partida.accionesMax = 2 + (jugTurno.extraAction ? 1 : 0);
         jugTurno.extraAction = false;
+        if (jugTurno.mareado) {
+            partida.accionesMax = Math.max(1, partida.accionesMax - 1);
+            io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} está mareado — pierde 1 acción`, tipo: 'marea' });
+            jugTurno.mareado = false;
+        }
 
         if (jugTurno.critClase) {
             io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre}: crítico ${jugTurno.critClase.multi * 100}% por ${jugTurno.critClase.duracion} turnos`, tipo: 'carta' });
@@ -1094,6 +1101,28 @@ io.on('connection', (socket) => {
                 });
                 return;
             }
+            if (accion === 'listarUsuarios') {
+                const usuarios = await Cuenta.find({}, 'nombre dinero nivel personajes');
+                const lista = usuarios.map(u => ({
+                    id: u._id,
+                    nombre: u.nombre,
+                    dinero: u.dinero,
+                    nivel: u.nivel,
+                    personajesCount: u.personajes ? u.personajes.length : 0
+                }));
+                socket.emit('devListaUsuarios', lista);
+                return;
+            }
+            if (accion === 'obtenerUsuario') {
+                const target = await Cuenta.findById(params.userId);
+                if (!target) { socket.emit('errorPersonaje', 'Usuario no encontrado.'); return; }
+                socket.emit('devUsuarioEncontrado', {
+                    id: target._id, nombre: target.nombre, dinero: target.dinero,
+                    nivel: target.nivel, experiencia: target.experiencia,
+                    foto: target.foto, personajes: target.personajes
+                });
+                return;
+            }
             const targetId = params.targetId || cuenta_id;
             const cuenta = await Cuenta.findById(targetId);
             if (!cuenta) { socket.emit('errorPersonaje', 'Cuenta destino no encontrada.'); return; }
@@ -1198,6 +1227,7 @@ io.on('connection', (socket) => {
                     maxHp: maxHP1, hp: maxHP1, energia: 0,
                     pose: null, status: {}, pasivas: pasivas1,
                     extraAction: false, critBonus: 0, enrageBonus: 0,
+                    mareado: false,
                     summon: null, inventario: [],
                     equipment: { mano1: null, mano2: null, armadura: null, accesorio: null },
                     objetosRecibidos: [],
@@ -1213,6 +1243,7 @@ io.on('connection', (socket) => {
                     maxHp: maxHP2, hp: maxHP2, energia: 0,
                     pose: null, status: {}, pasivas: pasivas2,
                     extraAction: false, critBonus: 0, enrageBonus: 0,
+                    mareado: false,
                     summon: null, inventario: [],
                     equipment: { mano1: null, mano2: null, armadura: null, accesorio: null },
                     objetosRecibidos: [],
@@ -1360,6 +1391,7 @@ io.on('connection', (socket) => {
                 nombre: pj.nombre, maxHp: maxHPJ, hp: maxHPJ, energia: 0,
                 pose: null, status: {}, pasivas: pas1,
                 extraAction: false, critBonus: 0, enrageBonus: 0,
+                mareado: false,
                 summon: null, inventario: [],
                 equipment: { mano1: null, mano2: null, armadura: null, accesorio: null },
                 objetosRecibidos: [], skillsCompradas: comp1,
@@ -1371,6 +1403,7 @@ io.on('connection', (socket) => {
                 nombre: botPj.nombre, maxHp: maxHPB, hp: maxHPB, energia: 0,
                 pose: null, status: {}, pasivas: pas2,
                 extraAction: false, critBonus: 0, enrageBonus: 0,
+                mareado: false,
                 summon: null, inventario: [],
                 equipment: { mano1: null, mano2: null, armadura: null, accesorio: null },
                 objetosRecibidos: [], skillsCompradas: comp2,
