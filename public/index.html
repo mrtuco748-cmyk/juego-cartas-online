@@ -926,9 +926,24 @@
         #pantallaMenu, #pantallaPersonajes, #pantallaCreacion,
         #pantallaSeleccionPJ, #pantallaInventario, #pantallaTienda {
             padding: 0 0 20px;
-            overflow-y: auto;
         }
         #pantallaMenu { display: block; }
+
+        /* ── STICKY BOTTOM BAR + SCROLLABLE PANEL ── */
+        #menu #contenedor {
+            display: flex;
+            flex-direction: column;
+            max-height: 95vh;
+            max-height: 95dvh;
+        }
+        #menu .main-panel {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            min-height: 0;
+        }
+        #menu .bottom-row {
+            flex-shrink: 0;
+        }
 
         /* ── DIVIDER ── */
         .game-divider {
