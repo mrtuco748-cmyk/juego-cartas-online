@@ -122,7 +122,11 @@
         .main-panel {
             background: linear-gradient(180deg, #130e0a 0%, #0e0a07 100%);
             border: 1px solid #2a1a08; margin: 6px; border-radius: 6px; padding: 14px 12px;
+            scrollbar-width: none; -ms-overflow-style: none;
         }
+        .main-panel::-webkit-scrollbar { display: none; }
+        .popup-box::-webkit-scrollbar { display: none; }
+        .popup-box { scrollbar-width: none; -ms-overflow-style: none; }
         .dot-notif { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 50%; background: #ff3300; box-shadow: 0 0 6px #ff3300; border: 1px solid #ff2200; }
         .dot-card { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%; background: #ff3300; box-shadow: 0 0 5px #ff3300; }
         .pj-card.tiene-puntos { border-color: #ff4422; }
