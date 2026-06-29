@@ -33,7 +33,7 @@ const SKILLS_DATA = {
     ultimo_aliento: { nombre: "Último Aliento", efecto: "revive", valor: 0.30, trigger: "on_death" },
     absorcion: { nombre: "Absorción de Hechizos", efecto: "spell_vamp", valor: 0.15, trigger: "on_cast" },
     maestro_critico: { nombre: "Maestro Crítico", efecto: "crit_up", valor: 0.25, trigger: "on_attack" },
-    fortaleza: { nombre: "Fortaleza", efecto: "damage_reduction", valor: 0.10, trigger: "on_take_damage" },
+    fortaleza: { nombre: "Fortaleza", efecto: "damage_reduction", valor: 0.25, trigger: "on_take_damage" },
     vampirismo: { nombre: "Vampirismo", efecto: "life_steal", valor: 0.08, trigger: "on_hit" },
     escudo_natural: { nombre: "Escudo Natural", efecto: "auto_shield", valor: 0.15, trigger: "on_turn_start" },
     furia_interna: { nombre: "Furia Interna", efecto: "enrage", valor: 0.03, trigger: "on_hp_loss" },
@@ -468,11 +468,11 @@ class GameProcessor {
             if (reverse) {
               ctx.damage += reduction;
               ctx.damageReduction = (ctx.damageReduction || 0) - reduction;
-              results.push({ log: `${ownerName} AMPLIFICA ${reduction} de daño (pasiva invertida)` });
+              if (reduction > 0) results.push({ log: `${ownerName} AMPLIFICA ${reduction} de daño (pasiva invertida)` });
             } else {
               ctx.damage = Math.max(0, ctx.damage - reduction);
               ctx.damageReduction = (ctx.damageReduction || 0) + reduction;
-              results.push({ log: `${ownerName} reduce ${Math.floor(reduction)} de daño` });
+              if (reduction > 0) results.push({ log: `${ownerName} reduce ${reduction} de daño` });
             }
           }
           break;

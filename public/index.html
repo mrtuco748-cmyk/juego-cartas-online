@@ -960,9 +960,9 @@
                         </select>
                         <div id="classInfo"></div>
                         <div id="skillPicker" style="display:none;margin-top:6px;">
-                            <div style="color:#d4a060;font-size:8px;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Elegí 3 activas iniciales</div>
+                            <div style="color:#d4a060;font-size:8px;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Elegí 2 activas iniciales</div>
                             <div class="skill-picker-grid" id="skillPickerGrid"></div>
-                            <div style="color:#9a7040;font-size:7px;text-align:right;margin-top:2px;" id="skillPickerCount">0/3 seleccionadas</div>
+                            <div style="color:#9a7040;font-size:7px;text-align:right;margin-top:2px;" id="skillPickerCount">0/2 seleccionadas</div>
                         </div>
                     </div>
                     <hr class="divider">
@@ -1272,7 +1272,7 @@
                 </div>`;
             }).join('');
             sp.style.display = 'block';
-            document.getElementById('skillPickerCount').textContent = '0/3 seleccionadas';
+            document.getElementById('skillPickerCount').textContent = '0/2 seleccionadas';
         }
 
         function toggleSkillPick(el) {
@@ -1282,12 +1282,12 @@
             if (idx >= 0) {
                 sel.splice(idx, 1);
                 el.classList.remove('seleccionada');
-            } else if (sel.length < 3) {
+            } else if (sel.length < 2) {
                 sel.push(id);
                 el.classList.add('seleccionada');
             }
             window._skillPickerSeleccion = sel;
-            document.getElementById('skillPickerCount').textContent = sel.length + '/3 seleccionadas';
+            document.getElementById('skillPickerCount').textContent = sel.length + '/2 seleccionadas';
         }
 
         const socket = io('https://juego-cartas-online-production.up.railway.app', {
@@ -2225,8 +2225,8 @@
             return;
         }
         const activas = window._skillPickerSeleccion || [];
-        if (activas.length !== 3) {
-            document.getElementById('errorPersonaje').textContent = 'Seleccioná exactamente 3 activas iniciales.';
+        if (activas.length !== 2) {
+            document.getElementById('errorPersonaje').textContent = 'Seleccioná exactamente 2 activas iniciales.';
             return;
         }
         socket.emit('guardarPersonaje', {
