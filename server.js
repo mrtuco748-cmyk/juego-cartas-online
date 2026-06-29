@@ -1047,10 +1047,19 @@ io.on('connection', (socket) => {
 
         // ----- frozen check -----
         if (yo.status && yo.status.frozen > 0) {
-            partida.turnoActual = rival.socketId;
-            io.to(partidaId).emit('logBatalla', { msg: `${yo.nombre} salta turno por paralisis`, tipo: 'status' });
-        } else {
-            partida.turnoActual = rival.socketId;
+            io.to(partidaId).emit('logBatalla', { msg: `${yo.nombre} estaba paralizado el turno anterior`, tipo: 'status' });
+        }
+        partida.turnoActual = rival.socketId;
+
+        // If the player whose turn just started is frozen, skip them immediately
+        // Loop in case both players are frozen
+        let maxSkips = 4; // safety limit
+        while (maxSkips-- > 0) {
+            jugTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador1 : partida.jugador2;
+            if (!(jugTurno.status && jugTurno.status.frozen > 0)) break;
+            const otro = partida.turnoActual === partida.jugador1.socketId ? partida.jugador2 : partida.jugador1;
+            io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} salta turno por paralisis`, tipo: 'status' });
+            partida.turnoActual = otro.socketId;
         }
 
         partida.turno++;
@@ -1068,7 +1077,7 @@ io.on('connection', (socket) => {
           }
         }
 
-        let jugTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador1 : partida.jugador2;
+        jugTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador1 : partida.jugador2;
         let rivTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador2 : partida.jugador1;
 
         // ----- slowFast: faster player (by velocidad stat) skips turn -----
