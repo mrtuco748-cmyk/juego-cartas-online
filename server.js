@@ -268,6 +268,19 @@ const socketNombres = new Map();
 io.on('connection', (socket) => {
     console.log('Cliente conectado:', socket.id);
 
+    // Shared helpers for processPassives with reversePassives and diceRoll with chaosFog
+    const pp = (pasivas, owner, rival, trigger, ctx, partida) => {
+        const reverse = (partida && partida.fortunaStatus || {}).reversePassives > 0;
+        return gp.processPassives(pasivas, owner, rival, trigger, ctx, reverse);
+    };
+    const diceRoll = (valor, partida, pid) => {
+        if ((partida && partida.fortunaStatus || {}).chaosFog > 0) {
+            io.to(pid).emit('logBatalla', { msg: 'Dados ocultos por la niebla del caos', tipo: 'fortuna' });
+        } else {
+            io.to(pid).emit('diceRoll', { valor });
+        }
+    };
+
     socket.on('ejecutarAccion', async ({ partidaId, tipo, atacante, defensor, cartaId, accionData, actuandoComoRival }) => {
         const partida = partidas[partidaId];
         if (!partida) return;
@@ -320,21 +333,6 @@ io.on('connection', (socket) => {
         const hpAntesYo = yo.hp;
         const hpAntesRival = rival.hp;
 
-        // Wrapper for processPassives with reversePassives support
-        const pp = (pasivas, owner, rival2, trigger, ctx) => {
-            const reverse = (partida.fortunaStatus || {}).reversePassives > 0;
-            return gp.processPassives(pasivas, owner, rival2, trigger, ctx, reverse);
-        };
-
-        // Wrapper for dice rolls with chaosFog support
-        const diceRoll = (valor) => {
-            if ((partida.fortunaStatus || {}).chaosFog > 0) {
-                io.to(partidaId).emit('logBatalla', { msg: 'Dados ocultos por la niebla del caos', tipo: 'fortuna' });
-            } else {
-                io.to(partidaId).emit('diceRoll', { valor });
-            }
-        };
-
         switch (tipo) {
             case 'carta': {
                 const carta = SKILLS_DATA.activas[cartaId];
@@ -357,7 +355,7 @@ io.on('connection', (socket) => {
                     break;
                 }
 
-                if (result.diceRoll) diceRoll(result.diceRoll);
+                if (result.diceRoll) diceRoll(result.diceRoll, partida, partidaId);
                 if (result.log) io.to(partidaId).emit('logBatalla', { msg: result.log, tipo: 'carta' });
 
                 // Cubo Perfecto: negate spell damage to defender
@@ -402,16 +400,16 @@ io.on('connection', (socket) => {
                 }
 
                 const castCtx = { damage: result.damage || 0 };
-                const spellLogs = pp(yo.pasivas, yo, rival, 'on_cast', castCtx);
+                const spellLogs = pp(yo.pasivas, yo, rival, 'on_cast', castCtx, partida);
                 spellLogs.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
 
                 if (result.doubleAttack && rival.hp > 0) {
-                    const pLogAtk2 = pp(yo.pasivas, yo, rival, 'on_attack', {});
+                    const pLogAtk2 = pp(yo.pasivas, yo, rival, 'on_attack', {}, partida);
                     pLogAtk2.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
                     const statsYo2 = gp.calcularStatsConBuffs(yo);
                     const statsRiv2 = gp.calcularStatsConBuffs(rival);
                     const dado2 = Math.floor(Math.random() * 6) + 1;
-                    diceRoll(dado2);
+                    diceRoll(dado2, partida, partidaId);
                     let danoExtra = Math.max(0, dado2 + statsYo2.fuerza - statsRiv2.resistencia);
                     if (yo.enrageBonus) danoExtra += yo.enrageBonus;
                     const critExtra = Math.max(statsYo2.critClaseMulti || 0, gp.calcularCritico(statsYo2.velocidad, statsRiv2.velocidad) + (statsYo2.critBonus || 0));
@@ -424,7 +422,7 @@ io.on('connection', (socket) => {
                     rival.hp -= danoExtra;
                     io.to(partidaId).emit('logBatalla', { msg: `Golpe extra: +${danoExtra} daño`, tipo: 'ataque' });
                     // Process on_hit for the extra attack
-                    const pHit2 = pp(yo.pasivas, yo, rival, 'on_hit', { damage: danoExtra, target: rival });
+                    const pHit2 = pp(yo.pasivas, yo, rival, 'on_hit', { damage: danoExtra, target: rival }, partida);
                     [...pHit2].forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
                     gp.procesarEfectosOnHit(yo, rival).forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'ataque' }));
                 }
@@ -463,14 +461,14 @@ io.on('connection', (socket) => {
                 }
 
                 // Process on_attack passives FIRST so critBonus from passives applies this turn
-                const pLogAtk = pp(yo.pasivas, yo, rival, 'on_attack', {});
+                const pLogAtk = pp(yo.pasivas, yo, rival, 'on_attack', {}, partida);
                 pLogAtk.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
 
                 const statsYoAtk = gp.calcularStatsConBuffs(yo);
                 const statsRivAtk = gp.calcularStatsConBuffs(rival);
 
                 let dado = Math.floor(Math.random() * 6) + 1;
-                diceRoll(dado);
+                diceRoll(dado, partida, partidaId);
 
                 // beastNumber: 6 on dice = 30 self damage
                 if (fs.beastNumber > 0 && dado === 6) {
@@ -539,7 +537,7 @@ io.on('connection', (socket) => {
                 // Process on_take_damage BEFORE applying damage so fortaleza etc works (skip if swapHealDamage nullified it)
                 if (danoFinal > 0) {
                     const dmgCtx = { damage: danoFinal, target: yo };
-                    const pLogDef = pp(rival.pasivas, rival, yo, 'on_take_damage', dmgCtx);
+                    const pLogDef = pp(rival.pasivas, rival, yo, 'on_take_damage', dmgCtx, partida);
                     danoFinal = Math.max(0, dmgCtx.damage);
                     pLogDef.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
                 }
@@ -573,7 +571,7 @@ io.on('connection', (socket) => {
                 }
 
                 if (danoFinal > 0) {
-                    const pLog1 = pp(yo.pasivas, yo, rival, 'on_hit', { damage: danoFinal, target: rival });
+                    const pLog1 = pp(yo.pasivas, yo, rival, 'on_hit', { damage: danoFinal, target: rival }, partida);
                     [...pLog1].forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
 
                     gp.procesarEfectosOnHit(yo, rival).forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'ataque' }));
@@ -627,7 +625,7 @@ io.on('connection', (socket) => {
             case 'pose': {
                 const tipoPose = (accionData && accionData.tipo) || (statsYo.resistencia > statsRival.fuerza ? 'parry' : 'esquivar');
                 const dadoPose = Math.floor(Math.random() * 6) + 1;
-                diceRoll(dadoPose);
+                diceRoll(dadoPose, partida, partidaId);
                 if (tipoPose === 'parry') {
                     const maxDado = 6;
                     const rangoParry = 2;
@@ -711,7 +709,7 @@ io.on('connection', (socket) => {
                 if (!gp.puedeAgregarInventario(yo.inventario, {})) { socket.emit('errorAccion', 'Inventario lleno'); break; }
                 const rivalStats = gp.calcularStatsConBuffs(rival);
                 const dadoRobo = Math.floor(Math.random() * 6) + 1 + statsYo.velocidad;
-                diceRoll(dadoRobo - statsYo.velocidad);
+                diceRoll(dadoRobo - statsYo.velocidad, partida, partidaId);
                 const dificultad = rivalStats.velocidad + 3;
                 if (dadoRobo > dificultad) {
                     const idx = Math.floor(Math.random() * rival.inventario.length);
@@ -731,7 +729,7 @@ io.on('connection', (socket) => {
                 if (objIdx === undefined || !yo.inventario[objIdx]) { socket.emit('errorAccion', 'Objeto inválido'); break; }
                 const obj = yo.inventario[objIdx];
                 const dadoL = Math.floor(Math.random() * 6) + 1;
-                diceRoll(dadoL);
+                diceRoll(dadoL, partida, partidaId);
                 const dañoStats = (obj.stats ? (obj.stats.dañoDirecto || 0) + (obj.stats.peso || 0) : 0);
                 const danoL = Math.max(0, dadoL + (obj.peso || 0) + (obj.filo || 0) + dañoStats);
                 if (rival.status && rival.status.shield > 0) {
@@ -756,7 +754,7 @@ io.on('connection', (socket) => {
                     break;
                 }
                 const dadoRec = Math.floor(Math.random() * 6) + 1;
-                diceRoll(dadoRec);
+                diceRoll(dadoRec, partida, partidaId);
                 const ultimoObj = yo.objetosRecibidos[yo.objetosRecibidos.length - 1];
                 const dificultadRec = accionData ? (accionData.dificultad || 6) : 6;
                 if (dadoRec > dificultadRec) {
@@ -775,7 +773,7 @@ io.on('connection', (socket) => {
             case 'desviar': {
                 if (!yo.objetosRecibidos || yo.objetosRecibidos.length === 0) { socket.emit('errorAccion', 'No hay objetos para desviar'); break; }
                 const dadoDesv = Math.floor(Math.random() * 6) + 1;
-                diceRoll(dadoDesv);
+                diceRoll(dadoDesv, partida, partidaId);
                 const dificultadDesv = accionData ? (accionData.dificultad || 6) : 6;
                 if (dadoDesv > dificultadDesv) {
                     const objDesv = yo.objetosRecibidos.pop();
@@ -903,7 +901,7 @@ io.on('connection', (socket) => {
                 const statsYoSum = gp.calcularStatsConBuffs(yo);
                 const statsRivSum = gp.calcularStatsConBuffs(rival);
                 const dadoSum = Math.floor(Math.random() * 6) + 1;
-                diceRoll(dadoSum);
+                diceRoll(dadoSum, partida, partidaId);
                 const statSum = yo.summon.stats || { fuerza: 3, resistencia: 2, velocidad: 2, magia: 1 };
                 let danoSum = Math.max(0, dadoSum + statSum.fuerza - statsRivSum.resistencia);
                 if (rival.status && rival.status.shield > 0) {
@@ -920,12 +918,12 @@ io.on('connection', (socket) => {
         // Trigger on_hp_loss for any player who lost HP
         if (yo.hp < hpAntesYo) {
             const perdidaYo = hpAntesYo - Math.max(0, yo.hp);
-            const hl1 = pp(yo.pasivas, yo, rival, 'on_hp_loss', { hpLost: perdidaYo });
+            const hl1 = pp(yo.pasivas, yo, rival, 'on_hp_loss', { hpLost: perdidaYo }, partida);
             hl1.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
         }
         if (rival.hp < hpAntesRival) {
             const perdidaRi = hpAntesRival - Math.max(0, rival.hp);
-            const hl2 = pp(rival.pasivas, rival, yo, 'on_hp_loss', { hpLost: perdidaRi });
+            const hl2 = pp(rival.pasivas, rival, yo, 'on_hp_loss', { hpLost: perdidaRi }, partida);
             hl2.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
         }
 
@@ -937,7 +935,7 @@ io.on('connection', (socket) => {
         for (const j of ambos) {
             if (j.hp <= 0) {
                 j.summon = null;
-                const reviveLogs = pp(j.pasivas, j, null, 'on_death', {});
+                const reviveLogs = pp(j.pasivas, j, null, 'on_death', {}, partida);
                 reviveLogs.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
             }
         }
@@ -1070,42 +1068,40 @@ io.on('connection', (socket) => {
           }
         }
 
-        const jugTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador1 : partida.jugador2;
-        const rivTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador2 : partida.jugador1;
+        let jugTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador1 : partida.jugador2;
+        let rivTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador2 : partida.jugador1;
 
-        // ----- slowFast: fastest player skips turn -----
-        if (fsTurno.slowFast && jugTurno.turnosJugados > rivTurno.turnosJugados) {
-            if (rivTurno.status && rivTurno.status.frozen > 0) {
-                partida.turnoActual = jugTurno.socketId;
-                io.to(partidaId).emit('logBatalla', { msg: `${rivTurno.nombre} salta turno por paralisis`, tipo: 'status' });
-            } else {
+        // ----- slowFast: faster player (by velocidad stat) skips turn -----
+        if (fsTurno.slowFast > 0) {
+            const statsJug = gp.calcularStatsConBuffs(jugTurno);
+            const statsRiv = gp.calcularStatsConBuffs(rivTurno);
+            if (statsJug.velocidad > statsRiv.velocidad) {
                 partida.turnoActual = rivTurno.socketId;
+                io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} salta su turno (slowFast)`, tipo: 'fortuna' });
+                // re-evaluate who goes
+                jugTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador1 : partida.jugador2;
+                rivTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador2 : partida.jugador1;
             }
-            io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} salta su turno (slowFast)`, tipo: 'fortuna' });
-            partidaEmitirEstado(partidaId, partida);
-            return;
         }
 
-        // ----- wasteAction: fastest player wastes 1 action -----
-        if (fsTurno.wasteAction && jugTurno.turnosJugados > rivTurno.turnosJugados) {
-            partida.accionesMax = Math.max(1, partida.accionesMax - 1);
-            io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} pierde una acción (desperdicio)`, tipo: 'fortuna' });
-        }
-
-        // ----- clone: fastest attacks self -----
-        if (fsTurno.clone && jugTurno.turnosJugados > rivTurno.turnosJugados) {
-            const statsClone = gp.calcularStatsConBuffs(jugTurno);
-            const statsCloneDef = gp.calcularStatsConBuffs(jugTurno);
-            const dadoClone = Math.floor(Math.random() * 6) + 1;
-            let dmgClone = Math.max(0, dadoClone + statsClone.fuerza - statsCloneDef.resistencia);
-            if (jugTurno.status && jugTurno.status.shield > 0) {
-                const abs = Math.min(jugTurno.status.shield, dmgClone);
-                jugTurno.status.shield -= abs;
-                dmgClone -= abs;
+        // ----- clone: faster player (by velocidad) attacks self -----
+        if (fsTurno.clone > 0) {
+            const statsJug = gp.calcularStatsConBuffs(jugTurno);
+            const statsRiv = gp.calcularStatsConBuffs(rivTurno);
+            if (statsJug.velocidad > statsRiv.velocidad) {
+                const statsCloneAtk = gp.calcularStatsConBuffs(jugTurno);
+                const statsCloneDef = gp.calcularStatsConBuffs(jugTurno);
+                const dadoClone = Math.floor(Math.random() * 6) + 1;
+                let dmgClone = Math.max(0, dadoClone + statsCloneAtk.fuerza - statsCloneDef.resistencia);
+                if (jugTurno.status && jugTurno.status.shield > 0) {
+                    const abs = Math.min(jugTurno.status.shield, dmgClone);
+                    jugTurno.status.shield -= abs;
+                    dmgClone -= abs;
+                }
+                jugTurno.hp -= dmgClone;
+                io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} ataca su propio clon: -${dmgClone} HP`, tipo: 'fortuna' });
+                if (partidaCheckMuerte(partidaId, partida)) return;
             }
-            jugTurno.hp -= dmgClone;
-            io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} ataca su propio clon: -${dmgClone} HP`, tipo: 'fortuna' });
-            if (partidaCheckMuerte(partidaId, partida)) return;
         }
 
         // ----- ghost: phantom attack on rival -----
@@ -1160,8 +1156,8 @@ io.on('connection', (socket) => {
         jugTurno.reducedCost = 0;
         jugTurno.enrageBonus = 0;
 
-        const tLogs1 = pp(jugTurno.pasivas, jugTurno, rivTurno, 'on_turn_start', {});
-        const tLogs2 = pp(rivTurno.pasivas, rivTurno, jugTurno, 'on_turn_start', {});
+        const tLogs1 = pp(jugTurno.pasivas, jugTurno, rivTurno, 'on_turn_start', {}, partida);
+        const tLogs2 = pp(rivTurno.pasivas, rivTurno, jugTurno, 'on_turn_start', {}, partida);
         [...tLogs1, ...tLogs2].forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
 
         partida.accionesMax = 2 + (jugTurno.extraAction ? 1 : 0);
@@ -1170,6 +1166,16 @@ io.on('connection', (socket) => {
             partida.accionesMax = Math.max(1, partida.accionesMax - 1);
             io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} está mareado — pierde 1 acción`, tipo: 'marea' });
             jugTurno.mareado = false;
+        }
+
+        // wasteAction: faster player wastes 1 action (after accionesMax is set)
+        if (fsTurno.wasteAction > 0) {
+            const statsJug = gp.calcularStatsConBuffs(jugTurno);
+            const statsRiv = gp.calcularStatsConBuffs(rivTurno);
+            if (statsJug.velocidad > statsRiv.velocidad) {
+                partida.accionesMax = Math.max(1, partida.accionesMax - 1);
+                io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} pierde una acción (desperdicio)`, tipo: 'fortuna' });
+            }
         }
 
         if (jugTurno.critClase) {
@@ -1185,11 +1191,6 @@ io.on('connection', (socket) => {
         if (jugTurno._fortunaTA) {
             partida.accionesMax++;
             io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} recibe una acción extra (El Elegido)`, tipo: 'fortuna' });
-        }
-
-        // wasteAction: decrement actionsMax (after wasted action was recorded)
-        if (fsTurno.wasteAction && partida.accionesUsadas.filter(a => a === 'waste').length > 0) {
-            // already accounted for above
         }
 
         jugTurno.turnosJugados = (jugTurno.turnosJugados || 0) + 1;
