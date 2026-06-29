@@ -1738,14 +1738,15 @@
 <div id="menu" class="pantalla">
     <div id="contenedor">
         <div class="top-bar">
-            <div class="top-icon-btn" style="font-size:16px;font-weight:bold;">i</div>
-            <div style="display:flex; align-items:center; gap:8px;">
+            <div style="display:flex; align-items:center; gap:6px;">
                 <div id="topFoto" style="width:28px; height:28px; border-radius:50%; border:1px solid #4a3010; background:#1a0e08; display:flex; align-items:center; justify-content:center; color:#5a3a18; font-size:14px; overflow:hidden;">U</div>
                 <span style="color:#d4a060; font-size:10px; letter-spacing:2px;" id="userNameDisplay">—</span>
-                <button onclick="cerrarSesion()" style="color:#6a3010; font-size:9px; letter-spacing:1px; cursor:pointer; border:1px solid #3a1808; border-radius:3px; padding:2px 6px; background:transparent; font-family:'Cinzel',serif;">SALIR</button>
             </div>
-            <div class="top-icon-btn" id="btnDev" onclick="abrirDevPanel()" style="display:none;font-size:10px;">DEV</div>
-            <div class="top-icon-btn" onclick="abrirConfig()" style="font-size:16px;font-weight:bold;">C</div>
+            <div style="display:flex; align-items:center; gap:6px;">
+                <button onclick="cerrarSesion()" style="color:#6a3010; font-size:9px; letter-spacing:1px; cursor:pointer; border:1px solid #3a1808; border-radius:3px; padding:2px 6px; background:transparent; font-family:'Cinzel',serif;">SALIR</button>
+                <div class="top-icon-btn" id="btnDev" onclick="abrirDevPanel()" style="display:none;font-size:10px;">DEV</div>
+                <div class="top-icon-btn" onclick="abrirConfig()" style="font-size:14px;">⚙</div>
+            </div>
         </div>
         <div class="resource-bar">
             <div class="coin-badge">Oro <span id="dineroDisplay">0</span></div>
@@ -1761,12 +1762,6 @@
             <!-- MENÚ PRINCIPAL -->
             <div id="pantallaMenu">
                 <div class="menu-hero">
-                    <div class="logo-main">LEGENDS OF THE ARENA</div>
-                    <div class="logo-sub">JUEGO DE CARTAS</div>
-                    <div class="user-badge" id="menuUserBadge">
-                        <span id="menuUserPhoto"></span>
-                        <span id="menuUserName">—</span>
-                    </div>
                 </div>
                 <div class="menu-buttons">
                     <button class="menu-btn" onclick="irASeleccionPJ()">
@@ -1968,8 +1963,8 @@
 
         <div class="bottom-row">
             <div class="round-btn" id="btnTienda" onclick="cambiarSeccion('tienda')">TIENDA</div>
-            <div class="round-btn" id="btnPersonajes" onclick="cambiarSeccion('personajes')">PERSO<br>NAJES<span class="dot-notif" id="dotPersonajes" style="display:none;"></span></div>
-            <div class="round-btn" id="btnInventario" onclick="cambiarSeccion('inventario')">INVEN<br>TARIO</div>
+            <div class="round-btn" id="btnPersonajes" onclick="cambiarSeccion('personajes')">PERSONAJES<span class="dot-notif" id="dotPersonajes" style="display:none;"></span></div>
+            <div class="round-btn" id="btnInventario" onclick="cambiarSeccion('inventario')">INVENTARIO</div>
         </div>
     </div>
 </div>
@@ -2665,10 +2660,6 @@
         } else {
             topFoto.innerHTML = 'U';
         }
-        const mn = document.getElementById('menuUserName');
-        if (mn) mn.textContent = cuenta.nombre.toUpperCase();
-        const mp = document.getElementById('menuUserPhoto');
-        if (mp) mp.innerHTML = cuenta.foto ? `<img src="${cuenta.foto}" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:6px;">` : '';
     }
 
     function iconoSkill(s) {
