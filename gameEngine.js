@@ -212,8 +212,9 @@ class GameProcessor {
         return { log: `${target.nombre} queda paralizado por ${card.duracion} turnos` };
       },
       cancel_attack: (target, card, ctx) => {
-        ctx.cancelAttack = true;
-        return { log: `El ataque entrante ha sido cancelado` };
+        ctx.source.status = ctx.source.status || {};
+        ctx.source.status.perfectCube = 1;
+        return { log: `${ctx.source.nombre} se envuelve en un Cubo Perfecto — el próximo ataque será anulado` };
       },
       rng_kill: (target, card) => {
         const roll = Math.floor(Math.random() * 6) + 1;
@@ -882,10 +883,22 @@ class GameProcessor {
       case 'swap_stats':
         partida.fortunaStatus = partida.fortunaStatus || {};
         partida.fortunaStatus.swapStats = card.duracion;
-        for (const s of ['fuerza','resistencia','velocidad','magia','suerte']) {
-          const tmp = jugador1.personaje[s];
-          jugador1.personaje[s] = jugador2.personaje[s];
-          jugador2.personaje[s] = tmp;
+        if (!partida._swapStatsTimer) {
+          [jugador1, jugador2].forEach(j => {
+            j._statsOriginales = {
+              fuerza: j.personaje.fuerza,
+              resistencia: j.personaje.resistencia,
+              velocidad: j.personaje.velocidad,
+              magia: j.personaje.magia,
+              suerte: j.personaje.suerte
+            };
+          });
+          for (const s of ['fuerza','resistencia','velocidad','magia','suerte']) {
+            const tmp = jugador1.personaje[s];
+            jugador1.personaje[s] = jugador2.personaje[s];
+            jugador2.personaje[s] = tmp;
+          }
+          partida._swapStatsTimer = card.duracion;
         }
         logs.push(`[Caos] ¡Identidad robada! Stats intercambiados por ${card.duracion} turnos`);
         break;

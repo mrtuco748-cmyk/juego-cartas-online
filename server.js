@@ -332,6 +332,8 @@ io.on('connection', (socket) => {
                     socket.emit('errorAccion', `Energía insuficiente (${yo.energia}/${carta.coste})`); break;
                 }
 
+                const fsCarta = partida.fortunaStatus || {};
+
                 const ctx = { source: yo, rival };
                 const result = gp.executeCard(carta, yo, rival, ctx);
 
@@ -342,6 +344,42 @@ io.on('connection', (socket) => {
 
                 if (result.diceRoll) io.to(partidaId).emit('diceRoll', { valor: result.diceRoll });
                 if (result.log) io.to(partidaId).emit('logBatalla', { msg: result.log, tipo: 'carta' });
+
+                // Cubo Perfecto: negate spell damage to defender
+                if (result.damage > 0 && rival.status && rival.status.perfectCube) {
+                    delete rival.status.perfectCube;
+                    io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} evade el daño del hechizo con su Cubo Perfecto`, tipo: 'carta' });
+                    result.damage = 0;
+                }
+
+                // swapHealDamage: if this card healed, convert to damage; if it damaged, convert to heal
+                if (fsCarta.swapHealDamage) {
+                    if (result.healing > 0) {
+                        const dmgSwap = result.healing;
+                        rival.hp -= dmgSwap;
+                        io.to(partidaId).emit('logBatalla', { msg: `[Caos] La curación se convierte en daño: ${rival.nombre} recibe ${dmgSwap}`, tipo: 'fortuna' });
+                        result.healing = 0;
+                    }
+                    if (result.damage > 0) {
+                        const healSwap = result.damage;
+                        rival.hp = Math.min(rival.maxHp, rival.hp + healSwap);
+                        io.to(partidaId).emit('logBatalla', { msg: `[Caos] El daño se convierte en curación: ${rival.nombre} recupera ${healSwap} HP`, tipo: 'fortuna' });
+                        result.damage = 0;
+                    }
+                }
+
+                // sacredGround after spell damage
+                if (result.damage > 0 && fsCarta.sacredGround > 0 && rival.hp < 1) {
+                    rival.hp = 1;
+                    io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} se aferra a la vida (Tierra Sagrada)`, tipo: 'fortuna' });
+                }
+
+                // mirrorDamage from spells
+                if (result.damage > 0 && fsCarta.mirrorDamage > 0) {
+                    yo.hp -= result.damage;
+                    io.to(partidaId).emit('logBatalla', { msg: `[Espejo] ${yo.nombre} recibe ${result.damage} de daño reflejado`, tipo: 'fortuna' });
+                    if (fsCarta.sacredGround > 0 && yo.hp < 1) { yo.hp = 1; io.to(partidaId).emit('logBatalla', { msg: `${yo.nombre} se aferra a la vida (Tierra Sagrada)`, tipo: 'fortuna' }); }
+                }
 
                 if (result.summon) {
                     yo.summon = result.summon;
@@ -360,6 +398,7 @@ io.on('connection', (socket) => {
                     const dado2 = Math.floor(Math.random() * 6) + 1;
                     io.to(partidaId).emit('diceRoll', { valor: dado2 });
                     let danoExtra = Math.max(0, dado2 + statsYo2.fuerza - statsRiv2.resistencia);
+                    if (yo.enrageBonus) danoExtra += yo.enrageBonus;
                     const critExtra = Math.max(statsYo2.critClaseMulti || 0, gp.calcularCritico(statsYo2.velocidad, statsRiv2.velocidad) + (statsYo2.critBonus || 0));
                     danoExtra = Math.floor(danoExtra * (1 + critExtra));
                     if (rival.status && rival.status.shield > 0) {
@@ -369,14 +408,45 @@ io.on('connection', (socket) => {
                     }
                     rival.hp -= danoExtra;
                     io.to(partidaId).emit('logBatalla', { msg: `Golpe extra: +${danoExtra} daño`, tipo: 'ataque' });
+                    // Process on_hit for the extra attack
+                    const pHit2 = gp.processPassives(yo.pasivas, yo, rival, 'on_hit', { damage: danoExtra, target: rival });
+                    [...pHit2].forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
+                    gp.procesarEfectosOnHit(yo, rival).forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'ataque' }));
                 }
 
-                if (result.cancelAttack) {
-                    partida.accionCancelada = true;
-                }
                 break;
             }
             case 'atacar': {
+                const fs = partida.fortunaStatus || {};
+
+                // clumsy: 50% fail
+                if (fs.clumsy > 0 && Math.random() < 0.5) {
+                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} falla por torpeza`, tipo: 'fortuna' });
+                    break;
+                }
+
+                // pacifism: no direct attacks
+                if (fs.pacifism > 0) {
+                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} no puede atacar (pacifismo forzado)`, tipo: 'fortuna' });
+                    break;
+                }
+
+                // noAttack: strongest can't attack
+                if (fs.noAttack > 0) {
+                    const statsRivNoAtk = gp.calcularStatsConBuffs(rival);
+                    if (statsYo.fuerza >= statsRivNoAtk.fuerza) {
+                        io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} no puede atacar (ego destruido)`, tipo: 'fortuna' });
+                        break;
+                    }
+                }
+
+                // Cubo Perfecto: negate entire attack if defender has it active
+                if (rival.status && rival.status.perfectCube) {
+                    delete rival.status.perfectCube;
+                    io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} evade todo daño con su Cubo Perfecto`, tipo: 'carta' });
+                    break;
+                }
+
                 // Process on_attack passives FIRST so critBonus from passives applies this turn
                 const pLogAtk = gp.processPassives(yo.pasivas, yo, rival, 'on_attack', {});
                 pLogAtk.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
@@ -384,9 +454,32 @@ io.on('connection', (socket) => {
                 const statsYoAtk = gp.calcularStatsConBuffs(yo);
                 const statsRivAtk = gp.calcularStatsConBuffs(rival);
 
-                const dado = Math.floor(Math.random() * 6) + 1;
+                let dado = Math.floor(Math.random() * 6) + 1;
                 io.to(partidaId).emit('diceRoll', { valor: dado });
-                let danoBase = Math.max(0, dado + statsYoAtk.fuerza - statsRivAtk.resistencia);
+
+                // beastNumber: 6 on dice = 30 self damage
+                if (fs.beastNumber > 0 && dado === 6) {
+                    yo.hp -= 30;
+                    io.to(partidaId).emit('logBatalla', { msg: `¡${statsYoAtk.nombre} sacó 6 y recibe 30 de daño (Número de la Bestia)!`, tipo: 'fortuna' });
+                }
+
+                // antiStrength: more strength = less damage
+                let fuerzaEfectiva = statsYoAtk.fuerza;
+                if (fs.antiStrength > 0) {
+                    fuerzaEfectiva = Math.max(0, 6 - Math.floor(statsYoAtk.fuerza / 2));
+                }
+
+                // invertResistance: resistance adds to damage instead of reducing
+                let resistenciaEfectiva = statsRivAtk.resistencia;
+                if (fs.invertResistance > 0) {
+                    resistenciaEfectiva = 0;
+                }
+
+                let danoBase = Math.max(0, dado + fuerzaEfectiva - resistenciaEfectiva);
+                if (fs.invertResistance > 0) {
+                    danoBase += statsRivAtk.resistencia;
+                }
+
                 let critMulti = Math.max(statsYoAtk.critClaseMulti || 0, gp.calcularCritico(statsYoAtk.velocidad, statsRivAtk.velocidad) + (statsYoAtk.critBonus || 0));
                 let danoFinal = Math.floor(danoBase * (1 + critMulti));
                 if (yo.enrageBonus) danoFinal += yo.enrageBonus;
@@ -394,36 +487,56 @@ io.on('connection', (socket) => {
                 let log = `${statsYoAtk.nombre} ataca — ${dado}+F:${statsYoAtk.fuerza}-R:${statsRivAtk.resistencia}=${danoBase}`;
 
                 if (rival.pose) {
+                    let poseFallida = false;
                     if (rival.pose.tipo === 'esquivar' && (rival.pose.valor + (statsRivAtk.dodgeBonus || 0)) > dado) {
                         io.to(partidaId).emit('logBatalla', { msg: `¡${rival.nombre} ESQUIVA!`, tipo: 'pose' });
                         rival.pose = null;
                         return partidaFinalizarAccion(partidaId, partida);
-                    }
-                    if (rival.pose.tipo === 'parry' && dado >= rival.pose.min && dado <= rival.pose.max) {
+                    } else if (rival.pose.tipo === 'parry' && dado >= rival.pose.min && dado <= rival.pose.max) {
                         const reflectedDmg = Math.max(1, Math.floor(statsRivAtk.resistencia * 0.5));
                         yo.hp -= reflectedDmg;
                         yo.mareado = true;
                         io.to(partidaId).emit('logBatalla', { msg: `¡${rival.nombre} hace PARRY! ${statsYoAtk.nombre} recibe ${reflectedDmg} de contraataque y queda mareado`, tipo: 'pose' });
                         rival.pose = null;
+                        // Check sacredGround after parry damage
+                        if (yo.hp < 1 && fs.sacredGround > 0) { yo.hp = 1; io.to(partidaId).emit('logBatalla', { msg: `${yo.nombre} se aferra a la vida (Tierra Sagrada)`, tipo: 'fortuna' }); }
                         return partidaFinalizarAccion(partidaId, partida);
+                    } else {
+                        poseFallida = true;
+                    }
+                    // electricField: failed pose deals 8 damage
+                    if (poseFallida && fs.electricField) {
+                        rival.hp -= 8;
+                        io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} recibe 8 de daño por campo eléctrico`, tipo: 'fortuna' });
+                        if (fs.sacredGround > 0 && rival.hp < 1) { rival.hp = 1; io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} se aferra a la vida (Tierra Sagrada)`, tipo: 'fortuna' }); }
                     }
                     rival.pose = null;
                 }
 
-                // Process on_take_damage BEFORE applying damage so fortaleza etc works
-                const dmgCtx = { damage: danoFinal, target: yo };
-                const pLogDef = gp.processPassives(rival.pasivas, rival, yo, 'on_take_damage', dmgCtx);
-                danoFinal = Math.max(0, dmgCtx.damage);
-                pLogDef.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
+                // swapHealDamage: damage heals instead
+                if (fs.swapHealDamage) {
+                    const healAmt = danoFinal;
+                    rival.hp = Math.min(rival.maxHp + (rival.hpOverflow || 0), rival.hp + healAmt);
+                    danoFinal = 0;
+                    io.to(partidaId).emit('logBatalla', { msg: `[Caos] El daño se convierte en curación: +${healAmt} HP a ${rival.nombre}`, tipo: 'fortuna' });
+                }
 
-                if (rival.status && rival.status.shield > 0) {
+                // Process on_take_damage BEFORE applying damage so fortaleza etc works (skip if swapHealDamage nullified it)
+                if (danoFinal > 0) {
+                    const dmgCtx = { damage: danoFinal, target: yo };
+                    const pLogDef = gp.processPassives(rival.pasivas, rival, yo, 'on_take_damage', dmgCtx);
+                    danoFinal = Math.max(0, dmgCtx.damage);
+                    pLogDef.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
+                }
+
+                if (rival.status && rival.status.shield > 0 && danoFinal > 0) {
                     const absorb = Math.min(rival.status.shield, danoFinal);
                     rival.status.shield -= absorb;
                     danoFinal -= absorb;
                     log += ` [escudo -${absorb}]`;
                 }
 
-                if (yo.danoAHP) {
+                if (yo.danoAHP && danoFinal > 0) {
                     const conv = Math.min(danoFinal, yo.maxHp - yo.hp);
                     yo.hp += conv;
                     log += ` (convierte ${conv} daño a HP)`;
@@ -431,13 +544,38 @@ io.on('connection', (socket) => {
 
                 rival.hp -= danoFinal;
 
-                const pLog1 = gp.processPassives(yo.pasivas, yo, rival, 'on_hit', { damage: danoFinal, target: rival });
-                [...pLog1].forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
+                // sacredGround: clamp HP to 1
+                if (fs.sacredGround > 0 && rival.hp < 1) {
+                    rival.hp = 1;
+                    io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} se aferra a la vida (Tierra Sagrada)`, tipo: 'fortuna' });
+                }
 
-                gp.procesarEfectosOnHit(yo, rival).forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'ataque' }));
+                // mirrorDamage: same damage to attacker
+                if (fs.mirrorDamage > 0 && danoFinal > 0) {
+                    yo.hp -= danoFinal;
+                    io.to(partidaId).emit('logBatalla', { msg: `[Espejo] ${yo.nombre} recibe ${danoFinal} de daño reflejado`, tipo: 'fortuna' });
+                    if (fs.sacredGround > 0 && yo.hp < 1) { yo.hp = 1; io.to(partidaId).emit('logBatalla', { msg: `${yo.nombre} se aferra a la vida (Tierra Sagrada)`, tipo: 'fortuna' }); }
+                }
+
+                if (danoFinal > 0) {
+                    const pLog1 = gp.processPassives(yo.pasivas, yo, rival, 'on_hit', { damage: danoFinal, target: rival });
+                    [...pLog1].forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
+
+                    gp.procesarEfectosOnHit(yo, rival).forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'ataque' }));
+                }
 
                 log += critMulti > 0 ? ` (Crítico x${1+critMulti}) → ${danoFinal}` : ` → ${danoFinal}`;
                 io.to(partidaId).emit('logBatalla', { msg: log, tipo: 'ataque' });
+
+                // reflejo magico: check if target has reflect status
+                if (rival.status && rival.status.reflect && danoFinal > 0) {
+                    const reflected = Math.floor(danoFinal * rival.status.reflect.valor);
+                    if (reflected > 0) {
+                        yo.hp -= reflected;
+                        io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} refleja ${reflected} de daño (Reflejo Mágico)`, tipo: 'carta' });
+                        if (fs.sacredGround > 0 && yo.hp < 1) { yo.hp = 1; io.to(partidaId).emit('logBatalla', { msg: `${yo.nombre} se aferra a la vida (Tierra Sagrada)`, tipo: 'fortuna' }); }
+                    }
+                }
 
                 if (statsYoAtk.ataquePenalty > 0) {
                     for (let p = 0; p < statsYoAtk.ataquePenalty; p++) {
@@ -448,11 +586,27 @@ io.on('connection', (socket) => {
                 break;
             }
             case 'descansar': {
-                const hpGain = Math.floor(Math.random() * 5) + 1;
-                const enGain = Math.floor(Math.random() * 5) + 1;
-                yo.hp = Math.min(yo.maxHp + (yo.hpOverflow || 0), yo.hp + hpGain);
-                yo.energia = Math.min(100, yo.energia + enGain);
-                io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} descansa → +${hpGain} HP, +${enGain} energía`, tipo: 'curacion' });
+                const fsDesc = partida.fortunaStatus || {};
+                let hpGain = Math.floor(Math.random() * 5) + 1;
+                let enGain = Math.floor(Math.random() * 5) + 1;
+
+                // warZone: cap at 1 each
+                if (fsDesc.warZone) {
+                    hpGain = Math.min(hpGain, 1);
+                    enGain = Math.min(enGain, 1);
+                }
+
+                // bloodthirstyRest: descansar hace daño en vez de curar
+                if (fsDesc.bloodthirstyRest > 0) {
+                    yo.hp -= hpGain;
+                    yo.energia = Math.min(100, yo.energia + enGain);
+                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} descansa pero sufre ${hpGain} de daño (sed de sangre)`, tipo: 'fortuna' });
+                    if (fsDesc.sacredGround > 0 && yo.hp < 1) { yo.hp = 1; io.to(partidaId).emit('logBatalla', { msg: `${yo.nombre} se aferra a la vida (Tierra Sagrada)`, tipo: 'fortuna' }); }
+                } else {
+                    yo.hp = Math.min(yo.maxHp, yo.hp + hpGain);
+                    yo.energia = Math.min(100, yo.energia + enGain);
+                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} descansa → +${hpGain} HP, +${enGain} energía`, tipo: 'curacion' });
+                }
                 break;
             }
             case 'pose': {
@@ -521,6 +675,9 @@ io.on('connection', (socket) => {
                 break;
             }
             case 'negociar': {
+                if ((partida.fortunaStatus || {}).mute > 0) {
+                    socket.emit('errorAccion', 'Estás mudo, no podés negociar'); break;
+                }
                 const oferta = accionData && accionData.oferta;
                 const pides = accionData && accionData.pides;
                 if (!oferta || !pides) { socket.emit('errorAccion', 'Especificá oferta y petición'); break; }
@@ -552,6 +709,9 @@ io.on('connection', (socket) => {
                 break;
             }
             case 'lanzar': {
+                if ((partida.fortunaStatus || {}).heavyGravity) {
+                    socket.emit('errorAccion', 'Gravedad extrema: no podés lanzar objetos'); break;
+                }
                 const objIdx = accionData && accionData.objIdx;
                 if (objIdx === undefined || !yo.inventario[objIdx]) { socket.emit('errorAccion', 'Objeto inválido'); break; }
                 const obj = yo.inventario[objIdx];
@@ -574,6 +734,12 @@ io.on('connection', (socket) => {
             }
             case 'recibir': {
                 if (!yo.objetosRecibidos || yo.objetosRecibidos.length === 0) { socket.emit('errorAccion', 'No hay objetos para recibir'); break; }
+                // butterHands: auto-fail
+                if ((partida.fortunaStatus || {}).butterHands > 0) {
+                    yo.objetosRecibidos.pop();
+                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} deja caer el objeto (manos de manteca)`, tipo: 'fortuna' });
+                    break;
+                }
                 const dadoRec = Math.floor(Math.random() * 6) + 1;
                 io.to(partidaId).emit('diceRoll', { valor: dadoRec });
                 const ultimoObj = yo.objetosRecibidos[yo.objetosRecibidos.length - 1];
@@ -819,6 +985,36 @@ io.on('connection', (socket) => {
         });
         peLogs.forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'curacion' }));
 
+        // ----- fortune status decrement -----
+        const fsTurno = partida.fortunaStatus || {};
+        const turnosToDecrement = ['swapHealDamage', 'swapStats', 'reversePassives', 'slowFast', 'antiStrength', 'mirrorDamage', 'pacifism', 'bloodthirstyRest', 'invertResistance', 'sharedTurn', 'statLottery', 'beastNumber', 'butterHands', 'clumsy', 'mute', 'wasteAction', 'noAttack', 'sacredGround', 'chaosFog', 'possession', 'clone', 'ghost', 'amnesia'];
+        turnosToDecrement.forEach(k => {
+            if (typeof fsTurno[k] === 'number' && fsTurno[k] > 0) {
+                fsTurno[k]--;
+                if (fsTurno[k] <= 0) delete fsTurno[k];
+            }
+        });
+        // swapStats revert when timer expires
+        if (partida._swapStatsTimer !== undefined) {
+            partida._swapStatsTimer--;
+            if (partida._swapStatsTimer <= 0) {
+                delete partida._swapStatsTimer;
+                [partida.jugador1, partida.jugador2].forEach(j => {
+                    const swap = j._statsOriginales;
+                    if (swap) {
+                        j.personaje.fuerza = swap.fuerza;
+                        j.personaje.resistencia = swap.resistencia;
+                        j.personaje.velocidad = swap.velocidad;
+                        j.personaje.magia = swap.magia;
+                        j.personaje.suerte = swap.suerte;
+                        delete j._statsOriginales;
+                        io.to(partidaId).emit('logBatalla', { msg: `${j.nombre} recupera sus estadísticas originales`, tipo: 'fortuna' });
+                    }
+                });
+            }
+        }
+
+        // ----- frozen check -----
         if (yo.status && yo.status.frozen > 0) {
             partida.turnoActual = rival.socketId;
             io.to(partidaId).emit('logBatalla', { msg: `${yo.nombre} salta turno por paralisis`, tipo: 'status' });
@@ -843,6 +1039,69 @@ io.on('connection', (socket) => {
 
         const jugTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador1 : partida.jugador2;
         const rivTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador2 : partida.jugador1;
+
+        // ----- slowFast: fastest player skips turn -----
+        if (fsTurno.slowFast && jugTurno.turnosJugados > rivTurno.turnosJugados) {
+            if (rivTurno.status && rivTurno.status.frozen > 0) {
+                partida.turnoActual = jugTurno.socketId;
+                io.to(partidaId).emit('logBatalla', { msg: `${rivTurno.nombre} salta turno por paralisis`, tipo: 'status' });
+            } else {
+                partida.turnoActual = rivTurno.socketId;
+            }
+            io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} salta su turno (slowFast)`, tipo: 'fortuna' });
+            partidaEmitirEstado(partidaId, partida);
+            return;
+        }
+
+        // ----- wasteAction: fastest player wastes 1 action -----
+        if (fsTurno.wasteAction && jugTurno.turnosJugados > rivTurno.turnosJugados) {
+            partida.accionesMax = Math.max(1, partida.accionesMax - 1);
+            io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} pierde una acción (desperdicio)`, tipo: 'fortuna' });
+        }
+
+        // ----- clone: fastest attacks self -----
+        if (fsTurno.clone && jugTurno.turnosJugados > rivTurno.turnosJugados) {
+            const statsClone = gp.calcularStatsConBuffs(jugTurno);
+            const statsCloneDef = gp.calcularStatsConBuffs(jugTurno);
+            const dadoClone = Math.floor(Math.random() * 6) + 1;
+            let dmgClone = Math.max(0, dadoClone + statsClone.fuerza - statsCloneDef.resistencia);
+            if (jugTurno.status && jugTurno.status.shield > 0) {
+                const abs = Math.min(jugTurno.status.shield, dmgClone);
+                jugTurno.status.shield -= abs;
+                dmgClone -= abs;
+            }
+            jugTurno.hp -= dmgClone;
+            io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} ataca su propio clon: -${dmgClone} HP`, tipo: 'fortuna' });
+            if (partidaCheckMuerte(partidaId, partida)) return;
+        }
+
+        // ----- ghost: phantom attack on rival -----
+        if (fsTurno.ghost > 0) {
+            const statsGhostAtk = gp.calcularStatsConBuffs(jugTurno);
+            const statsGhostDef = gp.calcularStatsConBuffs(rivTurno);
+            const dadoGhost = Math.floor(Math.random() * 6) + 1;
+            let dmgGhost = Math.max(0, dadoGhost + statsGhostAtk.fuerza - statsGhostDef.resistencia);
+            if (rivTurno.status && rivTurno.status.shield > 0) {
+                const abs = Math.min(rivTurno.status.shield, dmgGhost);
+                rivTurno.status.shield -= abs;
+                dmgGhost -= abs;
+            }
+            rivTurno.hp -= dmgGhost;
+            io.to(partidaId).emit('logBatalla', { msg: `Ataque fantasma: ${dmgGhost} de daño a ${rivTurno.nombre}`, tipo: 'fortuna' });
+            if (partidaCheckMuerte(partidaId, partida)) return;
+        }
+
+        // ----- amnesia: forget random skill (pasiva) -----
+        if (fsTurno.amnesia > 0 && jugTurno.pasivas && jugTurno.pasivas.length > 0) {
+            const idxAmnesia = Math.floor(Math.random() * jugTurno.pasivas.length);
+            const olvidada = jugTurno.pasivas.splice(idxAmnesia, 1)[0];
+            io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} olvida ${olvidada.nombre || olvidada} (amnesia)`, tipo: 'fortuna' });
+        }
+        // sharedTurn: rival gets extra action
+        if (fsTurno.sharedTurn > 0) {
+            rivTurno.extraAction = true;
+            io.to(partidaId).emit('logBatalla', { msg: `${rivTurno.nombre} gana una acción extra (turno compartido)`, tipo: 'fortuna' });
+        }
 
         const magJug = jugTurno.personaje.magia;
         const magRiv = rivTurno.personaje.magia;
@@ -881,8 +1140,26 @@ io.on('connection', (socket) => {
         }
 
         if (jugTurno.critClase) {
+            jugTurno.critClase.duracion--;
             io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre}: crítico ${jugTurno.critClase.multi * 100}% por ${jugTurno.critClase.duracion} turnos`, tipo: 'carta' });
+            if (jugTurno.critClase.duracion <= 0) {
+                delete jugTurno.critClase;
+                io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre}: efecto crítico de clase expiró`, tipo: 'carta' });
+            }
         }
+
+        // _fortunaTA: El Elegido extra action
+        if (jugTurno._fortunaTA) {
+            partida.accionesMax++;
+            io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} recibe una acción extra (El Elegido)`, tipo: 'fortuna' });
+        }
+
+        // wasteAction: decrement actionsMax (after wasted action was recorded)
+        if (fsTurno.wasteAction && partida.accionesUsadas.filter(a => a === 'waste').length > 0) {
+            // already accounted for above
+        }
+
+        jugTurno.turnosJugados = (jugTurno.turnosJugados || 0) + 1;
 
         io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} recupera ${enRegen} energía`, tipo: 'energia' });
         partidaEmitirEstado(partidaId, partida);
@@ -1234,7 +1511,8 @@ io.on('connection', (socket) => {
                     skillsCompradas: comp1,
                     pasivasCompradas: pasivasComp1,
                     persistentEffects: [],
-                    contadores: {}
+                    contadores: {},
+                    turnosJugados: 0
                 },
                 jugador2: {
                     ...jugador2,
@@ -1250,7 +1528,8 @@ io.on('connection', (socket) => {
                     skillsCompradas: comp2,
                     pasivasCompradas: pasivasComp2,
                     persistentEffects: [],
-                    contadores: {}
+                    contadores: {},
+                    turnosJugados: 0
                 },
                 turnoActual: turnoInicial,
                 turno: 0,
@@ -1395,7 +1674,8 @@ io.on('connection', (socket) => {
                 summon: null, inventario: [],
                 equipment: { mano1: null, mano2: null, armadura: null, accesorio: null },
                 objetosRecibidos: [], skillsCompradas: comp1,
-                pasivasCompradas: pComp1, persistentEffects: [], contadores: {}
+                pasivasCompradas: pComp1, persistentEffects: [], contadores: {},
+                turnosJugados: 0
             },
             jugador2: {
                 socketId: botId, cuenta_id: null,
@@ -1407,7 +1687,8 @@ io.on('connection', (socket) => {
                 summon: null, inventario: [],
                 equipment: { mano1: null, mano2: null, armadura: null, accesorio: null },
                 objetosRecibidos: [], skillsCompradas: comp2,
-                pasivasCompradas: pComp2, persistentEffects: [], contadores: {}
+                pasivasCompradas: pComp2, persistentEffects: [], contadores: {},
+                turnosJugados: 0
             },
             turnoActual: turnoInicial, turno: 0,
             primerTurnoJ1: true, primerTurnoJ2: true,
