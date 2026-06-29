@@ -879,176 +879,681 @@
         }
 
         /* ═══════════════════════════════════════════
-           PARTE 1 - CSS MEDIEVAL: LAYOUT & GLOBAL
+           GAME DESIGN SYSTEM — MEDIEVAL MODERN
            ═══════════════════════════════════════════ */
         :root {
-            --gold: #d4a060;
-            --text: #e8d8c8;
-            --bg-card: linear-gradient(145deg,#1c1610,#120e0a);
-            --border-card: #4a3010;
-            --radius-card: 10px;
-            --shadow-card: 0 2px 12px rgba(0,0,0,0.5);
-            --font: 'Cinzel',Georgia,serif;
-            --accent: #c85030;
+            --gold:   #e8b860;
+            --gold2:  #c89030;
+            --accent: #d44828;
+            --accent2:#a83820;
+            --bg:     #0a0806;
+            --bg2:    #100c08;
+            --bg3:    #18120e;
+            --card:   #1a1410;
+            --card2:  #221c16;
+            --border: #3a2818;
+            --border2:#5a3a20;
+            --text:   #e0d0c0;
+            --text2:  #a09070;
+            --text3:  #6a5030;
+            --font:   'Cinzel',Georgia,serif;
+            --radius: 12px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.6);
+            --glow:   0 0 20px rgba(200,80,48,0.15);
         }
 
-        /* ── hero summary card ── */
-        .hero-summary {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            background: var(--bg-card);
-            border: 1px solid var(--border-card);
-            border-radius: var(--radius-card);
-            padding: 12px 10px;
-            margin-bottom: 12px;
-            box-shadow: var(--shadow-card);
+        /* ── SCROLLBAR ── */
+        #pantallaMenu::-webkit-scrollbar,
+        #pantallaPersonajes::-webkit-scrollbar,
+        #pantallaCreacion::-webkit-scrollbar,
+        #pantallaSeleccionPJ::-webkit-scrollbar,
+        #pantallaInventario::-webkit-scrollbar,
+        #pantallaTienda::-webkit-scrollbar { width: 3px; }
+        #pantallaMenu::-webkit-scrollbar-track,
+        #pantallaPersonajes::-webkit-scrollbar-track,
+        #pantallaCreacion::-webkit-scrollbar-track,
+        #pantallaSeleccionPJ::-webkit-scrollbar-track,
+        #pantallaInventario::-webkit-scrollbar-track,
+        #pantallaTienda::-webkit-scrollbar-track { background: transparent; }
+        #pantallaMenu::-webkit-scrollbar-thumb,
+        #pantallaPersonajes::-webkit-scrollbar-thumb,
+        #pantallaCreacion::-webkit-scrollbar-thumb,
+        #pantallaSeleccionPJ::-webkit-scrollbar-thumb,
+        #pantallaInventario::-webkit-scrollbar-thumb,
+        #pantallaTienda::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        /* ── SCREENS BASE ── */
+        #pantallaMenu, #pantallaPersonajes, #pantallaCreacion,
+        #pantallaSeleccionPJ, #pantallaInventario, #pantallaTienda {
+            padding: 0 0 20px;
+            overflow-y: auto;
         }
-        .hero-summary .summary-item {
-            text-align: center;
-            color: var(--text);
-        }
-        .hero-summary .summary-item .summary-value {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--gold);
-        }
-        .hero-summary .summary-item .summary-label {
-            font-size: 7px;
-            letter-spacing: 1px;
-            color: #9a7040;
-            text-transform: uppercase;
+        #pantallaMenu { display: block; }
+
+        /* ── DIVIDER ── */
+        .game-divider {
+            height: 1px;
+            background: linear-gradient(90deg,transparent,var(--border),transparent);
+            margin: 12px 0;
+            border: none;
         }
 
-        /* ── menu hero / portal ── */
+        /* ═══════════════════════════════════════════
+           MENU HERO
+           ═══════════════════════════════════════════ */
         .menu-hero {
             text-align: center;
-            padding: 24px 12px 16px;
+            padding: 28px 16px 20px;
+            position: relative;
+        }
+        .menu-hero::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 10%; right: 10%;
+            height: 1px;
+            background: linear-gradient(90deg,transparent,rgba(200,150,60,0.2),transparent);
         }
         .menu-hero .logo-main {
-            font-size: 28px;
+            font-size: clamp(22px,6vw,32px);
             font-weight: 900;
-            color: var(--gold);
-            letter-spacing: 6px;
-            text-shadow: 0 0 20px rgba(200,150,60,0.3);
+            background: linear-gradient(180deg,#f0d080,#c89030);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 4px;
+            text-shadow: none;
+            filter: drop-shadow(0 2px 8px rgba(200,150,60,0.3));
         }
         .menu-hero .logo-sub {
-            font-size: 9px;
-            color: #8a6030;
-            letter-spacing: 8px;
+            font-size: 8px;
+            color: var(--text3);
+            letter-spacing: 6px;
             text-transform: uppercase;
-            margin-top: 2px;
+            margin-top: 4px;
         }
         .menu-hero .user-badge {
-            display: inline-block;
-            margin-top: 10px;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid #3a2010;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border);
             border-radius: 20px;
-            padding: 4px 12px 4px 6px;
-            font-size: 9px;
-            color: #b09060;
+            padding: 4px 14px 4px 4px;
+            font-size: 8px;
+            color: var(--text2);
             letter-spacing: 1px;
         }
         .menu-hero .user-badge img {
             width: 20px; height: 20px; border-radius: 50%;
-            vertical-align: middle; margin-right: 6px;
+            object-fit: cover;
+        }
+        .menu-hero .user-badge .badge-photo {
+            width: 20px; height: 20px; border-radius: 50%;
+            background: var(--card); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text3); font-size: 10px;
         }
 
-        /* ── menu buttons ── */
+        /* ═══════════════════════════════════════════
+           MENU BUTTONS
+           ═══════════════════════════════════════════ */
         .menu-buttons {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            padding: 0 6px 80px;
+            gap: 10px;
+            padding: 16px 14px 100px;
         }
         .menu-btn {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 14px 16px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-card);
-            border-radius: var(--radius-card);
+            position: relative;
+            padding: 16px 18px;
+            background: linear-gradient(145deg,var(--card),var(--bg3));
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
             color: var(--text);
             font-family: var(--font);
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 700;
             letter-spacing: 2px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.25s ease;
             text-align: left;
-            position: relative;
             overflow: hidden;
+            box-shadow: var(--shadow);
         }
         .menu-btn::before {
             content: '';
             position: absolute; inset: 0;
-            background: linear-gradient(135deg, rgba(200,80,48,0.06), transparent);
+            background: linear-gradient(135deg, rgba(200,80,48,0.08), transparent 60%);
+            pointer-events: none;
+            border-radius: var(--radius);
+        }
+        .menu-btn::after {
+            content: '';
+            position: absolute; inset: 1px;
+            border-radius: calc(var(--radius) - 1px);
+            border: 1px solid rgba(255,255,255,0.03);
             pointer-events: none;
         }
         .menu-btn:hover {
-            border-color: #7a4020;
-            background: linear-gradient(145deg,#221a14,#18120e);
-            transform: translateX(4px);
+            border-color: var(--border2);
+            background: linear-gradient(145deg,var(--card2),var(--card));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(0,0,0,0.6), var(--glow);
         }
-        .menu-btn:active { transform: scale(0.98); }
-        .menu-btn .btn-icon {
-            font-size: 22px;
-            width: 36px; text-align: center;
-            flex-shrink: 0;
+        .menu-btn:active {
+            transform: translateY(0) scale(0.98);
+            box-shadow: var(--shadow);
         }
-        .menu-btn .btn-title { color: var(--gold); }
+        .menu-btn .btn-title {
+            display: block;
+            color: var(--gold);
+            font-size: 14px;
+            letter-spacing: 3px;
+        }
         .menu-btn .btn-desc {
             display: block;
             font-size: 7px;
             font-weight: 400;
-            color: #7a6038;
+            color: var(--text3);
+            letter-spacing: 1px;
+            margin-top: 3px;
+        }
+        .menu-btn.arena {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(0.5);
+        }
+        .menu-btn.arena:hover {
+            transform: none;
+            box-shadow: var(--shadow);
+            border-color: var(--border);
+        }
+
+        /* ═══════════════════════════════════════════
+           PAGE HEADER
+           ═══════════════════════════════════════════ */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 14px 10px;
+            margin-bottom: 4px;
+            position: relative;
+        }
+        .page-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 14px; right: 14px;
+            height: 1px;
+            background: linear-gradient(90deg,transparent,rgba(200,150,60,0.15),transparent);
+        }
+        .page-header .page-title {
+            font-size: 12px;
+            color: var(--gold);
+            letter-spacing: 3px;
+            font-weight: 700;
+        }
+        .page-header .page-back {
+            font-size: 9px;
+            color: var(--text3);
+            cursor: pointer;
+            letter-spacing: 1px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 5px 12px;
+            font-family: var(--font);
+            transition: all 0.2s;
+        }
+        .page-header .page-back:hover {
+            color: var(--gold);
+            border-color: var(--border2);
+            background: rgba(0,0,0,0.5);
+        }
+
+        /* ═══════════════════════════════════════════
+           HERO SUMMARY
+           ═══════════════════════════════════════════ */
+        .hero-summary {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: linear-gradient(145deg,var(--card),var(--bg3));
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 10px;
+            margin: 4px 14px 10px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-summary::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg,rgba(200,150,60,0.03),transparent 50%);
+            pointer-events: none;
+        }
+        .hero-summary .summary-item { text-align: center; position: relative; z-index: 1; }
+        .hero-summary .summary-item .summary-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gold);
+            letter-spacing: 1px;
+        }
+        .hero-summary .summary-item .summary-label {
+            font-size: 7px;
+            letter-spacing: 1px;
+            color: var(--text3);
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        /* ═══════════════════════════════════════════
+           HERO CARDS (personajes list, selection)
+           ═══════════════════════════════════════════ */
+        .hero-list { display: flex; flex-direction: column; gap: 6px; padding: 0 14px; }
+        .hero-selection-grid { display: flex; flex-direction: column; gap: 6px; padding: 0 14px; }
+
+        .pj-card.hero-select-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            background: linear-gradient(145deg,var(--card),var(--bg3));
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+        .pj-card.hero-select-card::before {
+            content: '';
+            position: absolute; inset: 1px;
+            border-radius: calc(var(--radius) - 1px);
+            border: 1px solid rgba(255,255,255,0.02);
+            pointer-events: none;
+        }
+        .pj-card.hero-select-card:hover {
+            border-color: var(--border2);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+        }
+        .pj-card.hero-select-card:active { transform: scale(0.99); }
+        .pj-card.hero-select-card.seleccionado {
+            border-color: var(--accent);
+            box-shadow: 0 0 16px rgba(200,80,48,0.2), var(--shadow);
+        }
+        .pj-card.hero-select-card .pj-avatar {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background: var(--bg3);
+            overflow: hidden;
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text3); font-size: 16px;
+        }
+        .pj-card.hero-select-card .pj-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .pj-card.hero-select-card .pj-info { flex: 1; min-width: 0; }
+        .pj-card.hero-select-card .pj-nombre {
+            color: var(--gold);
+            font-size: 11px;
+            letter-spacing: 2px;
+        }
+        .pj-card.hero-select-card .pj-clase {
+            color: var(--text3);
+            font-size: 8px;
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+        .pj-card.hero-select-card .pj-stats {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+        .pj-card.hero-select-card .pj-stat {
+            background: rgba(0,0,0,0.35);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 8px;
+            color: var(--text2);
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .hero-select-card .select-btn {
+            font-family: var(--font);
+            font-size: 8px;
+            padding: 5px 10px;
+            background: linear-gradient(180deg,var(--accent),var(--accent2));
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(200,80,48,0.3);
+        }
+
+        /* ═══════════════════════════════════════════
+           STICKY ACTIONS
+           ═══════════════════════════════════════════ */
+        .sticky-actions {
+            display: flex;
+            gap: 8px;
+            padding: 10px 14px 14px;
+        }
+        .sticky-actions .main-btn { flex: 1; }
+
+        /* ═══════════════════════════════════════════
+           MAIN BUTTON - GAME STYLE
+           ═══════════════════════════════════════════ */
+        .main-btn.primary {
+            display: block; width: 100%;
+            padding: 12px 0;
+            font-family: var(--font);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: linear-gradient(180deg,#d85030,#982818);
+            box-shadow: 0 4px 16px rgba(200,80,48,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+            transition: all 0.2s ease;
+            position: relative;
+            text-transform: uppercase;
+        }
+        .main-btn.primary:hover {
+            filter: brightness(1.15);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(200,80,48,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+        }
+        .main-btn.primary:active {
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 2px 8px rgba(200,80,48,0.3);
+        }
+
+        /* ═══════════════════════════════════════════
+           HERO CREATE CARD
+           ═══════════════════════════════════════════ */
+        .hero-create-card {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: linear-gradient(145deg,var(--card),var(--bg3));
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 16px;
+            margin: 0 14px;
+            box-shadow: var(--shadow);
+        }
+        .hero-create-card .campo label {
+            color: var(--text2);
+            font-size: 8px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+            display: block;
+        }
+        .hero-create-card .campo input,
+        .hero-create-card .campo select {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--gold);
+            font-family: var(--font);
+            font-size: 11px;
+            padding: 8px 10px;
+            outline: none;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        .hero-create-card .campo input:focus,
+        .hero-create-card .campo select:focus {
+            border-color: var(--gold2);
+            box-shadow: 0 0 8px rgba(200,150,60,0.1);
+        }
+
+        .hero-create-card .hero-preview {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .hero-create-card .hero-preview .preview-avatar {
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            border: 2px solid var(--border2);
+            background: var(--bg3);
+            overflow: hidden;
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text3); font-size: 18px;
+        }
+        .hero-create-card .hero-preview .preview-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .hero-create-card .hero-preview .preview-info { flex: 1; }
+        .hero-create-card .hero-preview .preview-name {
+            color: var(--gold);
+            font-size: 11px;
+            letter-spacing: 2px;
+        }
+        .hero-create-card .hero-preview .preview-class {
+            color: var(--text3);
+            font-size: 8px;
             letter-spacing: 1px;
             margin-top: 1px;
         }
-        .menu-btn.arena {
-            opacity: 0.6;
-            cursor: not-allowed;
+
+        .hero-create-card .stats-section {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .hero-create-card .stats-section .stats-title {
+            color: var(--text2);
+            font-size: 8px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .hero-create-card .stats-section .stat-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .hero-create-card .stats-section .stat-row:last-child { border-bottom: none; }
+        .hero-create-card .stats-section .stat-row .stat-label {
+            color: var(--text2);
+            font-size: 9px;
+            letter-spacing: 1px;
+        }
+        .hero-create-card .stats-section .stat-row .stat-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .hero-create-card .stats-section .stat-row .stat-controls .stat-input {
+            width: 44px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--gold);
+            font-family: var(--font);
+            font-size: 11px;
+            padding: 4px 6px;
+            text-align: center;
+            outline: none;
+        }
+        .hero-create-card .stats-section .stat-row .stat-controls .stat-val {
+            color: var(--gold);
+            font-size: 14px;
+            font-weight: 700;
+            width: 28px;
+            text-align: center;
         }
 
-        /* ── cards-grid (tienda, inventario) ── */
+        .hero-create-card .skill-section {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .hero-create-card .skill-section .skill-title {
+            color: var(--text2);
+            font-size: 8px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .hero-create-card .skill-section .skill-picker-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+        }
+        .hero-create-card .skill-section .skill-picker-grid .skill-picker-item {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: 7px 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .hero-create-card .skill-section .skill-picker-grid .skill-picker-item:hover {
+            border-color: var(--border2);
+            background: rgba(0,0,0,0.55);
+        }
+        .hero-create-card .skill-section .skill-picker-grid .skill-picker-item.seleccionada {
+            border-color: var(--gold);
+            background: rgba(200,140,60,0.12);
+            box-shadow: 0 0 8px rgba(200,140,60,0.2);
+        }
+
+        /* ═══════════════════════════════════════════
+           TABS (shop, inventory)
+           ═══════════════════════════════════════════ */
+        .tabs {
+            display: flex;
+            margin: 4px 14px 8px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            padding: 3px;
+            border: 1px solid var(--border);
+        }
+        .tab {
+            flex: 1;
+            padding: 8px 0;
+            text-align: center;
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: var(--text3);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: var(--text2); }
+        .tab.activo {
+            color: var(--gold);
+            background: rgba(0,0,0,0.4);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .tab-panel { display: none; }
+        .tab-panel.activo { display: block; }
+
+        /* ═══════════════════════════════════════════
+           SHOP STATUS BAR
+           ═══════════════════════════════════════════ */
+        .shop-status {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: linear-gradient(145deg,var(--card),var(--bg3));
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px 10px;
+            margin: 4px 14px 8px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        .shop-status::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg,rgba(200,150,60,0.03),transparent 50%);
+            pointer-events: none;
+        }
+        .shop-status .summary-card { text-align: center; position: relative; z-index: 1; }
+        .shop-status .summary-card .summary-value {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--gold);
+        }
+        .shop-status .summary-card .summary-label {
+            font-size: 7px;
+            letter-spacing: 1px;
+            color: var(--text3);
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        /* ═══════════════════════════════════════════
+           CARDS GRID (shop, inventory)
+           ═══════════════════════════════════════════ */
         .cards-grid {
             display: flex;
             flex-direction: column;
             gap: 6px;
-            padding-bottom: 12px;
+            padding: 0 14px 12px;
         }
 
-        /* ── shop card ── */
         .shop-card {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 10px 10px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-card);
-            border-radius: var(--radius-card);
+            padding: 11px 12px;
+            background: linear-gradient(145deg,var(--card),var(--bg3));
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
             color: var(--text);
             font-family: var(--font);
             font-size: 10px;
             cursor: pointer;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            transition: all 0.2s;
             position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .shop-card::before {
+            content: '';
+            position: absolute; inset: 1px;
+            border-radius: calc(var(--radius) - 1px);
+            border: 1px solid rgba(255,255,255,0.02);
+            pointer-events: none;
         }
         .shop-card:hover {
-            border-color: #8a6030;
-            box-shadow: 0 0 10px rgba(200,160,80,0.1);
+            border-color: var(--border2);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4), var(--glow);
+            transform: translateY(-1px);
         }
+        .shop-card:active { transform: scale(0.99); }
         .shop-card.adquirida {
-            border-color: #2a5a20;
-            opacity: 0.7;
+            border-color: #2a4a20;
+            opacity: 0.65;
         }
         .shop-card .sc-icon {
-            font-size: 18px;
-            width: 28px;
+            font-size: 16px;
+            width: 26px;
             text-align: center;
             flex-shrink: 0;
+            color: var(--gold2);
         }
         .shop-card .sc-body { flex: 1; min-width: 0; }
         .shop-card .sc-name {
@@ -1059,7 +1564,7 @@
         }
         .shop-card .sc-desc {
             font-size: 8px;
-            color: #887868;
+            color: var(--text2);
             line-height: 1.3;
             margin-top: 2px;
         }
@@ -1067,393 +1572,111 @@
         .shop-card .sc-btn-comprar {
             font-family: var(--font);
             font-size: 9px;
-            padding: 4px 12px;
-            background: linear-gradient(180deg,#c85030,#7a2010);
+            padding: 5px 12px;
+            background: linear-gradient(180deg,var(--accent),var(--accent2));
             color: #fff;
             border: none;
-            border-radius: 4px;
+            border-radius: 5px;
             cursor: pointer;
             letter-spacing: 1px;
             transition: filter 0.15s;
+            box-shadow: 0 2px 6px rgba(200,80,48,0.3);
         }
-        .shop-card .sc-btn-comprar:hover { filter: brightness(1.25); }
+        .shop-card .sc-btn-comprar:hover { filter: brightness(1.2); }
+        .shop-card .sc-btn-comprar:active { transform: scale(0.95); }
         .shop-card .sc-adquirida {
-            color: #60d060;
+            color: #60b060;
             font-size: 8px;
             letter-spacing: 1px;
             font-weight: 700;
         }
 
         /* ═══════════════════════════════════════════
-           PARTE 2 - HERO LIST & SELECTION
-           ═══════════════════════════════════════════ */
-        .hero-list { display: flex; flex-direction: column; gap: 6px; }
-
-        .pj-card.hero-select-card {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 12px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-card);
-            border-radius: var(--radius-card);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .pj-card.hero-select-card:hover {
-            border-color: #6a4020;
-            background: linear-gradient(145deg,#221a14,#18120e);
-        }
-        .pj-card.hero-select-card.seleccionado {
-            border-color: var(--accent);
-            box-shadow: 0 0 12px rgba(200,80,48,0.15);
-        }
-        .pj-card.hero-select-card .pj-avatar {
-            width: 44px; height: 44px;
-            border-radius: 50%;
-            border: 2px solid var(--border-card);
-            background: #1a0e08;
-            overflow: hidden;
-            flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center;
-            color: #5a3a18; font-size: 18px;
-        }
-        .pj-card.hero-select-card .pj-avatar img {
-            width: 100%; height: 100%; object-fit: cover;
-        }
-        .pj-card.hero-select-card .pj-info { flex: 1; min-width: 0; }
-        .pj-card.hero-select-card .pj-nombre {
-            color: var(--gold);
-            font-size: 11px;
-            letter-spacing: 2px;
-        }
-        .pj-card.hero-select-card .pj-clase {
-            color: #6a4018;
-            font-size: 8px;
-            letter-spacing: 1px;
-            margin-top: 1px;
-        }
-        .pj-card.hero-select-card .pj-stats {
-            display: flex;
-            gap: 4px;
-            margin-top: 4px;
-            flex-wrap: wrap;
-        }
-        .pj-card.hero-select-card .pj-stat {
-            background: rgba(0,0,0,0.3);
-            padding: 2px 5px;
-            border-radius: 3px;
-            font-size: 8px;
-            color: #b0a090;
-            letter-spacing: 0.5px;
-        }
-
-        .hero-select-card .select-btn {
-            font-family: var(--font);
-            font-size: 8px;
-            padding: 5px 10px;
-            background: linear-gradient(180deg,#c85030,#7a2010);
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            letter-spacing: 1px;
-            flex-shrink: 0;
-        }
-
-        /* ── page-header ── */
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 0 8px;
-            margin-bottom: 6px;
-            border-bottom: 1px solid #2a1808;
-        }
-        .page-header .page-title {
-            font-size: 11px;
-            color: var(--gold);
-            letter-spacing: 3px;
-            font-weight: 700;
-        }
-        .page-header .page-back {
-            font-size: 10px;
-            color: #6a4018;
-            cursor: pointer;
-            letter-spacing: 1px;
-            background: none;
-            border: 1px solid #3a2008;
-            border-radius: 4px;
-            padding: 4px 10px;
-            font-family: var(--font);
-            transition: all 0.2s;
-        }
-        .page-header .page-back:hover {
-            color: var(--gold);
-            border-color: #6a4020;
-        }
-
-        /* ── sticky actions bar ── */
-        .sticky-actions {
-            display: flex;
-            gap: 6px;
-            padding: 8px 0;
-        }
-        .sticky-actions .main-btn {
-            flex: 1;
-        }
-
-        /* ═══════════════════════════════════════════
-           PARTE 3 - CREACION HERO
-           ═══════════════════════════════════════════ */
-        .hero-create-card {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-card);
-            border-radius: var(--radius-card);
-            padding: 16px 14px;
-            box-shadow: var(--shadow-card);
-        }
-        .hero-create-card .campo label {
-            color: #a08050;
-            font-size: 8px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-        .hero-create-card .hero-preview {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: rgba(0,0,0,0.2);
-            border: 1px solid #2a1808;
-            border-radius: 6px;
-            padding: 10px;
-        }
-        .hero-create-card .hero-preview .preview-avatar {
-            width: 50px; height: 50px;
-            border-radius: 50%;
-            border: 2px solid var(--border-card);
-            background: #1a0e08;
-            overflow: hidden;
-            flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center;
-            color: #5a3a18; font-size: 20px;
-        }
-        .hero-create-card .hero-preview .preview-avatar img {
-            width: 100%; height: 100%; object-fit: cover;
-        }
-        .hero-create-card .hero-preview .preview-info { flex: 1; }
-        .hero-create-card .hero-preview .preview-name {
-            color: var(--gold);
-            font-size: 11px;
-            letter-spacing: 2px;
-        }
-        .hero-create-card .hero-preview .preview-class {
-            color: #6a4018;
-            font-size: 8px;
-            letter-spacing: 1px;
-            margin-top: 1px;
-        }
-
-        .hero-create-card .stats-section {
-            background: rgba(0,0,0,0.15);
-            border: 1px solid #2a1808;
-            border-radius: 6px;
-            padding: 10px;
-        }
-        .hero-create-card .stats-section .stats-title {
-            color: #a08050;
-            font-size: 8px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 6px;
-        }
-        .hero-create-card .stats-section .stat-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 4px 0;
-        }
-        .hero-create-card .stats-section .stat-row .stat-label {
-            color: #9a7040;
-            font-size: 9px;
-            letter-spacing: 1px;
-        }
-        .hero-create-card .stats-section .stat-row .stat-controls {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .hero-create-card .stats-section .stat-row .stat-controls .stat-input {
-            width: 40px;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid #3a2010;
-            border-radius: 3px;
-            color: #d4b060;
-            font-family: var(--font);
-            font-size: 11px;
-            padding: 3px 5px;
-            text-align: center;
-            outline: none;
-        }
-        .hero-create-card .stats-section .stat-row .stat-controls .stat-val {
-            color: var(--gold);
-            font-size: 13px;
-            font-weight: 700;
-            width: 24px;
-            text-align: center;
-        }
-
-        .hero-create-card .skill-section {
-            background: rgba(0,0,0,0.15);
-            border: 1px solid #2a1808;
-            border-radius: 6px;
-            padding: 10px;
-        }
-        .hero-create-card .skill-section .skill-title {
-            color: #a08050;
-            font-size: 8px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
-        .hero-create-card .skill-section .skill-picker-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4px;
-        }
-        .hero-create-card .skill-section .skill-picker-grid .skill-picker-item {
-            background: rgba(0,0,0,0.4);
-            border: 1px solid #2a1808;
-            border-radius: 4px;
-            padding: 6px 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .hero-create-card .skill-section .skill-picker-grid .skill-picker-item:hover {
-            border-color: #5a3a18;
-            background: rgba(0,0,0,0.6);
-        }
-        .hero-create-card .skill-section .skill-picker-grid .skill-picker-item.seleccionada {
-            border-color: var(--gold);
-            background: rgba(200,140,60,0.1);
-            box-shadow: 0 0 6px rgba(200,140,60,0.2);
-        }
-
-        /* ═══════════════════════════════════════════
-           PARTE 4 - BOTTOM ROW & OVERRIDES
+           BOTTOM ROW
            ═══════════════════════════════════════════ */
         .bottom-row {
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding: 8px 8px 10px;
-            gap: 6px;
-            border-top: 1px solid #2a1808;
-            background: linear-gradient(180deg,#120c06,#0a0604);
+            padding: 6px 8px 10px;
+            gap: 4px;
+            border-top: 1px solid var(--border);
+            background: linear-gradient(180deg,#100a06,#080604);
         }
-        .bottom-row .bottom-btn {
+        .round-btn {
             flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 6px 0;
+            padding: 8px 4px;
             background: none;
             border: none;
-            color: #6a4018;
+            color: var(--text3);
             font-family: var(--font);
             font-size: 8px;
             letter-spacing: 1px;
             cursor: pointer;
             transition: all 0.2s;
             position: relative;
+            border-radius: 8px;
+            min-height: 48px;
         }
-        .bottom-row .bottom-btn:hover { color: #a08050; }
-        .bottom-row .bottom-btn.active { color: var(--gold); }
-        .bottom-row .bottom-btn .bottom-icon {
-            font-size: 16px;
-            margin-bottom: 2px;
+        .round-btn:hover { color: var(--text2); background: rgba(255,255,255,0.03); }
+        .round-btn.activo {
+            color: var(--gold);
+            background: rgba(200,150,60,0.06);
+        }
+        .round-btn.activo::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 20%; right: 20%;
+            height: 2px;
+            background: linear-gradient(90deg,transparent,var(--gold),transparent);
+            border-radius: 1px;
         }
 
         /* ═══════════════════════════════════════════
-           EXTRA - TABS AJUSTADOS
+           ANIMATIONS
            ═══════════════════════════════════════════ */
-        .tabs {
-            display: flex;
-            margin-bottom: 8px;
-            border-bottom: 1px solid #2a1808;
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
-        .tab {
-            flex: 1;
-            padding: 7px 0;
-            text-align: center;
-            font-size: 9px;
-            letter-spacing: 2px;
-            color: #5a3a18;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
+        @keyframes glowPulse {
+            0%,100% { box-shadow: 0 0 8px rgba(200,150,60,0.1); }
+            50%     { box-shadow: 0 0 20px rgba(200,150,60,0.2); }
         }
-        .tab:hover { color: #8a6a38; }
-        .tab.activo { color: var(--gold); border-bottom: 2px solid var(--accent); }
-        .tab-panel { display: none; }
-        .tab-panel.activo { display: block; }
+        #pantallaMenu > *,
+        #pantallaPersonajes > *,
+        #pantallaCreacion > *,
+        #pantallaSeleccionPJ > *,
+        #pantallaTienda > *,
+        #pantallaInventario > * {
+            animation: fadeUp 0.35s ease forwards;
+        }
+        .hero-summary { animation: glowPulse 3s ease-in-out infinite; }
 
-        .shop-status {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            background: var(--bg-card);
-            border: 1px solid var(--border-card);
-            border-radius: var(--radius-card);
-            padding: 10px 10px;
-            margin-bottom: 8px;
+        /* ═══════════════════════════════════════════
+           RESPONSIVE — MOBILE PADDING
+           ═══════════════════════════════════════════ */
+        @media (max-width: 500px) {
+            .menu-hero { padding: 20px 12px 16px; }
+            .menu-hero .logo-main { font-size: clamp(18px,5vw,24px); letter-spacing: 3px; }
+            .menu-buttons { padding: 12px 10px 90px; gap: 8px; }
+            .menu-btn { padding: 14px 14px; }
+            .page-header { padding: 10px 12px 8px; }
+            .hero-summary { margin: 4px 10px 8px; padding: 10px 8px; }
+            .hero-list, .hero-selection-grid { padding: 0 10px; }
+            .hero-create-card { margin: 0 10px; padding: 14px 12px; }
+            .tabs { margin: 4px 10px 6px; }
+            .shop-status { margin: 4px 10px 6px; }
+            .cards-grid { padding: 0 10px 10px; }
+            .shop-card { padding: 10px 10px; }
+            .sticky-actions { padding: 8px 10px 12px; }
+            .bottom-row { padding: 4px 4px 8px; }
+            .round-btn { font-size: 7px; min-height: 44px; padding: 6px 2px; }
         }
-        .shop-status .summary-card {
-            text-align: center;
-        }
-        .shop-status .summary-card .summary-value {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--gold);
-        }
-        .shop-status .summary-card .summary-label {
-            font-size: 7px;
-            letter-spacing: 1px;
-            color: #9a7040;
-            text-transform: uppercase;
-        }
-
-        .hero-select-card {
-            /* already styled above */
-        }
-
-        .hero-selection-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        /* ── fix button styles ── */
-        .main-btn.primary {
-            background: linear-gradient(180deg,#c85030,#7a2010);
-        }
-        .main-btn.secondary {
-            font-size: 11px;
-            padding: 9px 0;
-            background: linear-gradient(180deg,#5a2e10,#3a1808);
-        }
-
-        /* ── scroll en screens ── */
-        #pantallaMenu, #pantallaPersonajes, #pantallaCreacion,
-        #pantallaSeleccionPJ, #pantallaInventario, #pantallaTienda {
-            padding: 6px 10px 20px;
-            overflow-y: auto;
-        }
-        #pantallaMenu { display: block; }
     </style>
 </head>
 <body>
