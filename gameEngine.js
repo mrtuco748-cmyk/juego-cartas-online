@@ -16,8 +16,8 @@ const SKILLS_DATA = {
     sello_silencio: { nombre: "Sello de Silencio", coste: 30, efecto: "silence", duracion: 2 },
     sacrificio: { nombre: "Sacrificio", coste: 15, efecto: "sacrifice", valor: 0.45 },
     invocacion: { nombre: "Invocación Menor", coste: 55, efecto: "summon", valor: 0.25 },
-    rafaga: { nombre: "Ráfaga", coste: 20, efecto: "damage_percent", valor: 0.15 },
-    cataclismo: { nombre: "Cataclismo", coste: 80, efecto: "damage_true", valor: 20 },
+    rafaga: { nombre: "Ráfaga", coste: 15, efecto: "damage_percent", valor: 0.15 },
+    cataclismo: { nombre: "Cataclismo", coste: 80, efecto: "damage_true", valor: 55 },
     bendicion: { nombre: "Bendición", coste: 35, efecto: "buff_all", valor: 2, duracion: 2 },
     escarcha: { nombre: "Escarcha", coste: 25, efecto: "debuff", stat: "velocidad", valor: 4, duracion: 2 },
     acrio: { nombre: "Acrio", coste: 30, efecto: "damage_true", valor: 15, requiereItem: "Varita Común Nivel 3" }
@@ -262,10 +262,8 @@ class GameProcessor {
       },
       aoe_damage: (target, card, ctx) => {
         const dmg = Math.floor(target.maxHp * card.valor);
-        const selfDmg = ctx.source ? Math.floor(ctx.source.maxHp * card.valor * 0.5) : 0;
         target.hp -= dmg;
-        if (ctx.source) ctx.source.hp -= selfDmg;
-        return { damage: dmg, log: `Tormenta causa ${dmg} de daño al rival y ${selfDmg} al lanzador` };
+        return { damage: dmg, log: `Tormenta causa ${dmg} de daño al rival` };
       },
       silence: (target, card) => {
         target.status = target.status || {};
@@ -299,7 +297,10 @@ class GameProcessor {
         src.status = src.status || {};
         src.status.buffs = src.status.buffs || {};
         stats.forEach(s => {
-          src.status.buffs[s] = { valor: card.valor, restante: card.duracion, fuente: card.nombre };
+          const existente = src.status.buffs[s];
+          if (!existente || existente.valor < card.valor) {
+            src.status.buffs[s] = { valor: card.valor, restante: card.duracion, fuente: card.nombre };
+          }
         });
         return { log: `${src.nombre} recibe +${card.valor} a todas las stats por ${card.duracion} turnos` };
       }
@@ -346,35 +347,61 @@ class GameProcessor {
         case "dot":
           if (trigger === "on_hit" && ctx.target) {
             const dmg = Math.floor(ctx.target.maxHp * pasiva.valor);
-            ctx.target.hp -= dmg;
-            results.push({ log: `${ctx.target.nombre} sufre ${dmg} de daño por veneno` });
+            if (reverse) {
+              ctx.target.hp = Math.min(ctx.target.maxHp, ctx.target.hp + dmg);
+              results.push({ log: `${ctx.target.nombre} se cura ${dmg} por veneno invertido` });
+            } else {
+              ctx.target.hp -= dmg;
+              results.push({ log: `${ctx.target.nombre} sufre ${dmg} de daño por veneno` });
+            }
           }
           break;
         case "survival":
           if (trigger === "on_death" && owner.hp <= 0 && !owner._revived) {
-            owner.hp = pasiva.hp_min;
-            owner._revived = true;
-            results.push({ log: `${ownerName} sobrevive con ${pasiva.hp_min} HP (Tótem)` });
+            if (reverse) {
+              owner.hp = 0;
+              owner._revived = true;
+              results.push({ log: `${ownerName} cae sin salvación (Tótem invertido)` });
+            } else {
+              owner.hp = pasiva.hp_min;
+              owner._revived = true;
+              results.push({ log: `${ownerName} sobrevive con ${pasiva.hp_min} HP (Tótem)` });
+            }
           }
           break;
         case "regen_hp":
           if (trigger === "on_turn_start") {
             const healed = Math.floor(owner.maxHp * pasiva.valor);
-            owner.hp = Math.min(owner.maxHp, owner.hp + healed);
-            results.push({ log: `${ownerName} regenera ${healed} HP` });
+            if (reverse) {
+              owner.hp -= healed;
+              results.push({ log: `${ownerName} pierde ${healed} HP por regeneración invertida` });
+            } else {
+              owner.hp = Math.min(owner.maxHp, owner.hp + healed);
+              results.push({ log: `${ownerName} regenera ${healed} HP` });
+            }
           }
           break;
         case "regen_energy":
           if (trigger === "on_turn_start") {
-            owner.energia = Math.min(100, owner.energia + pasiva.valor);
-            results.push({ log: `${ownerName} recupera ${pasiva.valor} energía` });
+            if (reverse) {
+              owner.energia = Math.max(0, owner.energia - pasiva.valor);
+              results.push({ log: `${ownerName} pierde ${pasiva.valor} energía por maná invertido` });
+            } else {
+              owner.energia = Math.min(100, owner.energia + pasiva.valor);
+              results.push({ log: `${ownerName} recupera ${pasiva.valor} energía` });
+            }
           }
           break;
         case "counter":
           if (trigger === "on_take_damage" && ctx.damage) {
             const counterDmg = Math.floor(ctx.damage * pasiva.valor);
-            if (rival) rival.hp -= counterDmg;
-            results.push({ log: `${ownerName} contraataca causando ${counterDmg} daño` });
+            if (reverse) {
+              if (rival) rival.hp += counterDmg;
+              results.push({ log: `${ownerName} CURA a ${rivalName} por contraataque invertido` });
+            } else {
+              if (rival) rival.hp -= counterDmg;
+              results.push({ log: `${ownerName} contraataca causando ${counterDmg} daño` });
+            }
           }
           break;
         case "thorns":
@@ -402,9 +429,14 @@ class GameProcessor {
           break;
         case "revive":
           if (trigger === "on_death" && owner.hp <= 0 && !owner._revived) {
-            owner.hp = Math.floor(owner.maxHp * pasiva.valor);
-            owner._revived = true;
-            results.push({ log: `${ownerName} revive con ${owner.hp} HP` });
+            if (reverse) {
+              owner._revived = true;
+              results.push({ log: `${ownerName} no puede revivir (pasiva invertida)` });
+            } else {
+              owner.hp = Math.floor(owner.maxHp * pasiva.valor);
+              owner._revived = true;
+              results.push({ log: `${ownerName} revive con ${owner.hp} HP` });
+            }
           }
           break;
         case "spell_vamp":
@@ -423,8 +455,10 @@ class GameProcessor {
           if (trigger === "on_attack") {
             if (reverse) {
               owner.critBonus = (owner.critBonus || 0) - pasiva.valor;
+              if (pasiva.valor) results.push({ log: `${ownerName} PIERDE crítico (pasiva invertida)` });
             } else {
               owner.critBonus = (owner.critBonus || 0) + pasiva.valor;
+              if (pasiva.valor) results.push({ log: `${ownerName} obtiene crítico +${pasiva.valor}` });
             }
           }
           break;
@@ -471,8 +505,10 @@ class GameProcessor {
           if (trigger === "on_hp_loss" && ctx.hpLost) {
             if (reverse) {
               owner.enrageBonus = Math.max(0, (owner.enrageBonus || 0) - Math.floor(ctx.hpLost * pasiva.valor));
+              if (ctx.hpLost) results.push({ log: `${ownerName} PIERDE furia (pasiva invertida)` });
             } else {
               owner.enrageBonus = (owner.enrageBonus || 0) + Math.floor(ctx.hpLost * pasiva.valor);
+              if (ctx.hpLost) results.push({ log: `${ownerName} gana furia +${Math.floor(ctx.hpLost * pasiva.valor)}` });
             }
           }
           break;
@@ -566,7 +602,7 @@ class GameProcessor {
       logs.push(`${jugador.nombre}: el daño causado se convierte en HP`);
     }
 
-    if (info.hpPenalidad) {
+    if (info.hpPenalidad && !esPrimerTurno) {
       const penalidad = Math.floor(jugador.maxHp * info.hpPenalidad);
       jugador.hp -= penalidad;
       jugador.hp = Math.max(1, jugador.hp);
@@ -989,8 +1025,8 @@ class GameProcessor {
         const d2 = Math.floor(Math.random() * 6) + 1;
         partida._fortunaRolls = partida._fortunaRolls || [];
         partida._fortunaRolls.push({ j1: d1, j2: d2 });
-        if (d1 < d2) { jugador1.hp = 0; logs.push(`[Muerte] ${jugador1.nombre} pierde la ruleta rusa (${d1} vs ${d2})`); }
-        else if (d2 < d1) { jugador2.hp = 0; logs.push(`[Muerte] ${jugador2.nombre} pierde la ruleta rusa (${d2} vs ${d1})`); }
+        if (d1 < d2) { jugador1.hp = 0; logs.push(`[Muerte] ${jugador1.nombre} muere en la ruleta rusa (${d1} vs ${d2})`); }
+        else if (d2 < d1) { jugador2.hp = 0; logs.push(`[Muerte] ${jugador2.nombre} muere en la ruleta rusa (${d2} vs ${d1})`); }
         else logs.push(`[Muerte] Ruleta rusa: empate (${d1} vs ${d2}), nada pasa`);
         break;
       }
@@ -1152,11 +1188,6 @@ class GameProcessor {
         partida.fortunaStatus.heavyGravity = true;
         logs.push(`[Mundo] ¡Gravedad extrema! Lanzar objetos prohibido`);
         break;
-      case 'possession':
-        partida.fortunaStatus = partida.fortunaStatus || {};
-        partida.fortunaStatus.possession = card.duracion;
-        logs.push(`[Oculto] ¡Posesión! Controlas las acciones del rival por ${card.duracion} turno(s)`);
-        break;
       case 'clone':
         partida.fortunaStatus = partida.fortunaStatus || {};
         partida.fortunaStatus.clone = card.duracion;
@@ -1166,11 +1197,6 @@ class GameProcessor {
         partida.fortunaStatus = partida.fortunaStatus || {};
         partida.fortunaStatus.ghost = card.duracion;
         logs.push(`[Oculto] ¡El fantasma! El de menos HP es intocable pero no ataca por ${card.duracion} turnos`);
-        break;
-      case 'time_loop':
-        partida.fortunaStatus = partida.fortunaStatus || {};
-        partida.fortunaStatus.timeLoop = true;
-        logs.push(`[Oculto] ¡Bucle temporal! El turno anterior se repite`);
         break;
       case 'amnesia':
         partida.fortunaStatus = partida.fortunaStatus || {};
@@ -1239,10 +1265,8 @@ const FORTUNE_CARDS = [
   { id: 'niebla_caos', nombre: 'Niebla del caos', categoria: 'Mundo', desc: 'Por 4 turnos todos los dados se tiran con los ojos cerrados y no se puede ver el resultado del rival', efecto: 'chaos_fog', duracion: 4 },
   { id: 'campo_electrico', nombre: 'Campo eléctrico', categoria: 'Mundo', desc: 'Permanente hasta la próxima fortuna: cada pose fallida hace 8 de daño al que la intentó', efecto: 'electric_field' },
   { id: 'gravedad_extrema', nombre: 'Gravedad extrema', categoria: 'Mundo', desc: 'Permanente: lanzar objetos está prohibido, son demasiado pesados', efecto: 'heavy_gravity' },
-  { id: 'posesion', nombre: 'Posesión', categoria: 'Oculto', desc: 'Por 1 turno, cada jugador controla las acciones del otro', efecto: 'possession', duracion: 1 },
   { id: 'clon', nombre: 'Clon', categoria: 'Oculto', desc: 'Aparece un clon de ambos jugadores con la mitad de sus stats que ataca de forma automática cada turno por 3 turnos', efecto: 'clone', duracion: 3 },
   { id: 'el_fantasma', nombre: 'El fantasma', categoria: 'Oculto', desc: 'El jugador con menos HP se vuelve intocable por 2 turnos pero tampoco puede atacar', efecto: 'ghost', duracion: 2 },
-  { id: 'bucle_temporal', nombre: 'Bucle temporal', categoria: 'Oculto', desc: 'El turno anterior se repite exactamente igual, con los mismos dados y las mismas acciones', efecto: 'time_loop', duracion: 1 },
   { id: 'amnesia_total', nombre: 'Amnesia total', categoria: 'Oculto', desc: 'Ambos jugadores olvidan sus pasivas y sus stats por 3 turnos. Combaten como personajes nivel 1 con 5 en todo', efecto: 'amnesia', duracion: 3 },
 ];
 

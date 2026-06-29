@@ -115,7 +115,7 @@ const CLASS_POOL = {
     Acorazado: ["escudo_arcano", "cubo_perfecto", "golpe_directo", "reflejo_magico", "golpe_veloz", "drenar_vida", "sacrificio"],
     Ogro: ["golpe_directo", "golpe_veloz", "tormenta", "sacrificio", "furia_berserker", "maldicion", "cubo_perfecto"],
     Golem: ["escudo_arcano", "cubo_perfecto", "golpe_directo", "explosion_mana", "reflejo_magico", "sacrificio", "drenar_vida"],
-    Picaro: ["golpe_veloz", "golpe_directo", "drenar_vida", "cubo_perfecto", "paralisis", "reflejo_magico", "maldicion"],
+    Picaro: ["golpe_veloz", "golpe_directo", "drenar_vida", "cubo_perfecto", "paralisis", "jackpot", "reflejo_magico"],
     Ninja: ["golpe_veloz", "golpe_directo", "drenar_vida", "sello_silencio", "paralisis", "reflejo_magico", "cubo_perfecto"],
     Cazador: ["golpe_directo", "golpe_veloz", "rafaga", "escarcha", "paralisis", "drenar_vida", "tormenta"],
     Mago: ["explosion_mana", "tormenta", "escarcha", "drenar_vida", "cubo_perfecto", "rafaga", "escudo_arcano"],
@@ -452,6 +452,12 @@ io.on('connection', (socket) => {
                 // pacifism: no direct attacks
                 if (fs.pacifism > 0) {
                     io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} no puede atacar (pacifismo forzado)`, tipo: 'fortuna' });
+                    break;
+                }
+
+                // ghost: ethereal player can't attack
+                if (statsYo._ghostNoAttack) {
+                    io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} es etéreo y no puede atacar`, tipo: 'fortuna' });
                     break;
                 }
 
@@ -1011,7 +1017,7 @@ io.on('connection', (socket) => {
 
         // ----- fortune status decrement -----
         const fsTurno = partida.fortunaStatus || {};
-        const turnosToDecrement = ['swapHealDamage', 'swapStats', 'reversePassives', 'slowFast', 'antiStrength', 'mirrorDamage', 'pacifism', 'bloodthirstyRest', 'invertResistance', 'sharedTurn', 'statLottery', 'beastNumber', 'butterHands', 'clumsy', 'mute', 'wasteAction', 'noAttack', 'sacredGround', 'chaosFog', 'possession', 'clone', 'ghost', 'amnesia'];
+        const turnosToDecrement = ['swapHealDamage', 'swapStats', 'reversePassives', 'slowFast', 'antiStrength', 'mirrorDamage', 'pacifism', 'bloodthirstyRest', 'invertResistance', 'sharedTurn', 'statLottery', 'beastNumber', 'butterHands', 'clumsy', 'mute', 'wasteAction', 'noAttack', 'sacredGround', 'chaosFog', 'clone', 'ghost', 'amnesia'];
         turnosToDecrement.forEach(k => {
             if (typeof fsTurno[k] === 'number' && fsTurno[k] > 0) {
                 fsTurno[k]--;
@@ -1105,52 +1111,50 @@ io.on('connection', (socket) => {
             }
         }
 
-        // ----- clone: faster player (by velocidad) attacks self -----
+        // ----- clone: clone of current player attacks rival with half stats -----
         if (fsTurno.clone > 0) {
-            const statsJug = gp.calcularStatsConBuffs(jugTurno);
-            const statsRiv = gp.calcularStatsConBuffs(rivTurno);
-            if (statsJug.velocidad > statsRiv.velocidad) {
-                const statsCloneAtk = gp.calcularStatsConBuffs(jugTurno);
-                const statsCloneDef = gp.calcularStatsConBuffs(jugTurno);
-                const dadoClone = Math.floor(Math.random() * 6) + 1;
-                let dmgClone = Math.max(0, dadoClone + statsCloneAtk.fuerza - statsCloneDef.resistencia);
-                if (jugTurno.status && jugTurno.status.shield > 0) {
-                    const abs = Math.min(jugTurno.status.shield, dmgClone);
-                    jugTurno.status.shield -= abs;
-                    dmgClone -= abs;
-                }
-                jugTurno.hp -= dmgClone;
-                io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} ataca su propio clon: -${dmgClone} HP`, tipo: 'fortuna' });
-                if (partidaCheckMuerte(partidaId, partida)) return;
-            }
-        }
-
-        // ----- ghost: phantom attack on rival -----
-        if (fsTurno.ghost > 0) {
-            const statsGhostAtk = gp.calcularStatsConBuffs(jugTurno);
-            const statsGhostDef = gp.calcularStatsConBuffs(rivTurno);
-            const dadoGhost = Math.floor(Math.random() * 6) + 1;
-            let dmgGhost = Math.max(0, dadoGhost + statsGhostAtk.fuerza - statsGhostDef.resistencia);
+            const statsCloneAtk = gp.calcularStatsConBuffs(jugTurno);
+            const statsCloneDef = gp.calcularStatsConBuffs(rivTurno);
+            const dadoClone = Math.floor(Math.random() * 6) + 1;
+            const atkClone = Math.floor(statsCloneAtk.fuerza * 0.5);
+            const defClone = statsCloneDef.resistencia;
+            let dmgClone = Math.max(0, dadoClone + atkClone - defClone);
             if (rivTurno.status && rivTurno.status.shield > 0) {
-                const abs = Math.min(rivTurno.status.shield, dmgGhost);
+                const abs = Math.min(rivTurno.status.shield, dmgClone);
                 rivTurno.status.shield -= abs;
-                dmgGhost -= abs;
+                dmgClone -= abs;
             }
-            rivTurno.hp -= dmgGhost;
-            io.to(partidaId).emit('logBatalla', { msg: `Ataque fantasma: ${dmgGhost} de daño a ${rivTurno.nombre}`, tipo: 'fortuna' });
+            rivTurno.hp -= dmgClone;
+            io.to(partidaId).emit('logBatalla', { msg: `El clon de ${jugTurno.nombre} ataca a ${rivTurno.nombre}: -${dmgClone} HP`, tipo: 'fortuna' });
             if (partidaCheckMuerte(partidaId, partida)) return;
         }
 
-        // ----- amnesia: forget random skill (pasiva) -----
-        if (fsTurno.amnesia > 0 && jugTurno.pasivas && jugTurno.pasivas.length > 0) {
-            const idxAmnesia = Math.floor(Math.random() * jugTurno.pasivas.length);
-            const olvidada = jugTurno.pasivas.splice(idxAmnesia, 1)[0];
-            io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} olvida ${olvidada.nombre || olvidada} (amnesia)`, tipo: 'fortuna' });
+        // ----- ghost: lower-HP player is immune but cannot attack -----
+        jugTurno._ghostNoAttack = false;
+        rivTurno._ghostNoAttack = false;
+        if (fsTurno.ghost > 0) {
+            const hpJug = jugTurno.maxHp - jugTurno.hp;
+            const hpRiv = rivTurno.maxHp - rivTurno.hp;
+            const ghostTarget = hpJug > hpRiv ? jugTurno : (hpRiv > hpJug ? rivTurno : null);
+            if (ghostTarget) {
+                ghostTarget.status = ghostTarget.status || {};
+                ghostTarget.status.inmune = true;
+                ghostTarget._ghostNoAttack = true;
+                io.to(partidaId).emit('logBatalla', { msg: `${ghostTarget.nombre} se vuelve etéreo (fantasma)`, tipo: 'fortuna' });
+            }
         }
-        // sharedTurn: rival gets extra action
+
+        // ----- amnesia: forget ALL passives -----
+        if (fsTurno.amnesia > 0 && jugTurno.pasivas && jugTurno.pasivas.length > 0) {
+            const olvidadas = jugTurno.pasivas.map(p => p.nombre || p).join(', ');
+            jugTurno.pasivas = [];
+            io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} olvida todas sus pasivas (amnesia)`, tipo: 'fortuna' });
+        }
+        // sharedTurn: both players get an extra action
         if (fsTurno.sharedTurn > 0) {
+            jugTurno.extraAction = true;
             rivTurno.extraAction = true;
-            io.to(partidaId).emit('logBatalla', { msg: `${rivTurno.nombre} gana una acción extra (turno compartido)`, tipo: 'fortuna' });
+            io.to(partidaId).emit('logBatalla', { msg: `Ambos jugadores ganan una acción extra (turno compartido)`, tipo: 'fortuna' });
         }
 
         const magJug = jugTurno.personaje.magia;
