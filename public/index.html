@@ -2249,8 +2249,6 @@
             document.getElementById(s).style.display = 'none';
         });
         document.getElementById(id).style.display = 'block';
-        const br = document.querySelector('.bottom-row');
-        if (br) br.style.display = id === 'pantallaMenu' ? 'flex' : 'none';
     }
 
     function irAAuth() { AudioManager.playSFX('click'); mostrarPantalla('auth'); }
