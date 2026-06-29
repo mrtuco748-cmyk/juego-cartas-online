@@ -1532,25 +1532,16 @@
                 </div>
                 <div class="menu-buttons">
                     <button class="menu-btn" onclick="irASeleccionPJ()">
-                        <span class="btn-icon">⚔</span>
-                        <span>
-                            <span class="btn-title">JUGAR</span>
-                            <span class="btn-desc">Enfrentate a otro jugador</span>
-                        </span>
+                        <span class="btn-title">JUGAR</span>
+                        <span class="btn-desc">Enfrentate a otro jugador</span>
                     </button>
                     <button class="menu-btn" onclick="iniciarPractica()">
-                        <span class="btn-icon">🛡</span>
-                        <span>
-                            <span class="btn-title">PRACTICA</span>
-                            <span class="btn-desc">Combate contra la IA</span>
-                        </span>
+                        <span class="btn-title">PRACTICA</span>
+                        <span class="btn-desc">Combate contra la IA</span>
                     </button>
                     <button class="menu-btn arena">
-                        <span class="btn-icon">👑</span>
-                        <span>
-                            <span class="btn-title">ARENA</span>
-                            <span class="btn-desc">Proximamente</span>
-                        </span>
+                        <span class="btn-title">ARENA</span>
+                        <span class="btn-desc">Proximamente</span>
                     </button>
                 </div>
             </div>
@@ -1613,35 +1604,35 @@
                         <div class="stats-section">
                             <div class="stats-title">Stats Base (total 20, min 3 c/u)</div>
                             <div class="stat-row">
-                                <span class="stat-label">⚔ Fuerza</span>
+                                <span class="stat-label">Fuerza</span>
                                 <div class="stat-controls">
                                     <span class="stat-val" id="previewFuerza">0</span>
                                     <input class="stat-input" type="number" id="fuerza" value="0" min="0" oninput="actualizarPreview()">
                                 </div>
                             </div>
                             <div class="stat-row">
-                                <span class="stat-label">🛡 Resistencia</span>
+                                <span class="stat-label">Resistencia</span>
                                 <div class="stat-controls">
                                     <span class="stat-val" id="previewResistencia">0</span>
                                     <input class="stat-input" type="number" id="resistencia" value="0" min="0" oninput="actualizarPreview()">
                                 </div>
                             </div>
                             <div class="stat-row">
-                                <span class="stat-label">💨 Velocidad</span>
+                                <span class="stat-label">Velocidad</span>
                                 <div class="stat-controls">
                                     <span class="stat-val" id="previewVelocidad">0</span>
                                     <input class="stat-input" type="number" id="velocidad" value="0" min="0" oninput="actualizarPreview()">
                                 </div>
                             </div>
                             <div class="stat-row">
-                                <span class="stat-label">✨ Magia</span>
+                                <span class="stat-label">Magia</span>
                                 <div class="stat-controls">
                                     <span class="stat-val" id="previewMagia">0</span>
                                     <input class="stat-input" type="number" id="magia" value="0" min="0" oninput="actualizarPreview()">
                                 </div>
                             </div>
                             <div class="stat-row">
-                                <span class="stat-label">🍀 Suerte</span>
+                                <span class="stat-label">Suerte</span>
                                 <div class="stat-controls">
                                     <span class="stat-val" id="previewSuerte">0</span>
                                     <input class="stat-input" type="number" id="suerte" value="0" min="0" oninput="actualizarPreview()">
@@ -2444,19 +2435,19 @@
 
     function iconoSkill(s) {
         const mapa = {
-            damage_percent:'⚔', heal:'❤', shield:'🛡', stun:'⚡',
-            cancel_attack:'🔄', rng_kill:'💀', buff:'⬆', debuff:'⬇',
-            lifesteal:'🩸', double_attack:'⚔⚔', reflect:'🪞',
-            aoe_damage:'💥', silence:'🔇', sacrifice:'🔥',
-            summon:'👤', buff_all:'✨', damage_true:'💢',
-            dot:'☠', regen_hp:'💚', regen_energy:'💙',
-            counter:'↩', thorns:'🌵', revive:'♻', extra_action:'⚡',
-            spell_vamp:'🔮', crit_up:'🎯', damage_reduction:'🛡',
-            life_steal:'🩸', auto_shield:'🛡', enrage:'💢',
-            cleanse:'✨', survival:'💪', reduce_energy_cost:'💧',
-            stun_chance:'⚡', thorns_resistance:'🛡'
+            damage_percent:'◆', heal:'◇', shield:'○', stun:'◎',
+            cancel_attack:'△', rng_kill:'✧', buff:'▲', debuff:'▼',
+            lifesteal:'♢', double_attack:'◈', reflect:'▽',
+            aoe_damage:'●', silence:'□', sacrifice:'▣',
+            summon:'⊡', buff_all:'✧', damage_true:'★',
+            dot:'☠', regen_hp:'♡', regen_energy:'♤',
+            counter:'⇄', thorns:'♧', revive:'♨', extra_action:'⚡',
+            spell_vamp:'◇', crit_up:'⌖', damage_reduction:'◈',
+            life_steal:'♢', auto_shield:'○', enrage:'★',
+            cleanse:'✧', survival:'♤', reduce_energy_cost:'♢',
+            stun_chance:'◎', thorns_resistance:'◈'
         };
-        return mapa[s.efecto] || '✦';
+        return mapa[s.efecto] || '◇';
     }
 
     // ── RENDERIZAR PERSONAJES ──
@@ -2486,11 +2477,11 @@
                     <div class="pj-nombre">${pj.nombre} ${pts > 0 ? '<span style="color:#ff4422;font-size:9px;">(+'+pts+' pts)</span>' : ''}</div>
                     <div class="pj-clase">${pj.clase} · Lv.${pj.nivel || 1}</div>
                     <div class="pj-stats">
-                        <span class="pj-stat">⚔ ${pj.fuerza}</span>
-                        <span class="pj-stat">🛡 ${pj.resistencia}</span>
-                        <span class="pj-stat">💨 ${pj.velocidad}</span>
-                        <span class="pj-stat">✨ ${pj.magia}</span>
-                        <span class="pj-stat">🍀 ${pj.suerte}</span>
+                        <span class="pj-stat">FUE ${pj.fuerza}</span>
+                        <span class="pj-stat">RES ${pj.resistencia}</span>
+                        <span class="pj-stat">VEL ${pj.velocidad}</span>
+                        <span class="pj-stat">MAG ${pj.magia}</span>
+                        <span class="pj-stat">SUE ${pj.suerte}</span>
                     </div>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:4px;">
@@ -2514,11 +2505,11 @@
                     <div class="pj-nombre">${pj.nombre}</div>
                     <div class="pj-clase">${pj.clase} · Lv.${pj.nivel || 1}</div>
                     <div class="pj-stats">
-                        <span class="pj-stat">⚔ ${pj.fuerza}</span>
-                        <span class="pj-stat">🛡 ${pj.resistencia}</span>
-                        <span class="pj-stat">💨 ${pj.velocidad}</span>
-                        <span class="pj-stat">✨ ${pj.magia}</span>
-                        <span class="pj-stat">🍀 ${pj.suerte}</span>
+                        <span class="pj-stat">FUE ${pj.fuerza}</span>
+                        <span class="pj-stat">RES ${pj.resistencia}</span>
+                        <span class="pj-stat">VEL ${pj.velocidad}</span>
+                        <span class="pj-stat">MAG ${pj.magia}</span>
+                        <span class="pj-stat">SUE ${pj.suerte}</span>
                     </div>
                 </div>
                 ${seleccionado ? '<button class="select-btn">SELECCIONADO</button>' : ''}
