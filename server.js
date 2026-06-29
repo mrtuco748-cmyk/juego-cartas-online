@@ -1053,6 +1053,7 @@ io.on('connection', (socket) => {
 
         // If the player whose turn just started is frozen, skip them immediately
         // Loop in case both players are frozen
+        let jugTurno;
         let maxSkips = 4; // safety limit
         while (maxSkips-- > 0) {
             jugTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador1 : partida.jugador2;

@@ -351,8 +351,9 @@ class GameProcessor {
           }
           break;
         case "survival":
-          if (trigger === "on_death" && owner.hp <= 0) {
+          if (trigger === "on_death" && owner.hp <= 0 && !owner._revived) {
             owner.hp = pasiva.hp_min;
+            owner._revived = true;
             results.push({ log: `${ownerName} sobrevive con ${pasiva.hp_min} HP (Tótem)` });
           }
           break;
@@ -390,8 +391,13 @@ class GameProcessor {
           break;
         case "extra_action":
           if (trigger === "on_turn_start" && Math.random() < pasiva.probabilidad) {
-            owner.extraAction = true;
-            results.push({ log: `${ownerName} obtiene acción extra (Rapidez)` });
+            if (reverse) {
+              owner.extraAction = false;
+              results.push({ log: `${ownerName} PIERDE acción extra (pasiva invertida)` });
+            } else {
+              owner.extraAction = true;
+              results.push({ log: `${ownerName} obtiene acción extra (Rapidez)` });
+            }
           }
           break;
         case "revive":
@@ -518,17 +524,6 @@ class GameProcessor {
             } else {
               if (rival) rival.hp -= thorns;
               results.push({ log: `${ownerName} devuelve ${thorns} daño con Armadura Viva` });
-            }
-          }
-          break;
-        case "extra_action":
-          if (trigger === "on_turn_start" && Math.random() < pasiva.probabilidad) {
-            if (reverse) {
-              owner.extraAction = false;
-              results.push({ log: `${ownerName} PIERDE acción extra (pasiva invertida)` });
-            } else {
-              owner.extraAction = true;
-              results.push({ log: `${ownerName} obtiene acción extra (Rapidez)` });
             }
           }
           break;
