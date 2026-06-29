@@ -145,6 +145,7 @@ function renderizarCombate() {
       if (pj.status.silenced && pj.status.silenced > 0) parts.push(`[SILENCIADO ${pj.status.silenced}t]`);
       if (pj.status.shield && pj.status.shield > 0) parts.push(`[ESCUDO ${pj.status.shield}]`);
       if (pj.status.inmune) parts.push(`[INMUNE]`);
+      if (pj.status.perfectCube) parts.push(`[CUBO]`);
     }
     return `<div class="sheet-status">${parts.join(' ')}</div>`;
   };
@@ -813,6 +814,7 @@ function actualizarEscudoVisual() {
       if (pj.status.silenced && pj.status.silenced > 0) parts.push(`[SILENCIADO ${pj.status.silenced}t]`);
       if (pj.status.shield && pj.status.shield > 0) parts.push(`[ESCUDO ${pj.status.shield}]`);
       if (pj.status.inmune) parts.push(`[INMUNE]`);
+      if (pj.status.perfectCube) parts.push(`[CUBO]`);
     }
     el.textContent = parts.join(' ');
   });
@@ -962,6 +964,7 @@ function actualizarEfectosVisuales() {
     if (status.shield > 0) shadows.push('inset 0 0 30px rgba(60,160,255,0.35)', '0 0 20px rgba(60,160,255,0.25)');
     if (status.frozen > 0) shadows.push('inset 0 0 40px rgba(100,200,255,0.25)', '0 0 25px rgba(100,200,255,0.15)');
     if (status.inmune) shadows.push('inset 0 0 40px rgba(255,215,0,0.25)', '0 0 30px rgba(255,215,0,0.2)');
+    if (status.perfectCube) shadows.push('inset 0 0 40px rgba(180,100,255,0.3)', '0 0 25px rgba(180,100,255,0.2)');
     el.style.boxShadow = shadows.length ? shadows.join(',') : '';
 
     let overlay = el.querySelector('.effect-overlays');
@@ -976,7 +979,8 @@ function actualizarEfectosVisuales() {
       { cond: status.shield > 0, icon: '🛡', cls: 'icon-shield', pos: 'pos-tl' },
       { cond: status.frozen > 0, icon: '❄', cls: 'icon-frozen', pos: 'pos-tr' },
       { cond: status.silenced > 0, icon: '🔇', cls: 'icon-silenced', pos: 'pos-bl' },
-      { cond: status.inmune, icon: '✦', cls: 'icon-inmune', pos: 'pos-br' }
+      { cond: status.inmune, icon: '✦', cls: 'icon-inmune', pos: 'pos-br' },
+      { cond: status.perfectCube, icon: '⬜', cls: 'icon-cube', pos: 'pos-tl' }
     ];
     icons.forEach(ic => {
       if (!ic.cond) return;
