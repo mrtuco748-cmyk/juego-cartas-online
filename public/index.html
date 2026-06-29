@@ -877,6 +877,583 @@
             .pj-nombre { font-size: 13px; }
             .panel-titulo { font-size: 15px; }
         }
+
+        /* ═══════════════════════════════════════════
+           PARTE 1 - CSS MEDIEVAL: LAYOUT & GLOBAL
+           ═══════════════════════════════════════════ */
+        :root {
+            --gold: #d4a060;
+            --text: #e8d8c8;
+            --bg-card: linear-gradient(145deg,#1c1610,#120e0a);
+            --border-card: #4a3010;
+            --radius-card: 10px;
+            --shadow-card: 0 2px 12px rgba(0,0,0,0.5);
+            --font: 'Cinzel',Georgia,serif;
+            --accent: #c85030;
+        }
+
+        /* ── hero summary card ── */
+        .hero-summary {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-card);
+            padding: 12px 10px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-card);
+        }
+        .hero-summary .summary-item {
+            text-align: center;
+            color: var(--text);
+        }
+        .hero-summary .summary-item .summary-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--gold);
+        }
+        .hero-summary .summary-item .summary-label {
+            font-size: 7px;
+            letter-spacing: 1px;
+            color: #9a7040;
+            text-transform: uppercase;
+        }
+
+        /* ── menu hero / portal ── */
+        .menu-hero {
+            text-align: center;
+            padding: 24px 12px 16px;
+        }
+        .menu-hero .logo-main {
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--gold);
+            letter-spacing: 6px;
+            text-shadow: 0 0 20px rgba(200,150,60,0.3);
+        }
+        .menu-hero .logo-sub {
+            font-size: 9px;
+            color: #8a6030;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+        .menu-hero .user-badge {
+            display: inline-block;
+            margin-top: 10px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #3a2010;
+            border-radius: 20px;
+            padding: 4px 12px 4px 6px;
+            font-size: 9px;
+            color: #b09060;
+            letter-spacing: 1px;
+        }
+        .menu-hero .user-badge img {
+            width: 20px; height: 20px; border-radius: 50%;
+            vertical-align: middle; margin-right: 6px;
+        }
+
+        /* ── menu buttons ── */
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 0 6px 80px;
+        }
+        .menu-btn {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-card);
+            color: var(--text);
+            font-family: var(--font);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+        .menu-btn::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, rgba(200,80,48,0.06), transparent);
+            pointer-events: none;
+        }
+        .menu-btn:hover {
+            border-color: #7a4020;
+            background: linear-gradient(145deg,#221a14,#18120e);
+            transform: translateX(4px);
+        }
+        .menu-btn:active { transform: scale(0.98); }
+        .menu-btn .btn-icon {
+            font-size: 22px;
+            width: 36px; text-align: center;
+            flex-shrink: 0;
+        }
+        .menu-btn .btn-title { color: var(--gold); }
+        .menu-btn .btn-desc {
+            display: block;
+            font-size: 7px;
+            font-weight: 400;
+            color: #7a6038;
+            letter-spacing: 1px;
+            margin-top: 1px;
+        }
+        .menu-btn.arena {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* ── cards-grid (tienda, inventario) ── */
+        .cards-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-bottom: 12px;
+        }
+
+        /* ── shop card ── */
+        .shop-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-card);
+            color: var(--text);
+            font-family: var(--font);
+            font-size: 10px;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+        .shop-card:hover {
+            border-color: #8a6030;
+            box-shadow: 0 0 10px rgba(200,160,80,0.1);
+        }
+        .shop-card.adquirida {
+            border-color: #2a5a20;
+            opacity: 0.7;
+        }
+        .shop-card .sc-icon {
+            font-size: 18px;
+            width: 28px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .shop-card .sc-body { flex: 1; min-width: 0; }
+        .shop-card .sc-name {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--gold);
+            letter-spacing: 0.5px;
+        }
+        .shop-card .sc-desc {
+            font-size: 8px;
+            color: #887868;
+            line-height: 1.3;
+            margin-top: 2px;
+        }
+        .shop-card .sc-action { flex-shrink: 0; }
+        .shop-card .sc-btn-comprar {
+            font-family: var(--font);
+            font-size: 9px;
+            padding: 4px 12px;
+            background: linear-gradient(180deg,#c85030,#7a2010);
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: filter 0.15s;
+        }
+        .shop-card .sc-btn-comprar:hover { filter: brightness(1.25); }
+        .shop-card .sc-adquirida {
+            color: #60d060;
+            font-size: 8px;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        /* ═══════════════════════════════════════════
+           PARTE 2 - HERO LIST & SELECTION
+           ═══════════════════════════════════════════ */
+        .hero-list { display: flex; flex-direction: column; gap: 6px; }
+
+        .pj-card.hero-select-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-card);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .pj-card.hero-select-card:hover {
+            border-color: #6a4020;
+            background: linear-gradient(145deg,#221a14,#18120e);
+        }
+        .pj-card.hero-select-card.seleccionado {
+            border-color: var(--accent);
+            box-shadow: 0 0 12px rgba(200,80,48,0.15);
+        }
+        .pj-card.hero-select-card .pj-avatar {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            border: 2px solid var(--border-card);
+            background: #1a0e08;
+            overflow: hidden;
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            color: #5a3a18; font-size: 18px;
+        }
+        .pj-card.hero-select-card .pj-avatar img {
+            width: 100%; height: 100%; object-fit: cover;
+        }
+        .pj-card.hero-select-card .pj-info { flex: 1; min-width: 0; }
+        .pj-card.hero-select-card .pj-nombre {
+            color: var(--gold);
+            font-size: 11px;
+            letter-spacing: 2px;
+        }
+        .pj-card.hero-select-card .pj-clase {
+            color: #6a4018;
+            font-size: 8px;
+            letter-spacing: 1px;
+            margin-top: 1px;
+        }
+        .pj-card.hero-select-card .pj-stats {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+        .pj-card.hero-select-card .pj-stat {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 8px;
+            color: #b0a090;
+            letter-spacing: 0.5px;
+        }
+
+        .hero-select-card .select-btn {
+            font-family: var(--font);
+            font-size: 8px;
+            padding: 5px 10px;
+            background: linear-gradient(180deg,#c85030,#7a2010);
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            flex-shrink: 0;
+        }
+
+        /* ── page-header ── */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0 8px;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #2a1808;
+        }
+        .page-header .page-title {
+            font-size: 11px;
+            color: var(--gold);
+            letter-spacing: 3px;
+            font-weight: 700;
+        }
+        .page-header .page-back {
+            font-size: 10px;
+            color: #6a4018;
+            cursor: pointer;
+            letter-spacing: 1px;
+            background: none;
+            border: 1px solid #3a2008;
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-family: var(--font);
+            transition: all 0.2s;
+        }
+        .page-header .page-back:hover {
+            color: var(--gold);
+            border-color: #6a4020;
+        }
+
+        /* ── sticky actions bar ── */
+        .sticky-actions {
+            display: flex;
+            gap: 6px;
+            padding: 8px 0;
+        }
+        .sticky-actions .main-btn {
+            flex: 1;
+        }
+
+        /* ═══════════════════════════════════════════
+           PARTE 3 - CREACION HERO
+           ═══════════════════════════════════════════ */
+        .hero-create-card {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-card);
+            padding: 16px 14px;
+            box-shadow: var(--shadow-card);
+        }
+        .hero-create-card .campo label {
+            color: #a08050;
+            font-size: 8px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .hero-create-card .hero-preview {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid #2a1808;
+            border-radius: 6px;
+            padding: 10px;
+        }
+        .hero-create-card .hero-preview .preview-avatar {
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            border: 2px solid var(--border-card);
+            background: #1a0e08;
+            overflow: hidden;
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            color: #5a3a18; font-size: 20px;
+        }
+        .hero-create-card .hero-preview .preview-avatar img {
+            width: 100%; height: 100%; object-fit: cover;
+        }
+        .hero-create-card .hero-preview .preview-info { flex: 1; }
+        .hero-create-card .hero-preview .preview-name {
+            color: var(--gold);
+            font-size: 11px;
+            letter-spacing: 2px;
+        }
+        .hero-create-card .hero-preview .preview-class {
+            color: #6a4018;
+            font-size: 8px;
+            letter-spacing: 1px;
+            margin-top: 1px;
+        }
+
+        .hero-create-card .stats-section {
+            background: rgba(0,0,0,0.15);
+            border: 1px solid #2a1808;
+            border-radius: 6px;
+            padding: 10px;
+        }
+        .hero-create-card .stats-section .stats-title {
+            color: #a08050;
+            font-size: 8px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .hero-create-card .stats-section .stat-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 0;
+        }
+        .hero-create-card .stats-section .stat-row .stat-label {
+            color: #9a7040;
+            font-size: 9px;
+            letter-spacing: 1px;
+        }
+        .hero-create-card .stats-section .stat-row .stat-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .hero-create-card .stats-section .stat-row .stat-controls .stat-input {
+            width: 40px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #3a2010;
+            border-radius: 3px;
+            color: #d4b060;
+            font-family: var(--font);
+            font-size: 11px;
+            padding: 3px 5px;
+            text-align: center;
+            outline: none;
+        }
+        .hero-create-card .stats-section .stat-row .stat-controls .stat-val {
+            color: var(--gold);
+            font-size: 13px;
+            font-weight: 700;
+            width: 24px;
+            text-align: center;
+        }
+
+        .hero-create-card .skill-section {
+            background: rgba(0,0,0,0.15);
+            border: 1px solid #2a1808;
+            border-radius: 6px;
+            padding: 10px;
+        }
+        .hero-create-card .skill-section .skill-title {
+            color: #a08050;
+            font-size: 8px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .hero-create-card .skill-section .skill-picker-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+        }
+        .hero-create-card .skill-section .skill-picker-grid .skill-picker-item {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid #2a1808;
+            border-radius: 4px;
+            padding: 6px 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .hero-create-card .skill-section .skill-picker-grid .skill-picker-item:hover {
+            border-color: #5a3a18;
+            background: rgba(0,0,0,0.6);
+        }
+        .hero-create-card .skill-section .skill-picker-grid .skill-picker-item.seleccionada {
+            border-color: var(--gold);
+            background: rgba(200,140,60,0.1);
+            box-shadow: 0 0 6px rgba(200,140,60,0.2);
+        }
+
+        /* ═══════════════════════════════════════════
+           PARTE 4 - BOTTOM ROW & OVERRIDES
+           ═══════════════════════════════════════════ */
+        .bottom-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 8px 10px;
+            gap: 6px;
+            border-top: 1px solid #2a1808;
+            background: linear-gradient(180deg,#120c06,#0a0604);
+        }
+        .bottom-row .bottom-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 0;
+            background: none;
+            border: none;
+            color: #6a4018;
+            font-family: var(--font);
+            font-size: 8px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .bottom-row .bottom-btn:hover { color: #a08050; }
+        .bottom-row .bottom-btn.active { color: var(--gold); }
+        .bottom-row .bottom-btn .bottom-icon {
+            font-size: 16px;
+            margin-bottom: 2px;
+        }
+
+        /* ═══════════════════════════════════════════
+           EXTRA - TABS AJUSTADOS
+           ═══════════════════════════════════════════ */
+        .tabs {
+            display: flex;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #2a1808;
+        }
+        .tab {
+            flex: 1;
+            padding: 7px 0;
+            text-align: center;
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: #5a3a18;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: #8a6a38; }
+        .tab.activo { color: var(--gold); border-bottom: 2px solid var(--accent); }
+        .tab-panel { display: none; }
+        .tab-panel.activo { display: block; }
+
+        .shop-status {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-card);
+            padding: 10px 10px;
+            margin-bottom: 8px;
+        }
+        .shop-status .summary-card {
+            text-align: center;
+        }
+        .shop-status .summary-card .summary-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--gold);
+        }
+        .shop-status .summary-card .summary-label {
+            font-size: 7px;
+            letter-spacing: 1px;
+            color: #9a7040;
+            text-transform: uppercase;
+        }
+
+        .hero-select-card {
+            /* already styled above */
+        }
+
+        .hero-selection-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        /* ── fix button styles ── */
+        .main-btn.primary {
+            background: linear-gradient(180deg,#c85030,#7a2010);
+        }
+        .main-btn.secondary {
+            font-size: 11px;
+            padding: 9px 0;
+            background: linear-gradient(180deg,#5a2e10,#3a1808);
+        }
+
+        /* ── scroll en screens ── */
+        #pantallaMenu, #pantallaPersonajes, #pantallaCreacion,
+        #pantallaSeleccionPJ, #pantallaInventario, #pantallaTienda {
+            padding: 6px 10px 20px;
+            overflow-y: auto;
+        }
+        #pantallaMenu { display: block; }
     </style>
 </head>
 <body>
@@ -945,110 +1522,206 @@
 
             <!-- MENÚ PRINCIPAL -->
             <div id="pantallaMenu">
-                <div class="ornament">— — —</div>
-                <button class="main-btn" onclick="irASeleccionPJ()">JUGAR</button>
-                <div class="ornament" style="font-size:14px; margin:2px 0">— — —</div>
-                <button class="main-btn" onclick="iniciarPractica()" style="font-size:14px; padding:11px 0; background:linear-gradient(180deg,#b84020 0%,#6a1808 40%,#7a1d0e 60%,#b03018 100%)">PRÁCTICA</button>
-                <div class="ornament" style="font-size:13px; margin:2px 0">— — —</div>
-                <button class="main-btn" style="font-size:13px; padding:10px 0; background:linear-gradient(180deg,#a83818 0%,#601508 40%,#701a0c 60%,#a02818 100%)">EL ARENA</button>
+                <div class="menu-hero">
+                    <div class="logo-main">LEGENDS OF THE ARENA</div>
+                    <div class="logo-sub">JUEGO DE CARTAS</div>
+                    <div class="user-badge" id="menuUserBadge">
+                        <span id="menuUserPhoto"></span>
+                        <span id="menuUserName">—</span>
+                    </div>
+                </div>
+                <div class="menu-buttons">
+                    <button class="menu-btn" onclick="irASeleccionPJ()">
+                        <span class="btn-icon">⚔</span>
+                        <span>
+                            <span class="btn-title">JUGAR</span>
+                            <span class="btn-desc">Enfrentate a otro jugador</span>
+                        </span>
+                    </button>
+                    <button class="menu-btn" onclick="iniciarPractica()">
+                        <span class="btn-icon">🛡</span>
+                        <span>
+                            <span class="btn-title">PRACTICA</span>
+                            <span class="btn-desc">Combate contra la IA</span>
+                        </span>
+                    </button>
+                    <button class="menu-btn arena">
+                        <span class="btn-icon">👑</span>
+                        <span>
+                            <span class="btn-title">ARENA</span>
+                            <span class="btn-desc">Proximamente</span>
+                        </span>
+                    </button>
+                </div>
             </div>
 
             <!-- PERSONAJES -->
             <div id="pantallaPersonajes">
-                <div class="panel-titulo">MIS PERSONAJES</div>
-                <div class="scroll-panel" id="listaPJs"></div>
-                <hr class="divider">
-                <button class="main-btn" style="font-size:12px; padding:10px 0" onclick="irACrearPJ()">+ CREAR PERSONAJE</button>
-                <button class="main-btn secundario" onclick="irAMenuDesdeSeccion()">← VOLVER</button>
+                <div class="page-header">
+                    <span class="page-title">MIS HEROES</span>
+                    <button class="page-back" onclick="irAMenuDesdeSeccion()">← VOLVER</button>
+                </div>
+                <div class="hero-summary">
+                    <div class="summary-item">
+                        <div class="summary-value" id="heroCount">0</div>
+                        <div class="summary-label">Heroes</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value" id="heroGold">0</div>
+                        <div class="summary-label">Oro</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value" id="heroAverageLevel">1</div>
+                        <div class="summary-label">Nv. Promedio</div>
+                    </div>
+                </div>
+                <div class="hero-list" id="listaPJs"></div>
+                <div class="sticky-actions">
+                    <button class="main-btn primary" onclick="irACrearPJ()">+ CREAR HEROE</button>
+                </div>
             </div>
 
             <!-- CREAR PERSONAJE -->
             <div id="pantallaCreacion">
-                <div class="panel-titulo">FORJA TU HÉROE</div>
+                <div class="page-header">
+                    <span class="page-title">FORJA TU HEROE</span>
+                    <button class="page-back" onclick="irAPersonajes()">← VOLVER</button>
+                </div>
                 <form id="formPersonaje">
-                    <div class="campo"><label>Nombre del héroe</label><input type="text" id="nombre" placeholder="Nombre del héroe" required></div>
-                    <hr class="divider">
-                    <div class="stat-grid">
-                        <div class="stat-item"><span class="stat-label">Fuerza</span><input class="stat-input" type="number" id="fuerza" value="0" min="0"></div>
-                        <div class="stat-item"><span class="stat-label">Resistencia</span><input class="stat-input" type="number" id="resistencia" value="0" min="0"></div>
-                        <div class="stat-item"><span class="stat-label">Velocidad</span><input class="stat-input" type="number" id="velocidad" value="0" min="0"></div>
-                        <div class="stat-item"><span class="stat-label">Magia</span><input class="stat-input" type="number" id="magia" value="0" min="0"></div>
-                        <div class="stat-item"><span class="stat-label">Suerte</span><input class="stat-input" type="number" id="suerte" value="0" min="0"></div>
-                    </div>
-                    <div style="color:#9a7040; font-size:9px; text-align:right; letter-spacing:1px; margin-top:2px;">Total: <span id="totalStats">0</span>/20 · Mín 3 c/u</div>
-                    <hr class="divider">
-                    <div class="campo">
-                        <label>Clase</label>
-                        <select id="clase" onchange="mostrarInfoClase()">
-                            <optgroup label="── Magia ──"><option value="Chaman">Chamán</option><option value="Sacerdote">Sacerdote</option><option value="Druida">Druida</option></optgroup>
-                            <optgroup label="── Fuerza ──"><option value="Guerrero">Guerrero</option><option value="Paladin">Paladín</option><option value="Berserker">Berserker</option></optgroup>
-                            <optgroup label="── Resistencia ──"><option value="Acorazado">Acorazado</option><option value="Ogro">Ogro</option><option value="Golem">Golem</option></optgroup>
-                            <optgroup label="── Velocidad ──"><option value="Picaro">Pícaro</option><option value="Ninja">Ninja</option><option value="Cazador">Cazador</option></optgroup>
-                            <optgroup label="── Magia Avanzada ──"><option value="Mago">Mago</option><option value="MagoMaestro">Mago Maestro</option><option value="MagoGuerrero">Mago Guerrero</option></optgroup>
-                            <optgroup label="── Especial ──"><option value="SemiDios">Semi-Dios</option><option value="Demonio">Demonio</option><option value="Titan">Titán</option></optgroup>
-                        </select>
-                        <div id="classInfo"></div>
-                        <div id="skillPicker" style="display:none;margin-top:6px;">
-                            <div style="color:#d4a060;font-size:8px;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Elegí 2 activas iniciales</div>
-                            <div class="skill-picker-grid" id="skillPickerGrid"></div>
-                            <div style="color:#9a7040;font-size:7px;text-align:right;margin-top:2px;" id="skillPickerCount">0/2 seleccionadas</div>
+                    <div class="hero-create-card">
+                        <div class="campo"><label>Nombre del heroe</label><input type="text" id="nombre" placeholder="Nombre del heroe" required></div>
+                        <div class="hero-preview">
+                            <div class="preview-avatar" id="previewAvatar">
+                                <span id="previewHeroImg">?</span>
+                            </div>
+                            <div class="preview-info">
+                                <div class="preview-name" id="previewName">—</div>
+                                <div class="preview-class" id="previewClass">—</div>
+                            </div>
                         </div>
+                        <div class="campo"><label>Clase</label>
+                            <select id="clase" onchange="mostrarInfoClase();actualizarPreview()">
+                                <optgroup label="─ Magia ─"><option value="Chaman">Chaman</option><option value="Sacerdote">Sacerdote</option><option value="Druida">Druida</option></optgroup>
+                                <optgroup label="─ Fuerza ─"><option value="Guerrero">Guerrero</option><option value="Paladin">Paladin</option><option value="Berserker">Berserker</option></optgroup>
+                                <optgroup label="─ Resistencia ─"><option value="Acorazado">Acorazado</option><option value="Ogro">Ogro</option><option value="Golem">Golem</option></optgroup>
+                                <optgroup label="─ Velocidad ─"><option value="Picaro">Picaro</option><option value="Ninja">Ninja</option><option value="Cazador">Cazador</option></optgroup>
+                                <optgroup label="─ Magia Avanzada ─"><option value="Mago">Mago</option><option value="MagoMaestro">Mago Maestro</option><option value="MagoGuerrero">Mago Guerrero</option></optgroup>
+                                <optgroup label="─ Especial ─"><option value="SemiDios">Semi-Dios</option><option value="Demonio">Demonio</option><option value="Titan">Titan</option></optgroup>
+                            </select>
+                        </div>
+                        <div id="classInfo" style="display:none;"></div>
+                        <div class="stats-section">
+                            <div class="stats-title">Stats Base (total 20, min 3 c/u)</div>
+                            <div class="stat-row">
+                                <span class="stat-label">⚔ Fuerza</span>
+                                <div class="stat-controls">
+                                    <span class="stat-val" id="previewFuerza">0</span>
+                                    <input class="stat-input" type="number" id="fuerza" value="0" min="0" oninput="actualizarPreview()">
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">🛡 Resistencia</span>
+                                <div class="stat-controls">
+                                    <span class="stat-val" id="previewResistencia">0</span>
+                                    <input class="stat-input" type="number" id="resistencia" value="0" min="0" oninput="actualizarPreview()">
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">💨 Velocidad</span>
+                                <div class="stat-controls">
+                                    <span class="stat-val" id="previewVelocidad">0</span>
+                                    <input class="stat-input" type="number" id="velocidad" value="0" min="0" oninput="actualizarPreview()">
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">✨ Magia</span>
+                                <div class="stat-controls">
+                                    <span class="stat-val" id="previewMagia">0</span>
+                                    <input class="stat-input" type="number" id="magia" value="0" min="0" oninput="actualizarPreview()">
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">🍀 Suerte</span>
+                                <div class="stat-controls">
+                                    <span class="stat-val" id="previewSuerte">0</span>
+                                    <input class="stat-input" type="number" id="suerte" value="0" min="0" oninput="actualizarPreview()">
+                                </div>
+                            </div>
+                            <div style="text-align:right;margin-top:4px;color:#9a7040;font-size:8px;">Total: <span id="totalStats">0</span>/20</div>
+                        </div>
+                        <div class="skill-section">
+                            <div class="skill-title">Activas Iniciales</div>
+                            <div id="skillPicker" style="display:none;">
+                                <div style="color:#d4a060;font-size:8px;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Elegi 2 activas</div>
+                                <div class="skill-picker-grid" id="skillPickerGrid"></div>
+                                <div style="color:#9a7040;font-size:7px;text-align:right;margin-top:2px;" id="skillPickerCount">0/2 seleccionadas</div>
+                            </div>
+                        </div>
+                        <hr class="divider">
+                        <div class="campo"><label>URL de foto del personaje</label><input type="text" id="fotoUrl" placeholder="https://i.imgur.com/... (opcional)" oninput="actualizarPreview()"></div>
                     </div>
-                    <hr class="divider">
-                    <div class="campo"><label>URL de foto del personaje</label><input type="text" id="fotoUrl" placeholder="https://i.imgur.com/... (opcional)"></div>
-                    <hr class="divider">
                     <div class="msg-error" id="errorPersonaje"></div>
-                    <button type="submit" class="main-btn" style="font-size:13px; padding:11px 0; margin-top:4px">CREAR PERSONAJE</button>
-                    <button type="button" class="main-btn secundario" onclick="irAPersonajes()">← VOLVER</button>
+                    <div class="sticky-actions">
+                        <button type="submit" class="main-btn primary">CREAR HEROE</button>
+                    </div>
                 </form>
             </div>
 
-            <!-- SELECCIÓN DE PJ PARA JUGAR -->
+            <!-- SELECCION DE PJ PARA JUGAR -->
             <div id="pantallaSeleccionPJ">
-                <div class="panel-titulo">ELIGE TU PERSONAJE</div>
-                <div class="scroll-panel" id="listaPJsJugar"></div>
+                <div class="page-header">
+                    <span class="page-title">ELEGI TU HEROE</span>
+                    <button class="page-back" onclick="irAMenuDesdeSeccion()">← VOLVER</button>
+                </div>
+                <div class="hero-selection-grid" id="listaPJsJugar"></div>
                 <div class="msg-error" id="errorSeleccion"></div>
-                <hr class="divider">
-                <button class="main-btn" style="font-size:13px; padding:11px 0" onclick="confirmarSeleccion()">ENTRAR A BATALLA</button>
-                <button class="main-btn secundario" onclick="irAMenuDesdeSeccion()">← VOLVER</button>
+                <div class="sticky-actions">
+                    <button class="main-btn primary" onclick="confirmarSeleccion()">ENTRAR A BATALLA</button>
+                </div>
             </div>
 
             <!-- TIENDA -->
             <div id="pantallaTienda">
-                <div class="panel-titulo">TIENDA DE CARTAS</div>
-                <div id="tiendaPersonajeSelector"></div>
-                <hr class="divider">
+                <div class="page-header">
+                    <span class="page-title">TIENDA DE CARTAS</span>
+                    <button class="page-back" onclick="irAMenuDesdeSeccion()">← VOLVER</button>
+                </div>
+                <div class="shop-status">
+                    <div class="summary-card">
+                        <div class="summary-value" id="shopGold">0</div>
+                        <div class="summary-label">Oro</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value" id="shopActivas">0</div>
+                        <div class="summary-label">Activas</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value" id="shopPasivas">0</div>
+                        <div class="summary-label">Pasivas</div>
+                    </div>
+                </div>
                 <div class="tabs">
                     <div class="tab activo" onclick="cambiarTabTienda('activas')">ACTIVAS</div>
                     <div class="tab" onclick="cambiarTabTienda('pasivas')">PASIVAS</div>
                 </div>
-                <div id="tabTiendaActivas" class="tab-panel activo">
-                    <div class="scroll-panel" id="tiendaListaActivas"></div>
-                </div>
-                <div id="tabTiendaPasivas" class="tab-panel">
-                    <div class="scroll-panel" id="tiendaListaPasivas"></div>
-                </div>
+                <div id="tabTiendaActivas" class="tab-panel activo"><div class="cards-grid" id="tiendaListaActivas"></div></div>
+                <div id="tabTiendaPasivas" class="tab-panel"><div class="cards-grid" id="tiendaListaPasivas"></div></div>
                 <div class="msg-error" id="errorTienda"></div>
                 <div class="msg-ok" id="okTienda"></div>
-                <hr class="divider">
-                <button class="main-btn secundario" onclick="irAMenuDesdeSeccion()">← VOLVER</button>
             </div>
 
             <!-- INVENTARIO -->
             <div id="pantallaInventario">
-                <div class="panel-titulo">INVENTARIO DE HABILIDADES</div>
+                <div class="page-header">
+                    <span class="page-title">INVENTARIO</span>
+                    <button class="page-back" onclick="irAMenuDesdeSeccion()">← VOLVER</button>
+                </div>
                 <div class="tabs">
                     <div class="tab activo" onclick="cambiarTabInv('activas')">ACTIVAS</div>
                     <div class="tab" onclick="cambiarTabInv('pasivas')">PASIVAS</div>
                 </div>
-                <div id="tabInvActivas" class="tab-panel activo">
-                    <div class="scroll-panel" id="invListaActivas"></div>
-                </div>
-                <div id="tabInvPasivas" class="tab-panel">
-                    <div class="scroll-panel" id="invListaPasivas"></div>
-                </div>
-                <hr class="divider">
-                <button class="main-btn secundario" onclick="irAMenuDesdeSeccion()">← VOLVER</button>
+                <div id="tabInvActivas" class="tab-panel activo"><div class="cards-grid" id="invListaActivas"></div></div>
+                <div id="tabInvPasivas" class="tab-panel"><div class="cards-grid" id="invListaPasivas"></div></div>
             </div>
 
             <!-- ESPERA -->
@@ -1763,37 +2436,66 @@
         } else {
             topFoto.innerHTML = 'U';
         }
+        const mn = document.getElementById('menuUserName');
+        if (mn) mn.textContent = cuenta.nombre.toUpperCase();
+        const mp = document.getElementById('menuUserPhoto');
+        if (mp) mp.innerHTML = cuenta.foto ? `<img src="${cuenta.foto}" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:6px;">` : '';
+    }
+
+    function iconoSkill(s) {
+        const mapa = {
+            damage_percent:'⚔', heal:'❤', shield:'🛡', stun:'⚡',
+            cancel_attack:'🔄', rng_kill:'💀', buff:'⬆', debuff:'⬇',
+            lifesteal:'🩸', double_attack:'⚔⚔', reflect:'🪞',
+            aoe_damage:'💥', silence:'🔇', sacrifice:'🔥',
+            summon:'👤', buff_all:'✨', damage_true:'💢',
+            dot:'☠', regen_hp:'💚', regen_energy:'💙',
+            counter:'↩', thorns:'🌵', revive:'♻', extra_action:'⚡',
+            spell_vamp:'🔮', crit_up:'🎯', damage_reduction:'🛡',
+            life_steal:'🩸', auto_shield:'🛡', enrage:'💢',
+            cleanse:'✨', survival:'💪', reduce_energy_cost:'💧',
+            stun_chance:'⚡', thorns_resistance:'🛡'
+        };
+        return mapa[s.efecto] || '✦';
     }
 
     // ── RENDERIZAR PERSONAJES ──
     function renderizarPersonajes() {
         const lista = document.getElementById('listaPJs');
         if (!cuentaActual || cuentaActual.personajes.length === 0) {
-            lista.innerHTML = '<div class="vacio-msg">Aún no tenés personajes.<br>¡Creá tu primer héroe!</div>';
+            lista.innerHTML = '<div class="vacio-msg">Aun no tenes heroes.<br>Crea tu primer heroe!</div>';
+            document.getElementById('heroCount').textContent = '0';
+            document.getElementById('heroGold').textContent = '0';
+            document.getElementById('heroAverageLevel').textContent = '1';
             return;
         }
+        document.getElementById('heroCount').textContent = cuentaActual.personajes.length;
+        document.getElementById('heroGold').textContent = cuentaActual.dinero || 0;
+        const niveles = cuentaActual.personajes.map(p => p.nivel || 1);
+        const prom = niveles.length > 0 ? Math.round(niveles.reduce((a,b)=>a+b,0) / niveles.length) : 1;
+        document.getElementById('heroAverageLevel').textContent = prom;
+
         lista.innerHTML = cuentaActual.personajes.map((pj, i) => {
             const pts = pj.puntosStats || 0;
-            const avatar = pj.foto ? `<img src="${pj.foto}" alt="">` : '&nbsp;';
+            const avatar = pj.foto ? `<img src="${pj.foto}" alt="">` : '<span style="font-size:16px;">?</span>';
             return `
-            <div class="pj-card ${pts > 0 ? 'tiene-puntos' : ''}" onclick="mostrarCartaPersonaje(${i})">
+            <div class="pj-card hero-select-card ${pts > 0 ? 'tiene-puntos' : ''}" onclick="mostrarCartaPersonaje(${i})">
                 ${pts > 0 ? '<span class="dot-card"></span>' : ''}
                 <div class="pj-avatar">${avatar}</div>
                 <div class="pj-info">
-                    <div class="pj-nombre">${pj.nombre} ${pts > 0 ? '<span style="color:#ff4422;font-size:9px;">(+${pts} pts)</span>' : ''}</div>
+                    <div class="pj-nombre">${pj.nombre} ${pts > 0 ? '<span style="color:#ff4422;font-size:9px;">(+'+pts+' pts)</span>' : ''}</div>
                     <div class="pj-clase">${pj.clase} · Lv.${pj.nivel || 1}</div>
                     <div class="pj-stats">
-                        <span class="pj-stat">FUE ${pj.fuerza}</span>
-                        <span class="pj-stat">RES ${pj.resistencia}</span>
-                        <span class="pj-stat">VEL ${pj.velocidad}</span>
-                        <span class="pj-stat">MAG ${pj.magia}</span>
-                        <span class="pj-stat">SUE ${pj.suerte}</span>
-                        <span class="pj-stat">XP ${pj.experiencia || 0}/${pj.nivel || 1}</span>
+                        <span class="pj-stat">⚔ ${pj.fuerza}</span>
+                        <span class="pj-stat">🛡 ${pj.resistencia}</span>
+                        <span class="pj-stat">💨 ${pj.velocidad}</span>
+                        <span class="pj-stat">✨ ${pj.magia}</span>
+                        <span class="pj-stat">🍀 ${pj.suerte}</span>
                     </div>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:4px;">
                     ${pts > 0 ? `<button onclick="event.stopPropagation();abrirAsignarStats('${pj._id}',${i})" style="background:rgba(200,80,48,0.2);border:1px solid #8a3020;border-radius:3px;color:#d4a060;cursor:pointer;font-size:9px;font-family:'Cinzel',serif;padding:2px 6px;letter-spacing:1px;" title="Mejorar stats">SUBIR</button>` : ''}
-                    <button onclick="event.stopPropagation();eliminarPersonaje('${pj._id}')" style="background:none;border:none;color:#6a3010;cursor:pointer;font-size:12px;padding:2px;" title="Eliminar personaje">X</button>
+                    <button onclick="event.stopPropagation();eliminarPersonaje('${pj._id}')" style="background:none;border:none;color:#6a3010;cursor:pointer;font-size:12px;padding:2px;" title="Eliminar personaje">✕</button>
                 </div>
             </div>`;
         }).join('');
@@ -1803,21 +2505,23 @@
     function renderizarSeleccionPJ() {
         const lista = document.getElementById('listaPJsJugar');
         lista.innerHTML = cuentaActual.personajes.map((pj, i) => {
-            const avatar = pj.foto ? `<img src="${pj.foto}" alt="">` : '&nbsp;';
+            const avatar = pj.foto ? `<img src="${pj.foto}" alt="">` : '<span style="font-size:16px;">?</span>';
+            const seleccionado = pjSeleccionado && pjSeleccionado._id === pj._id;
             return `
-            <div class="pj-card" id="pjjugar-${i}" onclick="seleccionarPJ(${i})">
+            <div class="pj-card hero-select-card ${seleccionado ? 'seleccionado' : ''}" id="pjjugar-${i}" onclick="seleccionarPJ(${i})">
                 <div class="pj-avatar">${avatar}</div>
                 <div class="pj-info">
                     <div class="pj-nombre">${pj.nombre}</div>
                     <div class="pj-clase">${pj.clase} · Lv.${pj.nivel || 1}</div>
                     <div class="pj-stats">
-                        <span class="pj-stat">FUE ${pj.fuerza}</span>
-                        <span class="pj-stat">RES ${pj.resistencia}</span>
-                        <span class="pj-stat">VEL ${pj.velocidad}</span>
-                        <span class="pj-stat">MAG ${pj.magia}</span>
-                        <span class="pj-stat">SUE ${pj.suerte}</span>
+                        <span class="pj-stat">⚔ ${pj.fuerza}</span>
+                        <span class="pj-stat">🛡 ${pj.resistencia}</span>
+                        <span class="pj-stat">💨 ${pj.velocidad}</span>
+                        <span class="pj-stat">✨ ${pj.magia}</span>
+                        <span class="pj-stat">🍀 ${pj.suerte}</span>
                     </div>
                 </div>
+                ${seleccionado ? '<button class="select-btn">SELECCIONADO</button>' : ''}
             </div>`;
         }).join('');
     }
@@ -1995,16 +2699,14 @@
         const invSkills = cuentaActual.inventarioSkills || [];
         const invPas = cuentaActual.inventarioPasivas || [];
 
-        document.getElementById('pantallaInventario').querySelector('.panel-titulo').textContent = 'INVENTARIO DE HABILIDADES';
-
         let htmlActivas = '';
         invSkills.forEach(id => {
             const s = SKILL_DATA_LOOKUP[id];
             if (s) htmlActivas += `
                 <div class="shop-card" onclick="mostrarInfoSkill('${id}', 'activa')">
-                    <div class="sc-icon">✦</div>
+                    <div class="sc-icon">${iconoSkill(s)}</div>
                     <div class="sc-body">
-                        <div class="sc-name">${s.nombre}</div>
+                        <div class="sc-name">${s.nombre} <span style="color:#6a4018;font-size:7px;font-weight:400;">(EN COLECCION)</span></div>
                         <div class="sc-desc">${describirEfecto(s)} · ${s.coste || 0} EN</div>
                     </div>
                 </div>`;
@@ -2016,9 +2718,9 @@
             const p = SKILL_DATA_LOOKUP_PASIVAS[id];
             if (p) htmlPasivas += `
                 <div class="shop-card" onclick="mostrarInfoSkill('${id}', 'pasiva')">
-                    <div class="sc-icon">◇</div>
+                    <div class="sc-icon">${iconoSkill(p)}</div>
                     <div class="sc-body">
-                        <div class="sc-name">${p.nombre}</div>
+                        <div class="sc-name">${p.nombre} <span style="color:#6a4018;font-size:7px;font-weight:400;">(EN COLECCION)</span></div>
                         <div class="sc-desc">${p.desc || ''}</div>
                     </div>
                 </div>`;
@@ -2032,6 +2734,32 @@
         const total = stats.reduce((sum, s) => sum + (parseInt(document.getElementById(s).value) || 0), 0);
         document.getElementById('totalStats').textContent = total;
         document.getElementById('totalStats').style.color = total === 20 ? '#60d060' : '#ff6040';
+    }
+
+    function actualizarPreview() {
+        const stats = ['fuerza','resistencia','velocidad','magia','suerte'];
+        stats.forEach(s => {
+            const val = parseInt(document.getElementById(s).value) || 0;
+            const prev = document.getElementById('preview' + s.charAt(0).toUpperCase() + s.slice(1));
+            if (prev) prev.textContent = val;
+        });
+        const total = stats.reduce((sum, s) => sum + (parseInt(document.getElementById(s).value) || 0), 0);
+        document.getElementById('totalStats').textContent = total;
+        const nombre = document.getElementById('nombre').value.trim();
+        const pn = document.getElementById('previewName');
+        if (pn) pn.textContent = nombre || '—';
+        const clase = document.getElementById('clase').value;
+        const pc = document.getElementById('previewClass');
+        if (pc) pc.textContent = clase || '—';
+        const fotoUrl = document.getElementById('fotoUrl').value.trim();
+        const pi = document.getElementById('previewHeroImg');
+        if (pi) {
+            if (fotoUrl) {
+                pi.innerHTML = `<img src="${fotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+            } else {
+                pi.textContent = '?';
+            }
+        }
     }
 
     // ── CONFIG ──
@@ -2094,11 +2822,15 @@
         const invSkills = cuentaActual.inventarioSkills || [];
         const invPas = cuentaActual.inventarioPasivas || [];
 
+        document.getElementById('shopGold').textContent = cuentaActual.dinero || 0;
+        document.getElementById('shopActivas').textContent = invSkills.length;
+        document.getElementById('shopPasivas').textContent = invPas.length;
+
         document.getElementById('tiendaListaActivas').innerHTML = (tiendaData.skills || []).map(s => {
             const yaTiene = invSkills.includes(s.id);
             return `
                 <div class="shop-card ${yaTiene ? 'adquirida' : ''}" onclick="mostrarInfoSkill('${s.id}', 'activa')">
-                    <div class="sc-icon">✦</div>
+                    <div class="sc-icon">${iconoSkill(s)}</div>
                     <div class="sc-body">
                         <div class="sc-name">${s.nombre}</div>
                         <div class="sc-desc">${s.efecto.replace(/_/g,' ')} · ${s.coste || 0} EN</div>
@@ -2115,7 +2847,7 @@
             const yaTiene = invPas.includes(s.id);
             return `
                 <div class="shop-card ${yaTiene ? 'adquirida' : ''}" onclick="mostrarInfoSkill('${s.id}', 'pasiva')">
-                    <div class="sc-icon">◇</div>
+                    <div class="sc-icon">${iconoSkill(s)}</div>
                     <div class="sc-body">
                         <div class="sc-name">${s.nombre}</div>
                         <div class="sc-desc">${s.efecto.replace(/_/g,' ')} · ${s.desc || ''}</div>
@@ -2127,12 +2859,6 @@
                 </div>
             `;
         }).filter(Boolean).join('') || '<div class="vacio-msg">No hay cartas pasivas disponibles</div>';
-
-        document.getElementById('tiendaPersonajeSelector').innerHTML = `
-            <div class="campo" style="color:#6a4018;font-size:9px;text-align:center;letter-spacing:1px;">
-                Oro: ${cuentaActual.dinero || 0} · Activas: ${invSkills.length} · Pasivas: ${invPas.length}
-            </div>
-        `;
     }
 
     function getSkillsDeClase(clase) {
