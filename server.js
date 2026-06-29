@@ -394,6 +394,12 @@ io.on('connection', (socket) => {
                     if (fsCarta.sacredGround > 0 && yo.hp < 1) { yo.hp = 1; io.to(partidaId).emit('logBatalla', { msg: `${yo.nombre} se aferra a la vida (Tierra Sagrada)`, tipo: 'fortuna' }); }
                 }
 
+                // sacredGround: protege al lanzador de daño autoinfligido (sacrificio, tormenta)
+                if (fsCarta.sacredGround > 0 && yo.hp < 1) {
+                    yo.hp = 1;
+                    io.to(partidaId).emit('logBatalla', { msg: `${yo.nombre} se aferra a la vida (Tierra Sagrada)`, tipo: 'fortuna' });
+                }
+
                 if (result.summon) {
                     yo.summon = result.summon;
                     io.to(partidaId).emit('logBatalla', { msg: `${result.summon.nombre} aparece en el campo de batalla`, tipo: 'carta' });
@@ -421,6 +427,11 @@ io.on('connection', (socket) => {
                     }
                     rival.hp -= danoExtra;
                     io.to(partidaId).emit('logBatalla', { msg: `Golpe extra: +${danoExtra} daño`, tipo: 'ataque' });
+                    // sacredGround: proteger al rival en el segundo golpe
+                    if (fsCarta.sacredGround > 0 && rival.hp < 1) {
+                        rival.hp = 1;
+                        io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} se aferra a la vida (Tierra Sagrada)`, tipo: 'fortuna' });
+                    }
                     // Process on_hit for the extra attack
                     const pHit2 = pp(yo.pasivas, yo, rival, 'on_hit', { damage: danoExtra, target: rival }, partida);
                     [...pHit2].forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
