@@ -31,7 +31,8 @@ const personajeSchema = new mongoose.Schema({
     tps: { type: Array, default: [] },
     skillsCompradas: { type: [String], default: [] },
     pasivasCompradas: { type: [String], default: [] },
-    foto: { type: String, default: '' }
+    foto: { type: String, default: '' },
+    pasivasSeleccionadas: { type: [String], default: [] }
 });
 
 const cuentaSchema = new mongoose.Schema({
@@ -177,9 +178,14 @@ function mezclarArray(arr) {
     return m;
 }
 
-function getPasivasClase(clase, compradas = []) {
+function getPasivasClase(clase, compradas = [], seleccionadas = null) {
+    let ids;
+    if (seleccionadas && seleccionadas.length > 0) {
+        ids = seleccionadas.slice(0, 4);
+    } else {
+        ids = [...new Set([...gp.getPasivasPorDefecto(clase), ...compradas])].slice(0, 4);
+    }
     const pasivas = {};
-    const ids = [...new Set([...gp.getPasivasPorDefecto(clase), ...compradas])];
     ids.forEach(id => {
         if (SKILLS_DATA.pasivas[id]) pasivas[id] = SKILLS_DATA.pasivas[id];
     });
@@ -1423,6 +1429,29 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('guardarPasivasSeleccionadas', async ({ cuenta_id, personaje_id, pasivas }) => {
+        try {
+            if (!Array.isArray(pasivas) || pasivas.length > 4) {
+                socket.emit('errorPersonaje', 'Máximo 4 pasivas.'); return;
+            }
+            const cuenta = await Cuenta.findById(cuenta_id);
+            if (!cuenta) { socket.emit('errorPersonaje', 'Cuenta no encontrada.'); return; }
+            const pj = cuenta.personajes.id(personaje_id);
+            if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
+            pj.pasivasSeleccionadas = pasivas;
+            await cuenta.save();
+            socket.emit('loadoutGuardado', {
+                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
+                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
+                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
+                inventarioSkills: cuenta.inventarioSkills,
+                inventarioPasivas: cuenta.inventarioPasivas
+            });
+        } catch (err) {
+            socket.emit('errorPersonaje', 'Error al guardar pasivas.');
+        }
+    });
+
     socket.on('devComando', async ({ cuenta_id, accion, params }) => {
         try {
             const devCuenta = await Cuenta.findById(cuenta_id);
@@ -1551,8 +1580,8 @@ io.on('connection', (socket) => {
             const pasivasComp1 = jugador1._invPas || [];
             const pasivasComp2 = jugador2._invPas || [];
 
-            const pasivas1 = getPasivasClase(jugador1.personaje.clase, pasivasComp1);
-            const pasivas2 = getPasivasClase(jugador2.personaje.clase, pasivasComp2);
+            const pasivas1 = getPasivasClase(jugador1.personaje.clase, pasivasComp1, personaje1.pasivasSeleccionadas);
+            const pasivas2 = getPasivasClase(jugador2.personaje.clase, pasivasComp2, personaje2.pasivasSeleccionadas);
 
             partidas[partidaId] = {
                 id: partidaId,
@@ -1717,7 +1746,7 @@ io.on('connection', (socket) => {
         const pComp1 = invPas;
         const pComp2 = botPj.pasivasCompradas || [];
 
-        const pas1 = getPasivasClase(pj.clase, pComp1);
+        const pas1 = getPasivasClase(pj.clase, pComp1, pj.pasivasSeleccionadas);
         const pas2 = getPasivasClase(botPj.clase, pComp2);
 
         partidas[partidaId] = {
