@@ -203,7 +203,7 @@ class GameProcessor {
       heal_percent: (target, card, ctx) => {
         const src = ctx.source;
         const healed = Math.floor(src.maxHp * card.valor);
-        src.hp = Math.min(src.maxHp + (src.hpOverflow || 0), src.hp + healed);
+        src.hp = Math.min(src.maxHp, src.hp + healed);
         return { healing: healed, log: `${src.nombre} se cura ${healed} HP` };
       },
       stun: (target, card) => {
@@ -248,7 +248,7 @@ class GameProcessor {
       lifesteal: (target, card, ctx) => {
         const dmg = Math.floor(target.maxHp * card.valor);
         target.hp -= dmg;
-        ctx.source.hp = Math.min(ctx.source.maxHp + (ctx.source.hpOverflow || 0), ctx.source.hp + dmg);
+        ctx.source.hp = Math.min(ctx.source.maxHp, ctx.source.hp + dmg);
         return { damage: dmg, healing: dmg, log: `${ctx.source.nombre} drena ${dmg} HP de ${target.nombre}` };
       },
       double_attack: (target, card, ctx) => {
@@ -334,7 +334,7 @@ class GameProcessor {
     };
   }
 
-  processPassives(pasivas, owner, rival, trigger, ctx = {}) {
+  processPassives(pasivas, owner, rival, trigger, ctx = {}, reverse = false) {
     const results = [];
     const ownerName = owner.nombre || (owner.personaje ? owner.personaje.nombre : 'Alguien');
     const rivalName = rival && rival.nombre ? rival.nombre : (rival && rival.personaje ? rival.personaje.nombre : '');
@@ -359,7 +359,7 @@ class GameProcessor {
         case "regen_hp":
           if (trigger === "on_turn_start") {
             const healed = Math.floor(owner.maxHp * pasiva.valor);
-            owner.hp = Math.min(owner.maxHp + (owner.hpOverflow || 0), owner.hp + healed);
+            owner.hp = Math.min(owner.maxHp, owner.hp + healed);
             results.push({ log: `${ownerName} regenera ${healed} HP` });
           }
           break;
@@ -379,8 +379,13 @@ class GameProcessor {
         case "thorns":
           if (trigger === "on_take_damage" && ctx.damage) {
             const thornsDmg = Math.floor(ctx.damage * pasiva.valor);
-            if (rival) rival.hp -= thornsDmg;
-            results.push({ log: `Espinas causan ${thornsDmg} daño` });
+            if (reverse) {
+              if (rival) rival.hp += thornsDmg;
+              results.push({ log: `${ownerName} CURA a ${rivalName} (pasiva invertida)` });
+            } else {
+              if (rival) rival.hp -= thornsDmg;
+              results.push({ log: `Espinas causan ${thornsDmg} daño` });
+            }
           }
           break;
         case "extra_action":
@@ -399,67 +404,132 @@ class GameProcessor {
         case "spell_vamp":
           if (trigger === "on_cast" && ctx.damage) {
             const vamp = Math.floor(ctx.damage * pasiva.valor);
-            owner.hp = Math.min(owner.maxHp + (owner.hpOverflow || 0), owner.hp + vamp);
-            results.push({ log: `${ownerName} absorbe ${vamp} HP del hechizo` });
+            if (reverse) {
+              owner.hp -= vamp;
+              results.push({ log: `${ownerName} pierde ${vamp} HP (pasiva invertida)` });
+            } else {
+              owner.hp = Math.min(owner.maxHp, owner.hp + vamp);
+              results.push({ log: `${ownerName} absorbe ${vamp} HP del hechizo` });
+            }
           }
           break;
         case "crit_up":
-          if (trigger === "on_attack") owner.critBonus = (owner.critBonus || 0) + pasiva.valor;
+          if (trigger === "on_attack") {
+            if (reverse) {
+              owner.critBonus = (owner.critBonus || 0) - pasiva.valor;
+            } else {
+              owner.critBonus = (owner.critBonus || 0) + pasiva.valor;
+            }
+          }
           break;
         case "damage_reduction":
           if (trigger === "on_take_damage" && ctx.damage !== undefined) {
             const reduction = Math.floor(ctx.damage * pasiva.valor);
-            ctx.damage = Math.max(0, ctx.damage - reduction);
-            ctx.damageReduction = (ctx.damageReduction || 0) + reduction;
-            results.push({ log: `${ownerName} reduce ${Math.floor(reduction)} de daño` });
+            if (reverse) {
+              ctx.damage += reduction;
+              ctx.damageReduction = (ctx.damageReduction || 0) - reduction;
+              results.push({ log: `${ownerName} AMPLIFICA ${reduction} de daño (pasiva invertida)` });
+            } else {
+              ctx.damage = Math.max(0, ctx.damage - reduction);
+              ctx.damageReduction = (ctx.damageReduction || 0) + reduction;
+              results.push({ log: `${ownerName} reduce ${Math.floor(reduction)} de daño` });
+            }
           }
           break;
         case "life_steal":
           if (trigger === "on_hit" && ctx.damage) {
             const steal = Math.floor(ctx.damage * pasiva.valor);
-            owner.hp = Math.min(owner.maxHp + (owner.hpOverflow || 0), owner.hp + steal);
-            results.push({ log: `${ownerName} roba ${steal} HP` });
+            if (reverse) {
+              owner.hp -= steal;
+              results.push({ log: `${ownerName} PIERDE ${steal} HP por vampirismo invertido` });
+            } else {
+              owner.hp = Math.min(owner.maxHp, owner.hp + steal);
+              results.push({ log: `${ownerName} roba ${steal} HP` });
+            }
           }
           break;
         case "auto_shield":
           if (trigger === "on_turn_start") {
             owner.status = owner.status || {};
             const val = Math.floor(owner.maxHp * pasiva.valor);
-            owner.status.shield = (owner.status.shield || 0) + val;
-            results.push({ log: `${ownerName} obtiene escudo natural +${val}` });
+            if (reverse) {
+              owner.status.shield = Math.max(0, (owner.status.shield || 0) - val);
+              results.push({ log: `${ownerName} PIERDE escudo (pasiva invertida)` });
+            } else {
+              owner.status.shield = (owner.status.shield || 0) + val;
+              results.push({ log: `${ownerName} obtiene escudo natural +${val}` });
+            }
           }
           break;
         case "enrage":
           if (trigger === "on_hp_loss" && ctx.hpLost) {
-            owner.enrageBonus = (owner.enrageBonus || 0) + Math.floor(ctx.hpLost * pasiva.valor);
+            if (reverse) {
+              owner.enrageBonus = Math.max(0, (owner.enrageBonus || 0) - Math.floor(ctx.hpLost * pasiva.valor));
+            } else {
+              owner.enrageBonus = (owner.enrageBonus || 0) + Math.floor(ctx.hpLost * pasiva.valor);
+            }
           }
           break;
         case "cleanse":
           if (trigger === "on_turn_start" && owner.status) {
-            owner.status.debuffs = {};
-            owner.status.frozen = 0;
-            owner.status.silenced = 0;
-            results.push({ log: `${ownerName} se purifica` });
+            if (reverse) {
+              owner.status.debuffs = owner.status.debuffs || {};
+              owner.status.frozen = (owner.status.frozen || 0) + 1;
+              owner.status.silenced = (owner.status.silenced || 0) + 1;
+              results.push({ log: `${ownerName} se CORROMPE (pasiva invertida)` });
+            } else {
+              owner.status.debuffs = {};
+              owner.status.frozen = 0;
+              owner.status.silenced = 0;
+              results.push({ log: `${ownerName} se purifica` });
+            }
           }
           break;
         case "reduce_energy_cost":
           if (trigger === "on_turn_start") {
-            owner.reducedCost = (owner.reducedCost || 0) + pasiva.valor;
-            results.push({ log: `${ownerName} concentra su energia (-${pasiva.valor} coste de cartas)` });
+            if (reverse) {
+              owner.reducedCost = (owner.reducedCost || 0) - pasiva.valor;
+              results.push({ log: `${ownerName} desperdicia energia (+${pasiva.valor} coste de cartas)` });
+            } else {
+              owner.reducedCost = (owner.reducedCost || 0) + pasiva.valor;
+              results.push({ log: `${ownerName} concentra su energia (-${pasiva.valor} coste de cartas)` });
+            }
           }
           break;
         case "stun_chance":
           if (trigger === "on_hit" && ctx.target && Math.random() < pasiva.probabilidad) {
-            ctx.target.status = ctx.target.status || {};
-            ctx.target.status.frozen = (ctx.target.status.frozen || 0) + pasiva.duracion;
-            results.push({ log: `${ctx.target.nombre} queda aturdido (Golpe Pesado)` });
+            if (reverse) {
+              owner.status = owner.status || {};
+              owner.status.frozen = (owner.status.frozen || 0) + pasiva.duracion;
+              results.push({ log: `${ownerName} se aturde a sí mismo (pasiva invertida)` });
+            } else {
+              ctx.target.status = ctx.target.status || {};
+              ctx.target.status.frozen = (ctx.target.status.frozen || 0) + pasiva.duracion;
+              results.push({ log: `${ctx.target.nombre} queda aturdido (Golpe Pesado)` });
+            }
           }
           break;
         case "thorns_resistance":
           if (trigger === "on_take_damage" && ctx.damage) {
             const thorns = Math.floor(ctx.damage * pasiva.valor);
-            if (rival) rival.hp -= thorns;
-            results.push({ log: `${ownerName} devuelve ${thorns} daño con Armadura Viva` });
+            if (reverse) {
+              if (rival) rival.hp += thorns;
+              results.push({ log: `${ownerName} CURA a ${rivalName} (pasiva invertida)` });
+            } else {
+              if (rival) rival.hp -= thorns;
+              results.push({ log: `${ownerName} devuelve ${thorns} daño con Armadura Viva` });
+            }
+          }
+          break;
+        case "extra_action":
+          if (trigger === "on_turn_start" && Math.random() < pasiva.probabilidad) {
+            if (reverse) {
+              owner.extraAction = false;
+              results.push({ log: `${ownerName} PIERDE acción extra (pasiva invertida)` });
+            } else {
+              owner.extraAction = true;
+              results.push({ log: `${ownerName} obtiene acción extra (Rapidez)` });
+            }
           }
           break;
       }
@@ -471,7 +541,7 @@ class GameProcessor {
     const info = CLASS_DATA[jugador.personaje.clase];
     if (!info || !info.hpRegen) return 0;
     const healed = info.hpRegen;
-    jugador.hp = Math.min(jugador.maxHp + (jugador.hpOverflow || 0), jugador.hp + healed);
+    jugador.hp = Math.min(jugador.maxHp, jugador.hp + healed);
     return healed;
   }
 
@@ -709,7 +779,7 @@ class GameProcessor {
     for (const efecto of obj.efectos) {
       switch (efecto.efecto) {
         case "cura":
-          source.hp = Math.min(source.maxHp + (source.hpOverflow || 0), source.hp + efecto.valor);
+          source.hp = Math.min(source.maxHp, source.hp + efecto.valor);
           logs.push(`${source.nombre} usa ${obj.nombre}: +${efecto.valor} HP`);
           break;
         case "energia":
@@ -739,7 +809,7 @@ class GameProcessor {
           logs.push(`${source.nombre} gana +${efecto.valor} a todas las stats`);
           break;
         case "full_heal":
-          source.hp = source.maxHp + (source.hpOverflow || 0);
+          source.hp = source.maxHp;
           logs.push(`${source.nombre} recupera todo su HP`);
           break;
         case "max_hp_up":
@@ -773,7 +843,7 @@ class GameProcessor {
       const ef = jugador.persistentEffects[i];
       switch (ef.efecto) {
         case "regen_hp":
-          jugador.hp = Math.min(jugador.maxHp + (jugador.hpOverflow || 0), jugador.hp + ef.valor);
+          jugador.hp = Math.min(jugador.maxHp, jugador.hp + ef.valor);
           logs.push(`${jugador.nombre} regenera +${ef.valor} HP (${ef.id})`);
           break;
         case "regen_energy":
@@ -826,7 +896,7 @@ class GameProcessor {
               logs.push(`${jugador.nombre} recupera +${ef.valor} energía de ${eq.nombre}`);
               break;
             case "regen_hp":
-              jugador.hp = Math.min(jugador.maxHp + (jugador.hpOverflow || 0), jugador.hp + ef.valor);
+              jugador.hp = Math.min(jugador.maxHp, jugador.hp + ef.valor);
               logs.push(`${jugador.nombre} regenera +${ef.valor} HP de ${eq.nombre}`);
               break;
           }
@@ -928,10 +998,8 @@ class GameProcessor {
         break;
       }
       case 'divine_judgment': {
-        const total1 = (jugador1.fuerza||0)+(jugador1.resistencia||0)+(jugador1.velocidad||0)+(jugador1.magia||0)+(jugador1.suerte||0);
-        const total2 = (jugador2.fuerza||0)+(jugador2.resistencia||0)+(jugador2.velocidad||0)+(jugador2.magia||0)+(jugador2.suerte||0);
-        const st1 = (jugador1.personaje?.['fuerza']||0)+(jugador1.personaje?.['resistencia']||0)+(jugador1.personaje?.['velocidad']||0)+(jugador1.personaje?.['magia']||0)+(jugador1.personaje?.['suerte']||0);
-        const st2 = (jugador2.personaje?.['fuerza']||0)+(jugador2.personaje?.['resistencia']||0)+(jugador2.personaje?.['velocidad']||0)+(jugador2.personaje?.['magia']||0)+(jugador2.personaje?.['suerte']||0);
+        const st1 = (jugador1.personaje?.fuerza||0)+(jugador1.personaje?.resistencia||0)+(jugador1.personaje?.velocidad||0)+(jugador1.personaje?.magia||0)+(jugador1.personaje?.suerte||0);
+        const st2 = (jugador2.personaje?.fuerza||0)+(jugador2.personaje?.resistencia||0)+(jugador2.personaje?.velocidad||0)+(jugador2.personaje?.magia||0)+(jugador2.personaje?.suerte||0);
         if (st1 > st2) { jugador1.hp = Math.floor(jugador1.hp/2); logs.push(`[Muerte] ${jugador1.nombre} pierde mitad de HP (juicio divino)`); }
         else if (st2 > st1) { jugador2.hp = Math.floor(jugador2.hp/2); logs.push(`[Muerte] ${jugador2.nombre} pierde mitad de HP (juicio divino)`); }
         else logs.push(`[Muerte] Juicio divino: stats empatados, nada pasa`);
@@ -996,7 +1064,31 @@ class GameProcessor {
       case 'stat_lottery':
         partida.fortunaStatus = partida.fortunaStatus || {};
         partida.fortunaStatus.statLottery = card.duracion;
-        logs.push(`[Azar] ¡Lotería de stats! Stats redistribuidos por ${card.duracion} turnos`);
+        if (!partida._statLotteryTimer) {
+          [jugador1, jugador2].forEach(j => {
+            j._statsOriginales = j._statsOriginales || {
+              fuerza: j.personaje.fuerza,
+              resistencia: j.personaje.resistencia,
+              velocidad: j.personaje.velocidad,
+              magia: j.personaje.magia,
+              suerte: j.personaje.suerte
+            };
+          });
+          const statsKeys = ['fuerza','resistencia','velocidad','magia','suerte'];
+          [jugador1, jugador2].forEach(j => {
+            const total = statsKeys.reduce((s, k) => s + j.personaje[k], 0);
+            let remaining = total;
+            const newStats = {};
+            for (let i = 0; i < statsKeys.length - 1; i++) {
+              newStats[statsKeys[i]] = Math.floor(Math.random() * remaining);
+              remaining -= newStats[statsKeys[i]];
+            }
+            newStats[statsKeys[statsKeys.length - 1]] = remaining;
+            statsKeys.forEach(k => { j.personaje[k] = newStats[k]; });
+          });
+          partida._statLotteryTimer = card.duracion;
+        }
+        logs.push(`[Azar] ¡Lotería de stats! Stats redistribuidas por ${card.duracion} turnos`);
         break;
       case 'coin_flip': {
         const moneda = Math.random() < 0.5;
