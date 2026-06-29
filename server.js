@@ -323,7 +323,16 @@ io.on('connection', (socket) => {
         // Wrapper for processPassives with reversePassives support
         const pp = (pasivas, owner, rival2, trigger, ctx) => {
             const reverse = (partida.fortunaStatus || {}).reversePassives > 0;
-            return pp(pasivas, owner, rival2, trigger, ctx, reverse);
+            return gp.processPassives(pasivas, owner, rival2, trigger, ctx, reverse);
+        };
+
+        // Wrapper for dice rolls with chaosFog support
+        const diceRoll = (valor) => {
+            if ((partida.fortunaStatus || {}).chaosFog > 0) {
+                io.to(partidaId).emit('logBatalla', { msg: 'Dados ocultos por la niebla del caos', tipo: 'fortuna' });
+            } else {
+                io.to(partidaId).emit('diceRoll', { valor });
+            }
         };
 
         switch (tipo) {
@@ -348,7 +357,7 @@ io.on('connection', (socket) => {
                     break;
                 }
 
-                if (result.diceRoll) io.to(partidaId).emit('diceRoll', { valor: result.diceRoll });
+                if (result.diceRoll) diceRoll(result.diceRoll);
                 if (result.log) io.to(partidaId).emit('logBatalla', { msg: result.log, tipo: 'carta' });
 
                 // Cubo Perfecto: negate spell damage to defender
@@ -402,7 +411,7 @@ io.on('connection', (socket) => {
                     const statsYo2 = gp.calcularStatsConBuffs(yo);
                     const statsRiv2 = gp.calcularStatsConBuffs(rival);
                     const dado2 = Math.floor(Math.random() * 6) + 1;
-                    io.to(partidaId).emit('diceRoll', { valor: dado2 });
+                    diceRoll(dado2);
                     let danoExtra = Math.max(0, dado2 + statsYo2.fuerza - statsRiv2.resistencia);
                     if (yo.enrageBonus) danoExtra += yo.enrageBonus;
                     const critExtra = Math.max(statsYo2.critClaseMulti || 0, gp.calcularCritico(statsYo2.velocidad, statsRiv2.velocidad) + (statsYo2.critBonus || 0));
@@ -461,7 +470,7 @@ io.on('connection', (socket) => {
                 const statsRivAtk = gp.calcularStatsConBuffs(rival);
 
                 let dado = Math.floor(Math.random() * 6) + 1;
-                io.to(partidaId).emit('diceRoll', { valor: dado });
+                diceRoll(dado);
 
                 // beastNumber: 6 on dice = 30 self damage
                 if (fs.beastNumber > 0 && dado === 6) {

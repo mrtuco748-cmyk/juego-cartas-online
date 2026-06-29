@@ -604,7 +604,9 @@ class GameProcessor {
     if (jugador.status.bleed && jugador.status.bleed.turns > 0) {
       const dmg = jugador.status.bleed.damage;
       jugador.hp -= dmg;
-      logs.push(`${jugador.nombre} sufre ${dmg} de sangrado (${jugador.status.bleed.turns - 1}t)`);
+      const restantes = jugador.status.bleed.turns - 1;
+      if (restantes > 0) logs.push(`${jugador.nombre} sufre ${dmg} de sangrado (${restantes}t)`);
+      else logs.push(`${jugador.nombre} sufre ${dmg} de sangrado (último tick)`);
       jugador.status.bleed.turns--;
       if (jugador.status.bleed.turns <= 0) delete jugador.status.bleed;
     }
