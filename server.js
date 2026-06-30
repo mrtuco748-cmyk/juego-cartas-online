@@ -397,8 +397,8 @@ io.on('connection', (socket) => {
                     }
 
                     // 5) Reflejo Mágico (status.reflect)
-                    if (result.damage > 0 && rival.status && rival.status.reflect > 0) {
-                        const reflectDmg = Math.floor(result.damage * (rival.status.reflect_valor || 0.5));
+                    if (result.damage > 0 && rival.status && rival.status.reflect) {
+                        const reflectDmg = Math.floor(result.damage * (rival.status.reflect.valor || 0.5));
                         yo.hp -= reflectDmg;
                         io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} refleja ${reflectDmg} de daño a ${yo.nombre}`, tipo: 'carta' });
                     }

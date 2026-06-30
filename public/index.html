@@ -2285,12 +2285,6 @@
     });
     socket.on('errorReconexion', () => { localStorage.removeItem(STORAGE_KEY); mostrarLoading(); });
 
-    // ── NAVEGACIÓN ──
-    function mostrarPantalla(id) {
-        document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
-        document.getElementById(id).classList.add('activa');
-    }
-
     function mostrarSeccionMenu(id) {
         ['pantallaMenu','pantallaPersonajes','pantallaCreacion','pantallaSeleccionPJ','pantallaEspera','pantallaTienda','pantallaInventario'].forEach(s => {
             document.getElementById(s).style.display = 'none';
