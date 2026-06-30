@@ -19,28 +19,30 @@
       <stop offset="100%" stop-color="#6a4010"/>
     </linearGradient>
   </defs>
-  <!-- Shadow -->
+  <g transform="rotate(180 256 256)">
+    <!-- Blade -->
+    <polygon points="256,30 220,200 240,200 230,300 282,300 272,200 292,200" fill="url(#blade)" stroke="#6a4010" stroke-width="2"/>
+    <!-- Blade center line -->
+    <line x1="256" y1="50" x2="256" y2="290" stroke="#fffbe0" stroke-width="1.5" opacity="0.4"/>
+    <!-- Gold accents on blade -->
+    <polygon points="256,30 245,80 256,75 267,80" fill="#f0d080" opacity="0.6"/>
+    <!-- Crossguard -->
+    <rect x="190" y="295" width="132" height="16" rx="4" fill="url(#guardGold)" stroke="#6a4010" stroke-width="2"/>
+    <!-- Crossguard gems -->
+    <circle cx="200" cy="303" r="4" fill="#d42828" stroke="#6a1808" stroke-width="1"/>
+    <circle cx="312" cy="303" r="4" fill="#d42828" stroke="#6a1808" stroke-width="1"/>
+    <circle cx="256" cy="303" r="5" fill="#e83838" stroke="#6a1808" stroke-width="1"/>
+    <!-- Grip -->
+    <rect x="232" y="311" width="48" height="60" rx="3" fill="url(#grip)" stroke="#1a0800" stroke-width="2"/>
+    <!-- Grip wrapping lines -->
+    <line x1="232" y1="325" x2="280" y2="325" stroke="#1a0800" stroke-width="1.5"/>
+    <line x1="232" y1="340" x2="280" y2="340" stroke="#1a0800" stroke-width="1.5"/>
+    <line x1="232" y1="355" x2="280" y2="355" stroke="#1a0800" stroke-width="1.5"/>
+    <!-- Pommel -->
+    <rect x="238" y="371" width="36" height="20" rx="6" fill="#b08030" stroke="#6a4010" stroke-width="2"/>
+    <!-- Pommel gem -->
+    <circle cx="256" cy="381" r="5" fill="#d42828" stroke="#6a1808" stroke-width="1"/>
+  </g>
+  <!-- Shadow at bottom after rotation -->
   <ellipse cx="256" cy="450" rx="120" ry="16" fill="rgba(0,0,0,0.3)"/>
-  <!-- Blade -->
-  <polygon points="256,30 220,200 240,200 230,300 282,300 272,200 292,200" fill="url(#blade)" stroke="#6a4010" stroke-width="2"/>
-  <!-- Blade center line -->
-  <line x1="256" y1="50" x2="256" y2="290" stroke="#fffbe0" stroke-width="1.5" opacity="0.4"/>
-  <!-- Gold accents on blade -->
-  <polygon points="256,30 245,80 256,75 267,80" fill="#f0d080" opacity="0.6"/>
-  <!-- Crossguard -->
-  <rect x="190" y="295" width="132" height="16" rx="4" fill="url(#guardGold)" stroke="#6a4010" stroke-width="2"/>
-  <!-- Crossguard gems -->
-  <circle cx="200" cy="303" r="4" fill="#d42828" stroke="#6a1808" stroke-width="1"/>
-  <circle cx="312" cy="303" r="4" fill="#d42828" stroke="#6a1808" stroke-width="1"/>
-  <circle cx="256" cy="303" r="5" fill="#e83838" stroke="#6a1808" stroke-width="1"/>
-  <!-- Grip -->
-  <rect x="232" y="311" width="48" height="60" rx="3" fill="url(#grip)" stroke="#1a0800" stroke-width="2"/>
-  <!-- Grip wrapping lines -->
-  <line x1="232" y1="325" x2="280" y2="325" stroke="#1a0800" stroke-width="1.5"/>
-  <line x1="232" y1="340" x2="280" y2="340" stroke="#1a0800" stroke-width="1.5"/>
-  <line x1="232" y1="355" x2="280" y2="355" stroke="#1a0800" stroke-width="1.5"/>
-  <!-- Pommel -->
-  <rect x="238" y="371" width="36" height="20" rx="6" fill="#b08030" stroke="#6a4010" stroke-width="2"/>
-  <!-- Pommel gem -->
-  <circle cx="256" cy="381" r="5" fill="#d42828" stroke="#6a1808" stroke-width="1"/>
 </svg>
