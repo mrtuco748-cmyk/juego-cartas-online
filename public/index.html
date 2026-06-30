@@ -1727,9 +1727,10 @@
 </head>
 <body>
 
-<div id="loadingOverlay">
+<div id="loadingOverlay" onclick="mostrarLoading()">
     <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
-    <div class="loading-text">CONECTANDO...</div>
+    <div class="loading-text" id="loadingText">CONECTANDO...</div>
+    <div style="margin-top:14px;color:#6a4018;font-size:8px;letter-spacing:1px;cursor:pointer;" onclick="event.stopPropagation();mostrarLoading();localStorage.removeItem('loop_cuenta_id');document.getElementById('loadingOverlay').classList.remove('visible');">[ CANCELAR ]</div>
 </div>
 
 <!-- SPLASH -->
@@ -2270,9 +2271,9 @@
     let _loadingTimer = null;
     function mostrarLoading(m) {
         const o = document.getElementById('loadingOverlay');
-        const t = o.querySelector('.loading-text');
+        const t = document.getElementById('loadingText');
         if (_loadingTimer) { clearTimeout(_loadingTimer); _loadingTimer = null; }
-        if (m) { t.textContent = m; o.classList.add('visible'); _loadingTimer = setTimeout(() => { mostrarLoading(); }, 10000); } else { o.classList.remove('visible'); }
+        if (m) { t.textContent = m; o.classList.add('visible'); _loadingTimer = setTimeout(() => { mostrarLoading('SIN CONEXION — TOQUE CANCELAR'); }, 10000); } else { o.classList.remove('visible'); }
     }
 
     socket.on('connect', () => {
@@ -2280,7 +2281,13 @@
         if (saved && !cuentaActual) {
             mostrarLoading('RECONECTANDO...');
             socket.emit('reconectarCuenta', { cuenta_id: saved });
+        } else {
+            mostrarLoading();
         }
+    });
+    socket.off('disconnect');
+    socket.on('disconnect', () => {
+        if (cuentaActual) mostrarLoading('CONEXION PERDIDA...');
     });
     socket.on('errorReconexion', () => { localStorage.removeItem(STORAGE_KEY); mostrarLoading(); });
 
