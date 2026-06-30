@@ -3048,9 +3048,6 @@
         document.getElementById('volLabel').textContent = vol;
     }
 
-    const volGuardado = parseInt(localStorage.getItem('loop_vol')) || 10;
-    AudioManager.vol = volGuardado / 100;
-
     function abrirConfig() {
         document.getElementById('errorConfig').textContent = '';
         document.getElementById('okConfig').textContent = '';
@@ -3515,6 +3512,8 @@
             if (this._battlePaused) { this._battleAudio.play().catch(()=>{}); this._battlePaused = false; }
         }
     };
+    const volGuardado = parseInt(localStorage.getItem('loop_vol')) || 10;
+    AudioManager.vol = volGuardado / 100;
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) { AudioManager.pause(); } else { AudioManager.resume(); }
     });
