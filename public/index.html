@@ -8,7 +8,7 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0a0604">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
         body {
             background: #080604;
@@ -60,6 +60,18 @@
 
         /* ── AUTH ── */
         #auth { min-height: 100vh; align-items: center; justify-content: center; }
+
+        /* ── LOADING OVERLAY ── */
+        #loadingOverlay { position: fixed; inset: 0; z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; background: rgba(6,4,2,0.95); }
+        #loadingOverlay.visible { display: flex; }
+        .lds-ring { display: inline-block; position: relative; width: 64px; height: 64px; }
+        .lds-ring div { box-sizing: border-box; display: block; position: absolute; width: 48px; height: 48px; margin: 8px; border: 4px solid #4a3010; border-radius: 50%; animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite; border-color: #e8b860 transparent transparent transparent; }
+        .lds-ring div:nth-child(1) { animation-delay: -0.45s; }
+        .lds-ring div:nth-child(2) { animation-delay: -0.3s; }
+        .lds-ring div:nth-child(3) { animation-delay: -0.15s; }
+        @keyframes lds-ring { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-text { color: #d4a060; font-size: 12px; letter-spacing: 3px; margin-top: 20px; animation: pulse-text 1.5s ease-in-out infinite; }
+        @keyframes pulse-text { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
 
         /* ── CONTENEDOR ── */
         #contenedor {
@@ -1701,6 +1713,11 @@
 </head>
 <body>
 
+<div id="loadingOverlay">
+    <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+    <div class="loading-text">CONECTANDO...</div>
+</div>
+
 <!-- SPLASH -->
 <div id="splash" class="pantalla activa">
     <div class="splash-bg"></div>
@@ -2231,13 +2248,22 @@
     let modoPractica = false;
     const STORAGE_KEY = 'loop_cuenta_id';
 
+    let _loadingTimer = null;
+    function mostrarLoading(m) {
+        const o = document.getElementById('loadingOverlay');
+        const t = o.querySelector('.loading-text');
+        if (_loadingTimer) { clearTimeout(_loadingTimer); _loadingTimer = null; }
+        if (m) { t.textContent = m; o.classList.add('visible'); _loadingTimer = setTimeout(() => { mostrarLoading(); }, 10000); } else { o.classList.remove('visible'); }
+    }
+
     socket.on('connect', () => {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved && !cuentaActual) {
+            mostrarLoading('RECONECTANDO...');
             socket.emit('reconectarCuenta', { cuenta_id: saved });
         }
     });
-    socket.on('errorReconexion', () => { localStorage.removeItem(STORAGE_KEY); });
+    socket.on('errorReconexion', () => { localStorage.removeItem(STORAGE_KEY); mostrarLoading(); });
 
     // ── NAVEGACIÓN ──
     function mostrarPantalla(id) {
@@ -3174,6 +3200,7 @@
         mostrarPantalla('menu');
         mostrarSeccionMenu('pantallaMenu');
         actualizarNotificaciones();
+        mostrarLoading();
     });
 
     socket.on('errorLogin', (msg) => { document.getElementById('errorLogin').textContent = msg; });
