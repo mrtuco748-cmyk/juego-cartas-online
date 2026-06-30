@@ -3493,7 +3493,6 @@
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) { AudioManager.pause(); } else { AudioManager.resume(); }
     });
-    };
     AudioManager.startMenu();
     document.addEventListener('click', () => { if (!AudioManager.active && !AudioManager._muted) { AudioManager.startMenu(); } }, { once: true });
     document.body.addEventListener('click', function(e) {
