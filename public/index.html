@@ -2754,11 +2754,24 @@
                     <div class="pj-nombre">${pj.nombre} ${pts > 0 ? '<span style="color:#ff4422;font-size:9px;">(+'+pts+' pts)</span>' : ''}</div>
                     <div class="pj-clase">${pj.clase} · Lv.${pj.nivel || 1}</div>
                     <div class="pj-stats">
-                        <span class="pj-stat">FUE ${pj.fuerza}</span>
-                        <span class="pj-stat">RES ${pj.resistencia}</span>
-                        <span class="pj-stat">VEL ${pj.velocidad}</span>
-                        <span class="pj-stat">MAG ${pj.magia}</span>
-                        <span class="pj-stat">SUE ${pj.suerte}</span>
+                        <span class="pj-stat">F:${pj.fuerza}</span>
+                        <span class="pj-stat">R:${pj.resistencia}</span>
+                        <span class="pj-stat">V:${pj.velocidad}</span>
+                        <span class="pj-stat">M:${pj.magia}</span>
+                        <span class="pj-stat">S:${pj.suerte}</span>
+                    </div>
+                    <div class="pj-pasivas" style="display:flex;gap:3px;flex-wrap:wrap;margin-top:4px;">
+                        ${(() => {
+                            const pasivaIds = getPasivasClase2(pj.clase, cuentaActual.inventarioPasivas || []);
+                            const selec = (pj.pasivasSeleccionadas && pj.pasivasSeleccionadas.length > 0)
+                                ? pj.pasivasSeleccionadas : pasivaIds.slice(0, 4);
+                            return pasivaIds.map(id => {
+                                const p = SKILL_DATA_LOOKUP_PASIVAS[id];
+                                if (!p) return '';
+                                const activa = selec.includes(id);
+                                return `<span onclick="event.stopPropagation();togglePasivaSeleccionada(${i},'${id}')" style="cursor:pointer;font-size:7px;color:${activa?'#d4a060':'#5a3a18'};background:${activa?'rgba(180,120,40,0.15)':'rgba(0,0,0,0.25)'};padding:1px 5px;border-radius:3px;border:1px solid ${activa?'#8a6020':'#3a2010'};">${activa?'☑':'☐'} ${p.nombre}</span>`;
+                            }).join('');
+                        })()}
                     </div>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:4px;">
@@ -2782,11 +2795,11 @@
                     <div class="pj-nombre">${pj.nombre}</div>
                     <div class="pj-clase">${pj.clase} · Lv.${pj.nivel || 1}</div>
                     <div class="pj-stats">
-                        <span class="pj-stat">FUE ${pj.fuerza}</span>
-                        <span class="pj-stat">RES ${pj.resistencia}</span>
-                        <span class="pj-stat">VEL ${pj.velocidad}</span>
-                        <span class="pj-stat">MAG ${pj.magia}</span>
-                        <span class="pj-stat">SUE ${pj.suerte}</span>
+                        <span class="pj-stat">F:${pj.fuerza}</span>
+                        <span class="pj-stat">R:${pj.resistencia}</span>
+                        <span class="pj-stat">V:${pj.velocidad}</span>
+                        <span class="pj-stat">M:${pj.magia}</span>
+                        <span class="pj-stat">S:${pj.suerte}</span>
                     </div>
                 </div>
                 ${seleccionado ? '<button class="select-btn">SELECCIONADO</button>' : ''}
@@ -2918,7 +2931,8 @@
         pj.pasivasSeleccionadas = sel;
         const cid = cuentaActual.id || cuentaActual._id;
         socket.emit('guardarPasivasSeleccionadas', { cuenta_id: cid, personaje_id: pj._id, pasivas: sel });
-        mostrarCartaPersonaje(index);
+        renderizarPersonajes();
+        if (document.getElementById('popupCarta').classList.contains('visible')) mostrarCartaPersonaje(index);
     }
 
     function cerrarCartaPersonaje() {
