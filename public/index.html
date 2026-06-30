@@ -2765,13 +2765,13 @@
                             const pasivaIds = getPasivasClase2(pj.clase, cuentaActual.inventarioPasivas || []);
                             const selec = (pj.pasivasSeleccionadas && pj.pasivasSeleccionadas.length > 0)
                                 ? pj.pasivasSeleccionadas : pasivaIds.slice(0, 4);
-                            return pasivaIds.map(id => {
+                            return selec.map(id => {
                                 const p = SKILL_DATA_LOOKUP_PASIVAS[id];
                                 if (!p) return '';
-                                const activa = selec.includes(id);
-                                return `<span onclick="event.stopPropagation();togglePasivaSeleccionada(${i},'${id}')" style="cursor:pointer;font-size:7px;color:${activa?'#d4a060':'#5a3a18'};background:${activa?'rgba(180,120,40,0.15)':'rgba(0,0,0,0.25)'};padding:1px 5px;border-radius:3px;border:1px solid ${activa?'#8a6020':'#3a2010'};">${activa?'☑':'☐'} ${p.nombre}</span>`;
+                                return `<span style="font-size:7px;color:#d4a060;background:rgba(180,120,40,0.12);padding:1px 5px;border-radius:3px;border:1px solid #6a4020;">${p.nombre}</span>`;
                             }).join('');
                         })()}
+                        <span onclick="event.stopPropagation();abrirGestionPasivas(${i})" style="font-size:6px;color:#6a4018;border:1px dashed #4a3010;border-radius:3px;cursor:pointer;padding:1px 5px;">+EDITAR</span>
                     </div>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:4px;">
@@ -2933,6 +2933,73 @@
         socket.emit('guardarPasivasSeleccionadas', { cuenta_id: cid, personaje_id: pj._id, pasivas: sel });
         renderizarPersonajes();
         if (document.getElementById('popupCarta').classList.contains('visible')) mostrarCartaPersonaje(index);
+    }
+
+    function abrirGestionPasivas(index) {
+        const pj = cuentaActual.personajes[index];
+        if (!pj) return;
+        const invPas = cuentaActual.inventarioPasivas || [];
+        const defaults = getPasivasClase2(pj.clase, invPas);
+        const owned = [...new Set([...defaults, ...invPas])];
+        const selec = (pj.pasivasSeleccionadas && pj.pasivasSeleccionadas.length > 0) ? [...pj.pasivasSeleccionadas] : defaults.slice(0, 4);
+        const popup = document.getElementById('popupStats');
+        if (!popup) return;
+        window._pasivasEditando = { index, selec };
+        popup.innerHTML = `
+            <div class="popup-bg" onclick="cerrarPopupStats()"></div>
+            <div class="popup-box" style="max-width:380px;">
+                <div style="text-align:center;color:#d4a060;font-size:12px;letter-spacing:4px;margin-bottom:4px;">GESTIONAR PASIVAS</div>
+                <div style="text-align:center;color:#9a7040;font-size:10px;letter-spacing:2px;margin-bottom:14px;">${pj.nombre}</div>
+                <div style="text-align:center;color:#8a6a38;font-size:7px;letter-spacing:1px;margin-bottom:10px;">Seleccioná hasta 4 pasivas</div>
+                <div id="pasivasGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">
+                    ${owned.length === 0 ? '<div style="color:#6a4018;font-size:9px;">No hay pasivas disponibles.</div>' : ''}
+                    ${owned.map(id => {
+                        const d = SKILL_DATA_LOOKUP_PASIVAS[id];
+                        if (!d) return '';
+                        const eq = window._pasivasEditando.selec.includes(id);
+                        return `<div class="skill-picker-item ${eq ? 'seleccionada' : ''}" data-id="${id}" onclick="togglePasivaPopupPick(this)">
+                            <div class="sp-nombre">${d.nombre}</div>
+                            <div class="sp-coste">${d.desc || ''}</div>
+                        </div>`;
+                    }).join('')}
+                </div>
+                <div style="color:#9a7040;font-size:7px;text-align:right;margin-top:2px;" id="pasivasCount">${window._pasivasEditando.selec.length}/4 seleccionadas</div>
+                <hr class="divider">
+                <div class="msg-error" id="errorStats"></div>
+                <button class="main-btn" style="font-size:12px;padding:10px 0;" onclick="guardarPasivas()">GUARDAR</button>
+                <button class="main-btn secundario" style="margin-top:4px;" onclick="cerrarPopupStats()">CANCELAR</button>
+            </div>
+        `;
+        document.getElementById('popupStats').classList.add('visible');
+    }
+
+    function togglePasivaPopupPick(el) {
+        const ed = window._pasivasEditando;
+        if (!ed) return;
+        const id = el.dataset.id;
+        const idx = ed.selec.indexOf(id);
+        if (idx >= 0) {
+            ed.selec.splice(idx, 1);
+            el.classList.remove('seleccionada');
+        } else if (ed.selec.length < 4) {
+            ed.selec.push(id);
+            el.classList.add('seleccionada');
+        }
+        const c = document.getElementById('pasivasCount');
+        if (c) c.textContent = ed.selec.length + '/4 seleccionadas';
+    }
+
+    function guardarPasivas() {
+        const ed = window._pasivasEditando;
+        if (!ed) return;
+        const pj = cuentaActual.personajes[ed.index];
+        const cid = cuentaActual.id || cuentaActual._id;
+        if (!cid || !pj) return;
+        socket.emit('guardarPasivasSeleccionadas', {
+            cuenta_id: cid,
+            personaje_id: pj._id,
+            pasivas: ed.selec
+        });
     }
 
     function cerrarCartaPersonaje() {
