@@ -3480,7 +3480,19 @@
         toggle() {
             if (this._muted) { this._muted = false; const b = document.getElementById('btnMute'); if (b) b.textContent = '♫'; document.querySelector('.pantalla.activa')?.id === 'pantallaCombate' ? this.startBattle() : this.startMenu(); this.playSFX('select'); }
             else { this._muted = true; this.stop(0.3); const b = document.getElementById('btnMute'); if (b) b.textContent = '♪'; }
+        },
+        pause() {
+            if (this._menuAudio && !this._menuAudio.paused) { this._menuAudio.pause(); this._menuPaused = true; }
+            if (this._battleAudio && !this._battleAudio.paused) { this._battleAudio.pause(); this._battlePaused = true; }
+        },
+        resume() {
+            if (this._menuPaused) { this._menuAudio.play().catch(()=>{}); this._menuPaused = false; }
+            if (this._battlePaused) { this._battleAudio.play().catch(()=>{}); this._battlePaused = false; }
         }
+    };
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) { AudioManager.pause(); } else { AudioManager.resume(); }
+    });
     };
     AudioManager.startMenu();
     document.addEventListener('click', () => { if (!AudioManager.active && !AudioManager._muted) { AudioManager.startMenu(); } }, { once: true });
