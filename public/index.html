@@ -2074,7 +2074,7 @@
         };
 
         const SKILL_DATA_LOOKUP_PASIVAS = {
-            "regeneracion": { nombre: "Regeneración", efecto: "regen_hp", desc: "Regenera 3% de HP por turno" },
+            "regeneracion": { nombre: "Regeneración", efecto: "regen_hp", desc: "Regenera 1.5% de HP por turno" },
             "mana_infinito": { nombre: "Maná Infinito", efecto: "regen_energy", desc: "+5 energía por turno" },
             "veneno": { nombre: "Veneno", efecto: "dot", desc: "5% de daño por turno al golpear" },
             "contraataque": { nombre: "Contraataque", efecto: "counter", desc: "50% de daño devuelto" },
@@ -2083,7 +2083,7 @@
             "ultimo_aliento": { nombre: "Último Aliento", efecto: "revive", desc: "Revive con 30% HP" },
             "absorcion": { nombre: "Absorción de Hechizos", efecto: "spell_vamp", desc: "15% de daño como HP" },
             "maestro_critico": { nombre: "Maestro Crítico", efecto: "crit_up", desc: "+25% crítico" },
-            "fortaleza": { nombre: "Fortaleza", efecto: "damage_reduction", desc: "10% de reducción de daño" },
+            "fortaleza": { nombre: "Fortaleza", efecto: "damage_reduction", desc: "25% de reducción de daño" },
             "vampirismo": { nombre: "Vampirismo", efecto: "life_steal", desc: "8% de daño como HP" },
             "escudo_natural": { nombre: "Escudo Natural", efecto: "auto_shield", desc: "Escudo automático" },
             "furia_interna": { nombre: "Furia Interna", efecto: "enrage", desc: "+3% furia por HP perdido" },
@@ -2091,7 +2091,7 @@
             "totem": { nombre: "Tótem", efecto: "survival", desc: "Sobrevive con 1 HP" },
             "concentracion": { nombre: "Concentración", efecto: "reduce_energy_cost", desc: "Reduce 3 de coste de cartas" },
             "golpe_pesado": { nombre: "Golpe Pesado", efecto: "stun_chance", desc: "15% de aturdir al golpear" },
-            "armadura_viva": { nombre: "Armadura Viva", efecto: "thorns_resistance", desc: "8% de daño devuelto" }
+            "armadura_viva": { nombre: "Armadura Viva", efecto: "thorns_extra", desc: "8% de daño devuelto al atacar" }
         };
         const SKILLS_DATA_PASIVAS_EXTRA = SKILL_DATA_LOOKUP_PASIVAS;
 
@@ -2719,7 +2719,7 @@
             spell_vamp:'◇', crit_up:'⌖', damage_reduction:'◈',
             life_steal:'♢', auto_shield:'○', enrage:'★',
             cleanse:'✧', survival:'♤', reduce_energy_cost:'♢',
-            stun_chance:'◎', thorns_resistance:'◈'
+            stun_chance:'◎', thorns_extra:'◈'
         };
         return mapa[s.efecto] || '◇';
     }

@@ -24,13 +24,13 @@ const SKILLS_DATA = {
   },
   pasivas: {
     veneno: { nombre: "Veneno", efecto: "dot", valor: 0.05, trigger: "on_hit" },
+    ultimo_aliento: { nombre: "Último Aliento", efecto: "revive", valor: 0.30, trigger: "on_death" },
     totem: { nombre: "Tótem", efecto: "survival", hp_min: 1, trigger: "on_death" },
     regeneracion: { nombre: "Regeneración", efecto: "regen_hp", valor: 0.015, trigger: "on_turn_start" },
     mana_infinito: { nombre: "Maná Infinito", efecto: "regen_energy", valor: 5, trigger: "on_turn_start" },
     contraataque: { nombre: "Contraataque", efecto: "counter", valor: 0.50, trigger: "on_take_damage" },
     escudo_espinas: { nombre: "Escudo de Espinas", efecto: "thorns", valor: 0.10, trigger: "on_take_damage" },
     rapidez: { nombre: "Rapidez", efecto: "extra_action", probabilidad: 0.20, trigger: "on_turn_start" },
-    ultimo_aliento: { nombre: "Último Aliento", efecto: "revive", valor: 0.30, trigger: "on_death" },
     absorcion: { nombre: "Absorción de Hechizos", efecto: "spell_vamp", valor: 0.15, trigger: "on_cast" },
     maestro_critico: { nombre: "Maestro Crítico", efecto: "crit_up", valor: 0.25, trigger: "on_attack" },
     fortaleza: { nombre: "Fortaleza", efecto: "damage_reduction", valor: 0.25, trigger: "on_take_damage" },
@@ -39,8 +39,8 @@ const SKILLS_DATA = {
     furia_interna: { nombre: "Furia Interna", efecto: "enrage", valor: 0.03, trigger: "on_hp_loss" },
     bendito: { nombre: "Bendito", efecto: "cleanse", trigger: "on_turn_start" },
     concentracion: { nombre: "Concentración", efecto: "reduce_energy_cost", valor: 3, trigger: "on_turn_start" },
-    golpe_pesado: { nombre: "Golpe Pesado", efecto: "stun_chance", probabilidad: 0.15, duracion: 1, trigger: "on_hit" },
-    armadura_viva: { nombre: "Armadura Viva", efecto: "thorns_resistance", valor: 0.08, trigger: "on_take_damage" }
+    golpe_pesado: { nombre: "Golpe Pesado", efecto: "stun_chance", probabilidad: 0.15, duracion: 2, trigger: "on_hit" },
+    armadura_viva: { nombre: "Armadura Viva", efecto: "thorns_extra", valor: 0.08, trigger: "on_take_damage" }
   }
 };
 
@@ -293,7 +293,7 @@ class GameProcessor {
       },
       buff_all: (target, card, ctx) => {
         const src = ctx.source;
-        const stats = ["fuerza", "resistencia", "velocidad", "magia"];
+        const stats = ["fuerza", "resistencia", "velocidad", "magia", "suerte"];
         src.status = src.status || {};
         src.status.buffs = src.status.buffs || {};
         stats.forEach(s => {
@@ -357,14 +357,14 @@ class GameProcessor {
           }
           break;
         case "survival":
-          if (trigger === "on_death" && owner.hp <= 0 && !owner._revived) {
+          if (trigger === "on_death" && owner.hp <= 0 && !owner._survived) {
             if (reverse) {
               owner.hp = 0;
-              owner._revived = true;
+              owner._survived = true;
               results.push({ log: `${ownerName} cae sin salvación (Tótem invertido)` });
             } else {
               owner.hp = pasiva.hp_min;
-              owner._revived = true;
+              owner._survived = true;
               results.push({ log: `${ownerName} sobrevive con ${pasiva.hp_min} HP (Tótem)` });
             }
           }
@@ -551,7 +551,7 @@ class GameProcessor {
             }
           }
           break;
-        case "thorns_resistance":
+        case "thorns_extra":
           if (trigger === "on_take_damage" && ctx.damage) {
             const thorns = Math.floor(ctx.damage * pasiva.valor);
             if (reverse) {
@@ -746,7 +746,7 @@ class GameProcessor {
   }
 
   calcularTurnoInicial(jugadores) {
-    return [...jugadores].sort((a, b) => b.velocidad - a.velocidad);
+    return [...jugadores].sort((a, b) => b.velocidad - a.velocidad || (a.socketId < b.socketId ? -1 : 1));
   }
 
   objetosIguales(a, b) {
@@ -1041,8 +1041,10 @@ class GameProcessor {
       case 'chosen_one': {
         const objetivo = jugador1.hp <= jugador2.hp ? jugador1 : jugador2;
         const ids = Object.keys(SKILLS_DATA.activas);
-        const ta = SKILLS_DATA.activas[ids[Math.floor(Math.random()*ids.length)]];
+        const taId = ids[Math.floor(Math.random()*ids.length)];
+        const ta = SKILLS_DATA.activas[taId];
         objetivo._fortunaTA = ta;
+        if (!objetivo.skillsCompradas.includes(taId)) objetivo.skillsCompradas.push(taId);
         logs.push(`[Muerte] ¡${objetivo.nombre} es el elegido! Recibe ${ta.nombre} permanentemente`);
         break;
       }
@@ -1127,7 +1129,6 @@ class GameProcessor {
         const moneda = Math.random() < 0.5;
         const perdedor = moneda ? jugador1 : jugador2;
         for (const s of ['fuerza','resistencia','velocidad','magia','suerte']) {
-          perdedor[s] = Math.floor((perdedor[s]||5)/2);
           if (perdedor.personaje) perdedor.personaje[s] = Math.floor((perdedor.personaje[s]||5)/2);
         }
         logs.push(`[Azar] ¡La moneda! ${perdedor.nombre} pierde la mitad de sus stats`);
@@ -1221,8 +1222,10 @@ class GameProcessor {
         target.status = target.status || {};
         switch (ef.efecto) {
           case "bleed":
-            target.status.bleed = { damage: ef.valor, turns: ef.duracion };
-            logs.push(`${target.nombre} sangra por ${ef.valor} durante ${ef.duracion} turno(s) (${eq.nombre})`);
+            if (!target.status.bleed) target.status.bleed = { damage: 0, turns: 0 };
+            target.status.bleed.damage += ef.valor;
+            target.status.bleed.turns = Math.max(target.status.bleed.turns, ef.duracion);
+            logs.push(`${target.nombre} acumula sangrado +${ef.valor} (total ${target.status.bleed.damage}) por ${target.status.bleed.turns} turno(s) (${eq.nombre})`);
             break;
           case "bleed_permanent":
             target.status.bleedPermanent = (target.status.bleedPermanent || 0) + ef.valor;

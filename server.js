@@ -347,8 +347,9 @@ io.on('connection', (socket) => {
                     const tieneItem = Object.values(yo.equipment || {}).some(eq => eq && eq.nombre === carta.requiereItem);
                     if (!tieneItem) { socket.emit('errorAccion', 'Necesitás ' + carta.requiereItem + ' para usar esta carta'); break; }
                 }
-                if (yo.energia < carta.coste) {
-                    socket.emit('errorAccion', `Energía insuficiente (${yo.energia}/${carta.coste})`); break;
+                const costeFinal = Math.max(0, carta.coste - (yo.reducedCost || 0));
+                if (yo.energia < costeFinal) {
+                    socket.emit('errorAccion', `Energía insuficiente (${yo.energia}/${costeFinal})`); break;
                 }
 
                 const fsCarta = partida.fortunaStatus || {};
@@ -364,14 +365,49 @@ io.on('connection', (socket) => {
                 if (result.diceRoll) diceRoll(result.diceRoll, partida, partidaId);
                 if (result.log) io.to(partidaId).emit('logBatalla', { msg: result.log, tipo: 'carta' });
 
-                // Cubo Perfecto: negate spell damage to defender
-                if (result.damage > 0 && rival.status && rival.status.perfectCube) {
-                    delete rival.status.perfectCube;
-                    io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} evade el daño del hechizo con su Cubo Perfecto`, tipo: 'carta' });
-                    result.damage = 0;
+                // ── POST-PROCESAMIENTO DE DAÑO ──
+                // executeCard ya aplicó daño directo a rival.hp.
+                // Revertimos ese daño y lo re-aplicamos pasando por escudo, pasivas, etc.
+
+                if (result.damage > 0) {
+                    // 1) Revertir daño directo de executeCard
+                    rival.hp += result.damage;
+
+                    // 2) Cubo Perfecto: anula todo el daño del hechizo
+                    if (rival.status && rival.status.perfectCube) {
+                        delete rival.status.perfectCube;
+                        io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} evade el daño del hechizo con su Cubo Perfecto`, tipo: 'carta' });
+                        result.damage = 0;
+                    }
+
+                    // 3) Escudo: absorbe daño
+                    if (result.damage > 0 && rival.status && rival.status.shield > 0) {
+                        const absorb = Math.min(rival.status.shield, result.damage);
+                        rival.status.shield -= absorb;
+                        result.damage -= absorb;
+                        if (absorb > 0) io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} absorbe ${absorb} daño con su escudo`, tipo: 'carta' });
+                    }
+
+                    // 4) Pasivas on_take_damage (Fortaleza reduce daño, Contraataque devuelve, Espinas refleja)
+                    if (result.damage > 0) {
+                        const dmgCtx = { damage: result.damage, target: yo };
+                        const pLogDef = pp(rival.pasivas, rival, yo, 'on_take_damage', dmgCtx, partida);
+                        result.damage = Math.max(0, dmgCtx.damage);
+                        pLogDef.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
+                    }
+
+                    // 5) Reflejo Mágico (status.reflect)
+                    if (result.damage > 0 && rival.status && rival.status.reflect > 0) {
+                        const reflectDmg = Math.floor(result.damage * (rival.status.reflect_valor || 0.5));
+                        yo.hp -= reflectDmg;
+                        io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} refleja ${reflectDmg} de daño a ${yo.nombre}`, tipo: 'carta' });
+                    }
+
+                    // 6) Aplicar daño final
+                    rival.hp -= result.damage;
                 }
 
-                // swapHealDamage: if this card healed, convert to damage; if it damaged, convert to heal
+                // swapHealDamage: si la carta curó, convertirlo a daño; si dañó, convertir a cura
                 if (fsCarta.swapHealDamage) {
                     if (result.healing > 0) {
                         const dmgSwap = result.healing;
@@ -423,7 +459,7 @@ io.on('connection', (socket) => {
                     const dado2 = Math.floor(Math.random() * 6) + 1;
                     diceRoll(dado2, partida, partidaId);
                     let danoExtra = Math.max(0, dado2 + statsYo2.fuerza - statsRiv2.resistencia);
-                    if (yo.enrageBonus) danoExtra += yo.enrageBonus;
+                    if (yo.enrageBonus) { danoExtra += yo.enrageBonus; yo.enrageBonus = 0; }
                     const critExtra = Math.max(statsYo2.critClaseMulti || 0, gp.calcularCritico(statsYo2.velocidad, statsRiv2.velocidad) + (statsYo2.critBonus || 0));
                     danoExtra = Math.floor(danoExtra * (1 + critExtra));
                     if (rival.status && rival.status.shield > 0) {
@@ -518,7 +554,7 @@ io.on('connection', (socket) => {
 
                 let critMulti = Math.max(statsYoAtk.critClaseMulti || 0, gp.calcularCritico(statsYoAtk.velocidad, statsRivAtk.velocidad) + (statsYoAtk.critBonus || 0));
                 let danoFinal = Math.floor(danoBase * (1 + critMulti));
-                if (yo.enrageBonus) danoFinal += yo.enrageBonus;
+                if (yo.enrageBonus) { danoFinal += yo.enrageBonus; yo.enrageBonus = 0; }
 
                 let log = `${statsYoAtk.nombre} ataca — ${dado}+F:${statsYoAtk.fuerza}-R:${statsRivAtk.resistencia}=${danoBase}`;
 
@@ -923,6 +959,8 @@ io.on('connection', (socket) => {
                 if (!yo.summon || yo.summon.hp <= 0) { socket.emit('errorAccion', 'No tenés invocación activa'); break; }
                 const statsYoSum = gp.calcularStatsConBuffs(yo);
                 const statsRivSum = gp.calcularStatsConBuffs(rival);
+                const pLogSumAtk = pp(yo.pasivas, yo, rival, 'on_attack', {}, partida);
+                pLogSumAtk.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
                 const dadoSum = Math.floor(Math.random() * 6) + 1;
                 diceRoll(dadoSum, partida, partidaId);
                 const statSum = yo.summon.stats || { fuerza: 3, resistencia: 2, velocidad: 2, magia: 1 };
@@ -932,8 +970,19 @@ io.on('connection', (socket) => {
                     rival.status.shield -= absorb;
                     danoSum -= absorb;
                 }
+                if (danoSum > 0) {
+                    const dmgCtxSum = { damage: danoSum, target: yo };
+                    const pLogDefSum = pp(rival.pasivas, rival, yo, 'on_take_damage', dmgCtxSum, partida);
+                    danoSum = Math.max(0, dmgCtxSum.damage);
+                    pLogDefSum.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
+                }
                 rival.hp -= danoSum;
                 io.to(partidaId).emit('logBatalla', { msg: `${yo.summon.nombre} ataca causando ${danoSum} daño`, tipo: 'ataque' });
+                if (danoSum > 0) {
+                    const pHitSum = pp(yo.pasivas, yo, rival, 'on_hit', { damage: danoSum, target: rival }, partida);
+                    pHitSum.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
+                    gp.procesarEfectosOnHit(yo, rival).forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'ataque' }));
+                }
                 break;
             }
         }
@@ -960,6 +1009,10 @@ io.on('connection', (socket) => {
                 j.summon = null;
                 const reviveLogs = pp(j.pasivas, j, null, 'on_death', {}, partida);
                 reviveLogs.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
+            }
+            if (j.summon && j.summon.hp <= 0) {
+                io.to(partidaId).emit('logBatalla', { msg: `${j.summon.nombre} ha caído`, tipo: 'carta' });
+                j.summon = null;
             }
         }
 
@@ -1000,13 +1053,12 @@ io.on('connection', (socket) => {
 
         const accRest = partida.accionesMax - partida.accionesUsadas.length;
 
-        if (accRest > 0 && !partida.accionCancelada) {
+        if (accRest > 0) {
             partidaEmitirEstado(partidaId, partida);
             return;
         }
 
         partida.accionesUsadas = [];
-        partida.accionCancelada = false;
 
         const statusLogs = [];
         [yo, rival].forEach(j => {
@@ -1068,11 +1120,9 @@ io.on('connection', (socket) => {
             }
         }
 
-        // ----- frozen check -----
-        if (yo.status && yo.status.frozen > 0) {
-            io.to(partidaId).emit('logBatalla', { msg: `${yo.nombre} estaba paralizado el turno anterior`, tipo: 'status' });
-        }
         partida.turnoActual = rival.socketId;
+
+        // ----- frozen check -----
 
         // If the player whose turn just started is frozen, skip them immediately
         // Loop in case both players are frozen
@@ -1185,7 +1235,6 @@ io.on('connection', (socket) => {
 
         jugTurno.critBonus = 0;
         jugTurno.reducedCost = 0;
-        jugTurno.enrageBonus = 0;
 
         const tLogs1 = pp(jugTurno.pasivas, jugTurno, rivTurno, 'on_turn_start', {}, partida);
         const tLogs2 = pp(rivTurno.pasivas, rivTurno, jugTurno, 'on_turn_start', {}, partida);
@@ -1625,7 +1674,6 @@ io.on('connection', (socket) => {
                 primerTurnoJ2: true,
                 accionesUsadas: [],
                 accionesMax: 2,
-                accionCancelada: false,
                 fortunaStatus: {},
                 _hpIniciales: { j1: { maxHp: maxHP1 }, j2: { maxHp: maxHP2 } }
             };
@@ -1702,13 +1750,13 @@ io.on('connection', (socket) => {
             // Initial fortune card
             const cardInicial = FORTUNE_CARDS[Math.floor(Math.random() * FORTUNE_CARDS.length)];
             const flogsInicial = gp.aplicarFortuna(cardInicial, partidas[partidaId], partidas[partidaId].jugador1, partidas[partidaId].jugador2);
+            partidas[partidaId]._fortunaTriggered = true;
             setTimeout(() => {
                 flogsInicial.forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'fortuna' }));
                 io.to(partidaId).emit('fortunaCard', {
                     id: cardInicial.id, nombre: cardInicial.nombre, categoria: cardInicial.categoria,
                     desc: cardInicial.desc, efecto: cardInicial.efecto
                 });
-                partidas[partidaId]._fortunaTriggered = true;
             }, 500);
         }
     });
@@ -1780,7 +1828,7 @@ io.on('connection', (socket) => {
             turnoActual: turnoInicial, turno: 0,
             primerTurnoJ1: true, primerTurnoJ2: true,
             accionesUsadas: [], accionesMax: 2,
-            accionCancelada: false, esPractica: true,
+            esPractica: true,
             fortunaStatus: {},
             _hpIniciales: { j1: { maxHp: maxHPJ }, j2: { maxHp: maxHPB } }
         };
@@ -1837,13 +1885,13 @@ io.on('connection', (socket) => {
         // Initial fortune card
         const cardInicial = FORTUNE_CARDS[Math.floor(Math.random() * FORTUNE_CARDS.length)];
         const flogsInicial = gp.aplicarFortuna(cardInicial, partidas[partidaId], partidas[partidaId].jugador1, partidas[partidaId].jugador2);
+        partidas[partidaId]._fortunaTriggered = true;
         setTimeout(() => {
             flogsInicial.forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'fortuna' }));
             io.to(partidaId).emit('fortunaCard', {
                 id: cardInicial.id, nombre: cardInicial.nombre, categoria: cardInicial.categoria,
                 desc: cardInicial.desc, efecto: cardInicial.efecto
             });
-            partidas[partidaId]._fortunaTriggered = true;
         }, 500);
     });
 
