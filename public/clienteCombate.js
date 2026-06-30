@@ -857,7 +857,8 @@ function estiloLog(data) {
     carta: 'color:#d4a060;font-size:11px;font-weight:600;',
     pasiva: 'color:#50c850;font-size:10px;',
     status: 'color:#a0a0d0;font-size:10px;',
-    fortuna: 'color:#e0b060;font-size:13px;font-weight:700;letter-spacing:1px;background:rgba(200,140,60,0.08);padding:2px 6px;border-radius:4px;margin:2px 0;'
+    fortuna: 'color:#e0b060;font-size:13px;font-weight:700;letter-spacing:1px;background:rgba(200,140,60,0.08);padding:2px 6px;border-radius:4px;margin:2px 0;',
+    combo: 'color:#c080e0;font-size:11px;font-weight:700;letter-spacing:0.5px;background:rgba(160,80,200,0.1);padding:1px 4px;border-radius:3px;'
   };
   return estilos[data.tipo] || 'color:#9a7040;font-size:10px;';
 }

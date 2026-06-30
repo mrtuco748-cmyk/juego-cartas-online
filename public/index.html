@@ -2055,28 +2055,29 @@
     <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
     <script src="ui-card.js"></script>
     <script>
+        const TAG_NAMES = { fisico: 'FIS', tecnico: 'TEC', mental: 'MEN', instintivo: 'INS' };
         const SKILL_DATA_LOOKUP = {
-            "golpe_directo": { "nombre": "Golpe Directo", "coste": 25, "efecto": "damage_percent", "valor": 0.25 },
-            "paralisis": { "nombre": "Parálisis", "coste": 35, "efecto": "stun", "duracion": 2 },
-            "cubo_perfecto": { "nombre": "Cubo Perfecto", "coste": 20, "efecto": "cancel_attack" },
-            "jackpot": { "nombre": "Jackpot", "coste": 70, "efecto": "rng_kill", "rng": 6 },
-            "curacion_divina": { "nombre": "Curación Divina", "coste": 30, "efecto": "heal_percent", "valor": 0.40 },
-            "escudo_arcano": { "nombre": "Escudo Arcano", "coste": 25, "efecto": "shield", "valor": 0.30 },
-            "furia_berserker": { "nombre": "Furia Berserker", "coste": 40, "efecto": "buff", "stat": "fuerza", "valor": 5, "duracion": 3 },
-            "maldicion": { "nombre": "Maldición", "coste": 30, "efecto": "debuff", "stat": "resistencia", "valor": 3, "duracion": 3 },
-            "drenar_vida": { "nombre": "Drenar Vida", "coste": 35, "efecto": "lifesteal", "valor": 0.20 },
-            "explosion_mana": { "nombre": "Explosión de Maná", "coste": 50, "efecto": "damage_true", "valor": 35 },
-            "golpe_veloz": { "nombre": "Golpe Veloz", "coste": 15, "efecto": "double_attack" },
-            "reflejo_magico": { "nombre": "Reflejo Mágico", "coste": 40, "efecto": "reflect", "valor": 0.50, "duracion": 2 },
-            "tormenta": { "nombre": "Tormenta", "coste": 45, "efecto": "aoe_damage", "valor": 0.20 },
-            "sello_silencio": { "nombre": "Sello de Silencio", "coste": 30, "efecto": "silence", "duracion": 2 },
-            "sacrificio": { "nombre": "Sacrificio", "coste": 15, "efecto": "sacrifice", "valor": 0.45 },
-            "invocacion": { "nombre": "Invocación Menor", "coste": 55, "efecto": "summon", "valor": 0.25 },
-            "rafaga": { "nombre": "Ráfaga", "coste": 15, "efecto": "damage_percent", "valor": 0.15 },
-            "cataclismo": { "nombre": "Cataclismo", "coste": 80, "efecto": "damage_true", "valor": 55 },
-            "bendicion": { "nombre": "Bendición", "coste": 35, "efecto": "buff_all", "valor": 2, "duracion": 2 },
-            "escarcha": { "nombre": "Escarcha", "coste": 25, "efecto": "debuff", "stat": "velocidad", "valor": 4, "duracion": 2 },
-            "acrio": { "nombre": "Acrio", "coste": 30, "efecto": "damage_true", "valor": 15, "requiereItem": "Varita Común Nivel 3" }
+            "golpe_directo": { "nombre": "Golpe Directo", "coste": 25, "efecto": "damage_percent", "valor": 0.25, "tag": "fisico" },
+            "paralisis": { "nombre": "Parálisis", "coste": 35, "efecto": "stun", "duracion": 2, "tag": "tecnico" },
+            "cubo_perfecto": { "nombre": "Cubo Perfecto", "coste": 20, "efecto": "cancel_attack", "tag": "tecnico" },
+            "jackpot": { "nombre": "Jackpot", "coste": 70, "efecto": "rng_kill", "rng": 6, "tag": "instintivo" },
+            "curacion_divina": { "nombre": "Curación Divina", "coste": 30, "efecto": "heal_percent", "valor": 0.40, "tag": "instintivo" },
+            "escudo_arcano": { "nombre": "Escudo Arcano", "coste": 25, "efecto": "shield", "valor": 0.30, "tag": "tecnico" },
+            "furia_berserker": { "nombre": "Furia Berserker", "coste": 40, "efecto": "buff", "stat": "fuerza", "valor": 5, "duracion": 3, "tag": "fisico" },
+            "maldicion": { "nombre": "Maldición", "coste": 30, "efecto": "debuff", "stat": "resistencia", "valor": 3, "duracion": 3, "tag": "mental" },
+            "drenar_vida": { "nombre": "Drenar Vida", "coste": 35, "efecto": "lifesteal", "valor": 0.20, "tag": "mental" },
+            "explosion_mana": { "nombre": "Explosión de Maná", "coste": 50, "efecto": "damage_true", "valor": 35, "tag": "mental" },
+            "golpe_veloz": { "nombre": "Golpe Veloz", "coste": 15, "efecto": "double_attack", "tag": "fisico" },
+            "reflejo_magico": { "nombre": "Reflejo Mágico", "coste": 40, "efecto": "reflect", "valor": 0.50, "duracion": 2, "tag": "tecnico" },
+            "tormenta": { "nombre": "Tormenta", "coste": 45, "efecto": "aoe_damage", "valor": 0.20, "tag": "tecnico" },
+            "sello_silencio": { "nombre": "Sello de Silencio", "coste": 30, "efecto": "silence", "duracion": 2, "tag": "tecnico" },
+            "sacrificio": { "nombre": "Sacrificio", "coste": 15, "efecto": "sacrifice", "valor": 0.45, "tag": "mental" },
+            "invocacion": { "nombre": "Invocación Menor", "coste": 55, "efecto": "summon", "valor": 0.25, "tag": "instintivo" },
+            "rafaga": { "nombre": "Ráfaga", "coste": 15, "efecto": "damage_percent", "valor": 0.15, "tag": "fisico" },
+            "cataclismo": { "nombre": "Cataclismo", "coste": 80, "efecto": "damage_true", "valor": 55, "tag": "fisico" },
+            "bendicion": { "nombre": "Bendición", "coste": 35, "efecto": "buff_all", "valor": 2, "duracion": 2, "tag": "mental" },
+            "escarcha": { "nombre": "Escarcha", "coste": 25, "efecto": "debuff", "stat": "velocidad", "valor": 4, "duracion": 2, "tag": "tecnico" },
+            "acrio": { "nombre": "Acrio", "coste": 30, "efecto": "damage_true", "valor": 15, "requiereItem": "Varita Común Nivel 3", "tag": "mental" }
         };
 
         const SKILL_DATA_LOOKUP_PASIVAS = {

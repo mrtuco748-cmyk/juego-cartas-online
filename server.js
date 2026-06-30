@@ -1,4 +1,4 @@
-const { GameProcessor, SKILLS_DATA, CLASS_DATA, MAZOS, FORTUNE_CARDS, aplicarModsClase, getMaxHP } = require('./gameEngine');
+const { GameProcessor, SKILLS_DATA, CLASS_DATA, MAZOS, FORTUNE_CARDS, aplicarModsClase, getMaxHP, TAGS, COMBO_SYNERGIES, aplicarCombo, procesarCombosTurno } = require('./gameEngine');
 const gp = new GameProcessor();
 
 const express = require('express');
@@ -347,7 +347,13 @@ io.on('connection', (socket) => {
                     const tieneItem = Object.values(yo.equipment || {}).some(eq => eq && eq.nombre === carta.requiereItem);
                     if (!tieneItem) { socket.emit('errorAccion', 'Necesitás ' + carta.requiereItem + ' para usar esta carta'); break; }
                 }
-                const costeFinal = Math.max(0, carta.coste - (yo.reducedCost || 0));
+                // Combo: Sobrecarga — la próxima skill cuesta 0 energía
+                const costeSobrecarga = (yo._comboSobrecarga) ? 0 : carta.coste - (yo.reducedCost || 0);
+                if (yo._comboSobrecarga) {
+                    delete yo._comboSobrecarga;
+                    io.to(partidaId).emit('logBatalla', { msg: `[Combo] Sobrecarga reduce coste de ${carta.nombre} a 0 energía`, tipo: 'combo' });
+                }
+                const costeFinal = Math.max(0, costeSobrecarga);
                 if (yo.energia < costeFinal) {
                     socket.emit('errorAccion', `Energía insuficiente (${yo.energia}/${costeFinal})`); break;
                 }
@@ -547,14 +553,35 @@ io.on('connection', (socket) => {
                     resistenciaEfectiva = 0;
                 }
 
-                let danoBase = Math.max(0, dado + fuerzaEfectiva - resistenciaEfectiva);
+                // Combo: Fractura — ignora 50% resistencia rival
+                let resEfectiva = resistenciaEfectiva;
+                if (yo._comboFractura) {
+                    resEfectiva = Math.floor(resEfectiva * 0.5);
+                    io.to(partidaId).emit('logBatalla', { msg: `[Combo] Fractura ignora 50% de resistencia (${resistenciaEfectiva}→${resEfectiva})`, tipo: 'combo' });
+                    delete yo._comboFractura;
+                }
+                let danoBase = Math.max(0, dado + fuerzaEfectiva - resEfectiva);
                 if (fs.invertResistance > 0) {
                     danoBase += statsRivAtk.resistencia;
+                }
+
+                // Combo: Impacto — +40% daño base
+                if (yo._comboImpacto) {
+                    danoBase = Math.floor(danoBase * 1.4);
+                    io.to(partidaId).emit('logBatalla', { msg: `[Combo] Impacto +40% daño base (→${danoBase})`, tipo: 'combo' });
+                    delete yo._comboImpacto;
                 }
 
                 let critMulti = Math.max(statsYoAtk.critClaseMulti || 0, gp.calcularCritico(statsYoAtk.velocidad, statsRivAtk.velocidad) + (statsYoAtk.critBonus || 0));
                 let danoFinal = Math.floor(danoBase * (1 + critMulti));
                 if (yo.enrageBonus) { danoFinal += yo.enrageBonus; yo.enrageBonus = 0; }
+
+                // Combo: Reflejos — auto-esquiva
+                if (rival._comboReflejos) {
+                    delete rival._comboReflejos;
+                    io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} esquiva automáticamente por Reflejos`, tipo: 'combo' });
+                    return partidaFinalizarAccion(partidaId, partida);
+                }
 
                 let log = `${statsYoAtk.nombre} ataca — ${dado}+F:${statsYoAtk.fuerza}-R:${statsRivAtk.resistencia}=${danoBase}`;
 
@@ -599,6 +626,21 @@ io.on('connection', (socket) => {
                     const pLogDef = pp(rival.pasivas, rival, yo, 'on_take_damage', dmgCtx, partida);
                     danoFinal = Math.max(0, dmgCtx.damage);
                     pLogDef.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
+                }
+
+                // Combo: Contragolpe — devuelve 30% daño al atacante
+                if (rival._comboContragolpe && danoFinal > 0) {
+                    const devuelto = Math.floor(danoFinal * 0.3);
+                    yo.hp -= devuelto;
+                    io.to(partidaId).emit('logBatalla', { msg: `[Combo] Contragolpe devuelve ${devuelto} daño a ${yo.nombre}`, tipo: 'combo' });
+                    delete rival._comboContragolpe;
+                }
+                // Combo: Baluarte — -50% daño recibido
+                if (rival._baluarteActivo && danoFinal > 0) {
+                    const reducido = Math.floor(danoFinal * 0.5);
+                    io.to(partidaId).emit('logBatalla', { msg: `[Combo] Baluarte reduce daño 50% (${danoFinal}→${reducido})`, tipo: 'combo' });
+                    danoFinal = reducido;
+                    delete rival._baluarteActivo;
                 }
 
                 if (rival.status && rival.status.shield > 0 && danoFinal > 0) {
@@ -696,6 +738,7 @@ io.on('connection', (socket) => {
                     yo.pose = { tipo: 'esquivar', valor: dadoPose };
                     io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} prepara ESQUIVE (${dadoPose})`, tipo: 'pose' });
                 }
+                yo.comboInterrupted = true;
                 break;
             }
             case 'investigar': {
@@ -999,6 +1042,36 @@ io.on('connection', (socket) => {
             hl2.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
         }
 
+        // ── SISTEMA DE COMBOS POR TAGS ──
+        const accTag = (tipo === 'carta' && cartaId && SKILLS_DATA.activas[cartaId]) ? SKILLS_DATA.activas[cartaId].tag
+                     : (tipo === 'atacar') ? TAGS.FISICO
+                     : (tipo === 'descansar') ? TAGS.INSTINTIVO
+                     : null;
+        if (accTag) {
+            if (yo.comboOpener !== null && !yo.comboInterrupted) {
+                const combo = aplicarCombo(yo, rival, yo.comboOpener, accTag);
+                if (combo) {
+                    combo.logs.forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'combo' }));
+                    // Procesar efectos inmediatos de combo que modifican cálculos
+                    if (combo.effects.nombre === 'Ventaja') {
+                        partida.accionesMax = (partida.accionesMax || 2) + 1;
+                    }
+                }
+                // Reiniciar opener para próxima secuencia
+                yo.comboOpener = accTag;
+                yo.comboInterrupted = false;
+            } else {
+                // Primera acción del turno o interrupted: actualizar opener
+                yo.comboOpener = accTag;
+                yo.comboInterrupted = false;
+            }
+            yo.lastTag = accTag;
+        } else if (tipo === 'pose') {
+            // Pose marca interrupción (ya seteada arriba)
+        } else {
+            // Acciones no-combat no actualizan tag pero tampoco resetean
+        }
+
         partidaFinalizarAccion(partidaId, partida);
     });
 
@@ -1135,6 +1208,10 @@ io.on('connection', (socket) => {
             io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} salta turno por paralisis`, tipo: 'status' });
             partida.turnoActual = otro.socketId;
         }
+
+        // Procesar efectos de combo al inicio del turno del jugador
+        const comboL1 = procesarCombosTurno(jugTurno || (partida.turnoActual === partida.jugador1.socketId ? partida.jugador1 : partida.jugador2));
+        comboL1.forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'combo' }));
 
         partida.turno++;
         if (!partida._fortunaTriggered || (partida.turno > 0 && partida.turno % 7 === 0)) {
@@ -1649,7 +1726,8 @@ io.on('connection', (socket) => {
                     pasivasCompradas: pasivasComp1,
                     persistentEffects: [],
                     contadores: {},
-                    turnosJugados: 0
+                    turnosJugados: 0,
+                    lastTag: null, comboOpener: null, comboInterrupted: false
                 },
                 jugador2: {
                     ...jugador2,
@@ -1666,7 +1744,8 @@ io.on('connection', (socket) => {
                     pasivasCompradas: pasivasComp2,
                     persistentEffects: [],
                     contadores: {},
-                    turnosJugados: 0
+                    turnosJugados: 0,
+                    lastTag: null, comboOpener: null, comboInterrupted: false
                 },
                 turnoActual: turnoInicial,
                 turno: 0,

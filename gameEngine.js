@@ -1,26 +1,28 @@
+const TAGS = { FISICO: 'fisico', TECNICO: 'tecnico', MENTAL: 'mental', INSTINTIVO: 'instintivo' };
+
 const SKILLS_DATA = {
   activas: {
-    golpe_directo: { nombre: "Golpe Directo", coste: 25, efecto: "damage_percent", valor: 0.25 },
-    paralisis: { nombre: "Parálisis", coste: 35, efecto: "stun", duracion: 2 },
-    cubo_perfecto: { nombre: "Cubo Perfecto", coste: 20, efecto: "cancel_attack" },
-    jackpot: { nombre: "Jackpot", coste: 70, efecto: "rng_kill", rng: 6 },
-    curacion_divina: { nombre: "Curación Divina", coste: 30, efecto: "heal_percent", valor: 0.40 },
-    escudo_arcano: { nombre: "Escudo Arcano", coste: 25, efecto: "shield", valor: 0.30 },
-    furia_berserker: { nombre: "Furia Berserker", coste: 40, efecto: "buff", stat: "fuerza", valor: 5, duracion: 3 },
-    maldicion: { nombre: "Maldición", coste: 30, efecto: "debuff", stat: "resistencia", valor: 3, duracion: 3 },
-    drenar_vida: { nombre: "Drenar Vida", coste: 35, efecto: "lifesteal", valor: 0.20 },
-    explosion_mana: { nombre: "Explosión de Maná", coste: 50, efecto: "damage_true", valor: 35 },
-    golpe_veloz: { nombre: "Golpe Veloz", coste: 15, efecto: "double_attack" },
-    reflejo_magico: { nombre: "Reflejo Mágico", coste: 40, efecto: "reflect", valor: 0.50, duracion: 2 },
-    tormenta: { nombre: "Tormenta", coste: 45, efecto: "aoe_damage", valor: 0.20 },
-    sello_silencio: { nombre: "Sello de Silencio", coste: 30, efecto: "silence", duracion: 2 },
-    sacrificio: { nombre: "Sacrificio", coste: 15, efecto: "sacrifice", valor: 0.45 },
-    invocacion: { nombre: "Invocación Menor", coste: 55, efecto: "summon", valor: 0.25 },
-    rafaga: { nombre: "Ráfaga", coste: 15, efecto: "damage_percent", valor: 0.15 },
-    cataclismo: { nombre: "Cataclismo", coste: 80, efecto: "damage_true", valor: 55 },
-    bendicion: { nombre: "Bendición", coste: 35, efecto: "buff_all", valor: 2, duracion: 2 },
-    escarcha: { nombre: "Escarcha", coste: 25, efecto: "debuff", stat: "velocidad", valor: 4, duracion: 2 },
-    acrio: { nombre: "Acrio", coste: 30, efecto: "damage_true", valor: 15, requiereItem: "Varita Común Nivel 3" }
+    golpe_directo: { nombre: "Golpe Directo", coste: 25, efecto: "damage_percent", valor: 0.25, tag: TAGS.FISICO },
+    paralisis: { nombre: "Parálisis", coste: 35, efecto: "stun", duracion: 2, tag: TAGS.TECNICO },
+    cubo_perfecto: { nombre: "Cubo Perfecto", coste: 20, efecto: "cancel_attack", tag: TAGS.TECNICO },
+    jackpot: { nombre: "Jackpot", coste: 70, efecto: "rng_kill", rng: 6, tag: TAGS.INSTINTIVO },
+    curacion_divina: { nombre: "Curación Divina", coste: 30, efecto: "heal_percent", valor: 0.40, tag: TAGS.INSTINTIVO },
+    escudo_arcano: { nombre: "Escudo Arcano", coste: 25, efecto: "shield", valor: 0.30, tag: TAGS.TECNICO },
+    furia_berserker: { nombre: "Furia Berserker", coste: 40, efecto: "buff", stat: "fuerza", valor: 5, duracion: 3, tag: TAGS.FISICO },
+    maldicion: { nombre: "Maldición", coste: 30, efecto: "debuff", stat: "resistencia", valor: 3, duracion: 3, tag: TAGS.MENTAL },
+    drenar_vida: { nombre: "Drenar Vida", coste: 35, efecto: "lifesteal", valor: 0.20, tag: TAGS.MENTAL },
+    explosion_mana: { nombre: "Explosión de Maná", coste: 50, efecto: "damage_true", valor: 35, tag: TAGS.MENTAL },
+    golpe_veloz: { nombre: "Golpe Veloz", coste: 15, efecto: "double_attack", tag: TAGS.FISICO },
+    reflejo_magico: { nombre: "Reflejo Mágico", coste: 40, efecto: "reflect", valor: 0.50, duracion: 2, tag: TAGS.TECNICO },
+    tormenta: { nombre: "Tormenta", coste: 45, efecto: "aoe_damage", valor: 0.20, tag: TAGS.TECNICO },
+    sello_silencio: { nombre: "Sello de Silencio", coste: 30, efecto: "silence", duracion: 2, tag: TAGS.TECNICO },
+    sacrificio: { nombre: "Sacrificio", coste: 15, efecto: "sacrifice", valor: 0.45, tag: TAGS.MENTAL },
+    invocacion: { nombre: "Invocación Menor", coste: 55, efecto: "summon", valor: 0.25, tag: TAGS.INSTINTIVO },
+    rafaga: { nombre: "Ráfaga", coste: 15, efecto: "damage_percent", valor: 0.15, tag: TAGS.FISICO },
+    cataclismo: { nombre: "Cataclismo", coste: 80, efecto: "damage_true", valor: 55, tag: TAGS.FISICO },
+    bendicion: { nombre: "Bendición", coste: 35, efecto: "buff_all", valor: 2, duracion: 2, tag: TAGS.MENTAL },
+    escarcha: { nombre: "Escarcha", coste: 25, efecto: "debuff", stat: "velocidad", valor: 4, duracion: 2, tag: TAGS.TECNICO },
+    acrio: { nombre: "Acrio", coste: 30, efecto: "damage_true", valor: 15, requiereItem: "Varita Común Nivel 3", tag: TAGS.MENTAL }
   },
   pasivas: {
     veneno: { nombre: "Veneno", efecto: "dot", valor: 0.05, trigger: "on_hit" },
@@ -1273,4 +1275,132 @@ const FORTUNE_CARDS = [
   { id: 'amnesia_total', nombre: 'Amnesia total', categoria: 'Oculto', desc: 'Ambos jugadores olvidan sus pasivas y sus stats por 3 turnos. Combaten como personajes nivel 1 con 5 en todo', efecto: 'amnesia', duracion: 3 },
 ];
 
-module.exports = { GameProcessor, SKILLS_DATA, CLASS_DATA, MAZOS, FORTUNE_CARDS, aplicarModsClase, getMaxHP };
+// ── SISTEMA DE COMBOS POR TAGS ──
+const COMBO_SYNERGIES = {
+  'fisico|fisico':     { nombre: 'Fractura',     efecto: 'Ignora 50% Resistencia rival' },
+  'fisico|tecnico':    { nombre: 'Precisión',    efecto: '+20% Probabilidad de Crítico' },
+  'fisico|mental':     { nombre: 'Desestabilizar', efecto: '-15 Energía al rival' },
+  'fisico|instintivo': { nombre: 'Contragolpe',  efecto: 'Devuelve 30% daño recibido' },
+  'tecnico|fisico':    { nombre: 'Impacto',      efecto: '+40% Daño base' },
+  'tecnico|tecnico':   { nombre: 'Reflejos',     efecto: 'Esquiva automática el siguiente ataque' },
+  'tecnico|mental':    { nombre: 'Silencio',     efecto: 'Cancela la próxima carta del rival' },
+  'tecnico|instintivo':{ nombre: 'Respiración',  efecto: '+10 HP al instante' },
+  'mental|fisico':     { nombre: 'Herida',       efecto: 'Aplica Sangrado (daño progresivo)' },
+  'mental|tecnico':    { nombre: 'Transferencia', efecto: 'Intercambia energía con el rival' },
+  'mental|mental':     { nombre: 'Concentración', efecto: 'Gana +20 Energía extra' },
+  'mental|instintivo': { nombre: 'Sobrecarga',   efecto: 'La siguiente skill cuesta 0 energía' },
+  'instintivo|fisico': { nombre: 'Sentencia',    efecto: 'Daño verdadero (ignora defensa)' },
+  'instintivo|tecnico':{ nombre: 'Ventaja',      efecto: 'Gana 1 acción extra' },
+  'instintivo|mental': { nombre: 'Baluarte',     efecto: '-50% daño recibido hasta próximo turno' },
+  'instintivo|instintivo':{ nombre: 'Fortaleza', efecto: 'Escudo igual al 20% de HP total' }
+};
+
+function aplicarCombo(yo, rival, tag1, tag2) {
+  const key = tag1 + '|' + tag2;
+  const synergy = COMBO_SYNERGIES[key];
+  if (!synergy) return null;
+  const logs = [`${yo.nombre} activa combo [${tag1.toUpperCase()} + ${tag2.toUpperCase()}]: ${synergy.nombre} — ${synergy.efecto}`];
+  const effects = { nombre: synergy.nombre, efecto: synergy.efecto };
+
+  switch (key) {
+    case 'fisico|fisico':
+      // Fractura: próxima vez que rival reciba daño, resistencia se reduce 50%
+      yo._comboFractura = true;
+      break;
+    case 'fisico|tecnico':
+      yo.critBonus = (yo.critBonus || 0) + 0.20;
+      break;
+    case 'fisico|mental':
+      rival.energia = Math.max(0, (rival.energia || 0) - 15);
+      logs.push(`${rival.nombre} pierde 15 energía`);
+      break;
+    case 'fisico|instintivo': {
+      // Contragolpe: próximo ataque que reciba yo, devuelve 30%
+      yo._comboContragolpe = true;
+      break;
+    }
+    case 'tecnico|fisico':
+      yo._comboImpacto = true;
+      logs.push(`${yo.nombre} gana +40% en su próximo daño base`);
+      break;
+    case 'tecnico|tecnico':
+      yo._comboReflejos = true;
+      break;
+    case 'tecnico|mental':
+      rival._comboSilenciado = true;
+      logs.push(`${rival.nombre} no podrá usar cartas en su próximo turno`);
+      break;
+    case 'tecnico|instintivo':
+      yo.hp = Math.min(yo.maxHp, yo.hp + 10);
+      logs.push(`${yo.nombre} recupera 10 HP`);
+      break;
+    case 'mental|fisico':
+      rival._comboHerida = true;
+      logs.push(`${rival.nombre} sufre Sangrado en su próximo turno`);
+      break;
+    case 'mental|tecnico': {
+      // Transferencia: intercambia energía
+      const tmp = yo.energia;
+      yo.energia = rival.energia;
+      rival.energia = tmp;
+      logs.push(`Energía intercambiada: ${yo.nombre} (${yo.energia}) ↔ ${rival.nombre} (${rival.energia})`);
+      break;
+    }
+    case 'mental|mental':
+      yo.energia = Math.min(100, (yo.energia || 0) + 20);
+      logs.push(`${yo.nombre} gana 20 energía extra`);
+      break;
+    case 'mental|instintivo':
+      yo._comboSobrecarga = true;
+      logs.push(`${yo.nombre}: su próxima skill cuesta 0 energía`);
+      break;
+    case 'instintivo|fisico': {
+      // Sentencia: daño verdadero fijo
+      const sentenciaDmg = 15;
+      rival.hp -= sentenciaDmg;
+      logs.push(`${rival.nombre} recibe ${sentenciaDmg} de daño verdadero`);
+      break;
+    }
+    case 'instintivo|tecnico':
+      yo._comboVentaja = true;
+      logs.push(`${yo.nombre} gana 1 acción extra`);
+      break;
+    case 'instintivo|mental':
+      yo._comboBaluarte = true;
+      break;
+    case 'instintivo|instintivo': {
+      // Fortaleza: escudo
+      const shieldVal = Math.floor(yo.maxHp * 0.20);
+      if (!yo.status) yo.status = {};
+      yo.status.shield = (yo.status.shield || 0) + shieldVal;
+      logs.push(`${yo.nombre} obtiene escudo de ${shieldVal} HP`);
+      break;
+    }
+  }
+
+  return { logs, effects };
+}
+
+function procesarCombosTurno(jugador) {
+  // Procesa efectos de combo que afectan al jugador al inicio de su turno
+  const logs = [];
+  if (jugador._comboHerida) {
+    const dmg = Math.floor(jugador.maxHp * 0.05);
+    jugador.hp -= dmg;
+    if (dmg > 0) logs.push(`${jugador.nombre} sufre ${dmg} de sangrado por Herida`);
+    delete jugador._comboHerida;
+  }
+  if (jugador._comboSilenciado) {
+    if (!jugador.status) jugador.status = {};
+    jugador.status.silenced = (jugador.status.silenced || 0) + 1;
+    delete jugador._comboSilenciado;
+  }
+  if (jugador._comboBaluarte) {
+    // Se procesa en el cálculo de daño (reducción 50%)
+    delete jugador._comboBaluarte;
+    jugador._baluarteActivo = true;
+  }
+  return logs;
+}
+
+module.exports = { GameProcessor, SKILLS_DATA, CLASS_DATA, MAZOS, FORTUNE_CARDS, aplicarModsClase, getMaxHP, TAGS, COMBO_SYNERGIES, aplicarCombo, procesarCombosTurno };
