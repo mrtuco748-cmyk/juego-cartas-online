@@ -1,0 +1,138 @@
+╔══════════════════════════════════════════════════════════╗
+║                LOOP — ESTRUCTURA DEL PROYECTO            ║
+╚══════════════════════════════════════════════════════════╝
+
+============================================================
+ ARCHIVOS PRINCIPALES
+============================================================
+
+server.js
+  - Servidor Express + Socket.IO
+  - Conexion a MongoDB Atlas mediante Mongoose
+  - Manejo de cuentas: registro, inicio de sesion, reconexion
+  - Manejo de personajes: creacion, eliminacion, stats
+  - Tienda: compra de skills activas y pasivas
+  - Logica de combate: acciones (atacar, carta, descansar, pose,
+    investigar, crear, negociar, robar, lanzar, recibir, desviar,
+    reforzar, equipar, desequipar, usar_objeto, summon_attack)
+  - Procesamiento de dano de cartas con escudo/pasivas/reflejo
+  - Sistema de combos por tags (validacion y aplicacion en 2da accion)
+  - Turnos: orden, frozen skip, cartas de fortuna cada 7 turnos
+  - Finalizacion de partida: muerte, XP, desconexion
+  - Bot de practica con IA simple
+  - Sistema de inventario en combate y equipamiento
+
+gameEngine.js
+  - SKILLS_DATA: definicion de 21 skills activas y 18 pasivas
+    (nombre, coste, efecto, tag del combo, etc.)
+  - CLASS_DATA: estadisticas de 18 clases (mods, hpBonus, tipo)
+  - MAZOS: definiciones de items, recetas de crafteo, cofres
+  - FORTUNE_CARDS: 30 cartas de fortuna con efectos
+  - GameProcessor: clase con metodos de logica de juego
+    * executeCard(): ejecuta efectos de skills activas
+    * processPassives(): ejecuta pasivas por trigger
+    * calcularStatsConBuffs(): calcula stats con buffs/debuffs/equip
+    * applyStatusEffects(): decrementa frozen, silenced, bleed, etc.
+    * calcularCritico(): calculo de critico por velocidad
+    * calcularRegeneracionEnergia(): regeneracion segun magia
+    * aplicarFortuna(): aplica efectos de cartas de fortuna
+    * aplicarEfectosClase(): bonificaciones de clase (primer turno)
+    * metodo de invocacion (summon): creacion y stats
+    * Sistema de objetos: equipar, desequipar, crear, efectos on-hit
+    * Metodos de inventario: capacidad, peso, etc.
+  - COMBO_SYNERGIES: tabla de 16 combinaciones de tags con efectos
+  - aplicarCombo(): aplica efectos de combo entre 2 acciones
+  - procesarCombosTurno(): procesa efectos diferidos de combo
+
+============================================================
+ ARCHIVOS DEL CLIENTE (public/)
+============================================================
+
+public/index.html
+  - Estructura HTML completa del juego (una sola pagina)
+  - Estilos CSS medievales (dark/gold/brown, fuente Cinzel)
+  - Responsive design mobile-first con media queries
+  - Definiciones de datos del lado cliente:
+    * SKILL_DATA_LOOKUP: espejo de skills activas con tags
+    * SKILL_DATA_LOOKUP_PASIVAS: datos de pasivas
+    * SKILLS_DATA_PASIVAS_EXTRA, TAG_NAMES
+  - AudioManager: sistema de musica procedural con 2 tracks MP3
+    (menu y batalla), fade in/out, mute toggle, slider de volumen
+  - Pantallas: splash, auth (login/registro), menu principal,
+    personajes, creacion, seleccion, espera, tienda, inventario,
+    configuracion, combate
+  - Componentes UI: popups (stats, cartas, config, gestion activas,
+    gestion pasivas), notificaciones, loading overlay
+  - Navegacion: bottom-row con botones siempre visible
+  - Sistema de personajes: creacion con foto, stats, skills, pasivas
+  - Gestion de inventario de cuenta (coleccion de skills/pasivas)
+  - Tienda: compra con energia, tabs activas/pasivas
+  - Sistema de stats: distribucion de puntos por nivel (max 3 por vez)
+  - Service Worker registration para PWA
+
+public/clienteCombate.js
+  - Interfaz de combate del lado cliente
+  - Renderizado de tarjetas de personaje (hp, energia, stats,
+    efectos visuales, barras de progreso)
+  - Sheet de estadisticas detalladas (stat-breakdown con fuentes)
+  - Manejo de cartas de skills: seleccion, uso, drag-to-use (touch)
+  - Sistema de logs de batalla con colores por tipo (ataque, curacion,
+    carta, pasiva, fortuna, combo, etc.)
+  - Efectos visuales: dano flotante, notificaciones centradas,
+    iconos de estados (frozen, silenced, shield, buff, debuff, etc.)
+  - Invocaciones (summons): renderizado con HP y stats, boton ATACAR
+  - Sistema de cola de logs con delay y modo instantaneo
+  - Notificaciones de combo en log
+  - Manejo de eventos touch para mobile (card drag)
+
+public/ui-card.js
+  - Utilidades de renderizado de cartas en UI
+  - Funciones para crear elementos DOM de cartas/skills
+
+public/sw.js
+  - Service Worker para PWA (instalable)
+  - Cache solo de archivos de audio (/audio/)
+  - Network-first para el resto (siempre carga HTML/JS fresco)
+  - skipWaiting() y clients.claim() para actualizacion inmediata
+
+public/manifest.json
+  - Manifest de PWA
+  - Nombre: LOOP, display: standalone
+  - Icono SVG de espada, theme-color #0a0604
+
+============================================================
+ RECURSOS
+============================================================
+
+public/icons/LOOP-icon.svg
+  - Icono de la aplicacion: espada medieval con hoja dorada,
+    guarda con rubi, empunadura marron (ahora apunta hacia abajo)
+
+public/audio/
+  - menu.mp3: musica de menu (King's Feast, CC0)
+  - battle.mp3: musica de batalla (Medieval: Battle, CC0)
+  - SFX: clicks, golpes (blade), curacion (spell/heal),
+    monedas (snap/drop), notificaciones (message, appear-online),
+    sonidos de criatura (hurt, die), etc.
+
+============================================================
+ CONFIGURACION
+============================================================
+
+package.json
+  - Dependencias: express, socket.io, mongoose, bcrypt
+  - Script start: node server.js
+  - Engine: Node.js >=18
+
+package-lock.json
+  - Lock de dependencias (generado)
+
+railway.toml
+  - Configuracion de deploy en Railway
+  - Comando de build y start
+
+Procfile
+  - Comando de inicio para Railway: node server.js
+
+.gitignore
+  - Ignora node_modules, .env, etc.
