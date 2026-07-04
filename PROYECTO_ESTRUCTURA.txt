@@ -136,3 +136,78 @@ Procfile
 
 .gitignore
   - Ignora node_modules, .env, etc.
+
+============================================================
+ RESUMEN DEL JUEGO
+============================================================
+
+LOOP es un juego de cartas por turnos 1v1 con tematica medieval.
+Cada jugador controla un personaje con 5 estadisticas (Fuerza,
+Resistencia, Velocidad, Magia, Suerte) y un mazo de skills activas
+adquiridas en la tienda. Hay 18 clases con modificadores unicos.
+
+El combate transcurre por turnos. Cada turno el jugador tiene 2
+acciones y energia que se regenera segun su Magia. Puede atacar
+(dado + Fuerza - Resistencia rival), usar cartas (skills activas
+con coste de energia), descansar (recupera HP/energia), o realizar
+acciones de inventario/invocacion.
+
+Las skills activas tienen efectos variados: dano %, dano verdadero,
+curacion, escudo, stun, silencio, buff, debuff, robo de vida,
+reflejo, invocacion, doble ataque, sacrificio, etc. Las pasivas
+(4 max por personaje) se activan automaticamente segun su trigger.
+
+Cada 7 turnos (+1 al inicio) se activa una carta de Fortuna que
+altera las reglas: intercambia cura/dano, stats al reves,
+inmunidad, ruleta rusa, etc. Hay 30 cartas de fortuna.
+
+Sistema de Combos: cada skill tiene un tag (Fisico, Tecnico,
+Mental, Instintivo). Al ejecutar 2 acciones en un turno, el tag
+de la primera (o el opener del turno anterior) se combina con el
+tag de la segunda para activar un efecto extra. Si el jugador usa
+POSE, el combo se interrumpe. 16 combinaciones posibles.
+
+Gana quien reduzca el HP del rival a 0. El ganador recibe XP
+para subir de nivel y distribuir puntos de stats.
+
+============================================================
+ RESUMEN DE LA ARQUITECTURA DEL PROYECTO
+============================================================
+
+El proyecto sigue una arquitectura Cliente-Servidor con
+autoridad total del servidor (server authority).
+
+Servidor (Node.js + Express + Socket.IO):
+  - El servidor contiene TODA la logica del juego.
+  - Recibe acciones del cliente via eventos Socket.IO,
+    las valida, ejecuta los calculos, y emite el resultado.
+  - Conecta a MongoDB Atlas para persistencia de cuentas,
+    personajes, inventario, y progreso.
+  - La logica de juego central esta en gameEngine.js (SKILLS_DATA,
+    CLASS_DATA, GameProcessor), importada por server.js.
+  - Las partidas activas se almacenan en memoria en el objeto
+    partidas{}, no en base de datos (en tiempo real).
+  - Se deploya en Railway (automatico desde GitHub).
+
+Cliente (HTML/CSS/JS vanilla, una sola pagina):
+  - El cliente es solo una interfaz de visualizacion.
+  - No ejecuta logica de juego propia — toda decision la toma
+    el servidor.
+  - Se comunica con el servidor mediante Socket.IO en tiempo real.
+  - Las pantallas se manejan con clases .activa/.pantalla.
+  - Los datos de skills se duplican del lado cliente solo para
+    mostrar informacion (SKILL_DATA_LOOKUP), las validaciones
+    reales ocurren en el servidor.
+  - Instalable como PWA (Service Worker solo cachea audio, el
+    HTML/JS siempre se obtiene fresco).
+
+Flujo basico:
+  1. Cliente se conecta via Socket.IO al servidor
+  2. Usuario inicia sesion (o crea cuenta)
+  3. Crea personajes, gasta dinero en tienda, asigna stats
+  4. Busca partida o inicia practica contra bot
+  5. Durante el combate, cada accion del cliente se envia
+     como evento 'ejecutarAccion'
+  6. Servidor procesa la accion, aplica dano/pasivas/fortunas/
+     combos, y emite el estado actualizado a ambos jugadores
+  7. Al morir un jugador, la partida termina y se otorga XP
