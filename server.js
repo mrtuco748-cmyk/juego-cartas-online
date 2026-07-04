@@ -1,4 +1,7 @@
-const { GameProcessor, SKILLS_DATA, CLASS_DATA, MAZOS, FORTUNE_CARDS, aplicarModsClase, getMaxHP, TAGS, COMBO_SYNERGIES, aplicarCombo, procesarCombosTurno } = require('./gameEngine');
+const { GameProcessor, SKILLS_DATA, CLASS_DATA, MAZOS, aplicarModsClase, getMaxHP } = require('./server/combat/engine');
+const { TAGS, COMBO_SYNERGIES, aplicarCombo, procesarCombosTurno } = require('./server/combat/combos');
+const FORTUNE_CARDS = require('./server/combat/fortune');
+const { Cuenta } = require('./server/models/Cuenta');
 const gp = new GameProcessor();
 
 const express = require('express');
@@ -16,39 +19,6 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://mrtSpill:p3Lr9hWAkM9iTtq5@
 mongoose.connect(MONGO_URI)
     .then(() => console.log('Conectado a MongoDB Atlas'))
     .catch(err => console.error('Error MongoDB:', err.message));
-
-const personajeSchema = new mongoose.Schema({
-    nombre: String, clase: String,
-    fuerza: Number, resistencia: Number, velocidad: Number, magia: Number, suerte: Number,
-    hp: { type: Number, default: 100 },
-    energia: { type: Number, default: 100 },
-    nivel: { type: Number, default: 1 },
-    experiencia: { type: Number, default: 0 },
-    puntosStats: { type: Number, default: 0 },
-    activasIniciales: { type: [String], default: [] },
-    activasEquipadas: { type: [String], default: [] },
-    tas: { type: Array, default: [] },
-    tps: { type: Array, default: [] },
-    skillsCompradas: { type: [String], default: [] },
-    pasivasCompradas: { type: [String], default: [] },
-    foto: { type: String, default: '' },
-    pasivasSeleccionadas: { type: [String], default: [] }
-});
-
-const cuentaSchema = new mongoose.Schema({
-    nombre: { type: String, unique: true, required: true },
-    password: { type: String, required: true },
-    dinero: { type: Number, default: 0 },
-    nivel: { type: Number, default: 1 },
-    experiencia: { type: Number, default: 0 },
-    foto: { type: String, default: '' },
-    dev: { type: Boolean, default: false },
-    personajes: [personajeSchema],
-    inventarioSkills: { type: [String], default: [] },
-    inventarioPasivas: { type: [String], default: [] }
-}, { timestamps: true });
-
-const Cuenta = mongoose.model('Cuenta', cuentaSchema);
 
 app.use(express.static('public'));
 app.get('/socket.io/socket.io.js', (req, res) => {
@@ -169,15 +139,6 @@ function migrarInventario(cuenta) {
     return cambiado;
 }
 
-function mezclarArray(arr) {
-    const m = [...arr];
-    for (let i = m.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [m[i], m[j]] = [m[j], m[i]];
-    }
-    return m;
-}
-
 function getPasivasClase(clase, compradas = [], seleccionadas = null) {
     let ids;
     if (seleccionadas && seleccionadas.length > 0) {
@@ -227,14 +188,6 @@ function removerHPBonusItem(jugador, item) {
     }
 }
 
-function shuffleArray(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-}
-
 function partidaEmitirEstado(partidaId, partida) {
     const p1 = partida.jugador1, p2 = partida.jugador2;
     const j1s = getSkillsParaClase(p1.personaje?.activasIniciales, p1.skillsCompradas || [], p1.personaje?.activasEquipadas, p1.equipment, p1.personaje?.clase);
@@ -274,7 +227,11 @@ const socketNombres = new Map();
 io.on('connection', (socket) => {
     console.log('Cliente conectado:', socket.id);
 
-    // Shared helpers for processPassives with reversePassives and diceRoll with chaosFog
+    const routeDeps = { Cuenta, socketNombres, SKILLS_DATA, CLASS_DATA, SKILL_PRICES, aplicarModsClase, getMaxHP, MAZOS, migrarInventario, gp };
+    require('./server/routes/auth')(io, socket, routeDeps);
+    require('./server/routes/characters')(io, socket, routeDeps);
+    require('./server/routes/shop')(io, socket, routeDeps);
+
     const pp = (pasivas, owner, rival, trigger, ctx, partida) => {
         const reverse = (partida && partida.fortunaStatus || {}).reversePassives > 0;
         return gp.processPassives(pasivas, owner, rival, trigger, ctx, reverse);
@@ -335,7 +292,6 @@ io.on('connection', (socket) => {
         const statsYo = gp.calcularStatsConBuffs(yo);
         const statsRival = gp.calcularStatsConBuffs(rival);
 
-        // Snapshot HP for on_hp_loss triggers
         const hpAntesYo = yo.hp;
         const hpAntesRival = rival.hp;
 
@@ -347,7 +303,6 @@ io.on('connection', (socket) => {
                     const tieneItem = Object.values(yo.equipment || {}).some(eq => eq && eq.nombre === carta.requiereItem);
                     if (!tieneItem) { socket.emit('errorAccion', 'Necesitás ' + carta.requiereItem + ' para usar esta carta'); break; }
                 }
-                // Combo: Sobrecarga — la próxima skill cuesta 0 energía
                 const costeSobrecarga = (yo._comboSobrecarga) ? 0 : carta.coste - (yo.reducedCost || 0);
                 if (yo._comboSobrecarga) {
                     delete yo._comboSobrecarga;
@@ -371,22 +326,15 @@ io.on('connection', (socket) => {
                 if (result.diceRoll) diceRoll(result.diceRoll, partida, partidaId);
                 if (result.log) io.to(partidaId).emit('logBatalla', { msg: result.log, tipo: 'carta' });
 
-                // ── POST-PROCESAMIENTO DE DAÑO ──
-                // executeCard ya aplicó daño directo a rival.hp.
-                // Revertimos ese daño y lo re-aplicamos pasando por escudo, pasivas, etc.
-
                 if (result.damage > 0) {
-                    // 1) Revertir daño directo de executeCard
                     rival.hp += result.damage;
 
-                    // 2) Cubo Perfecto: anula todo el daño del hechizo
                     if (rival.status && rival.status.perfectCube) {
                         delete rival.status.perfectCube;
                         io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} evade el daño del hechizo con su Cubo Perfecto`, tipo: 'carta' });
                         result.damage = 0;
                     }
 
-                    // 3) Escudo: absorbe daño
                     if (result.damage > 0 && rival.status && rival.status.shield > 0) {
                         const absorb = Math.min(rival.status.shield, result.damage);
                         rival.status.shield -= absorb;
@@ -394,7 +342,6 @@ io.on('connection', (socket) => {
                         if (absorb > 0) io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} absorbe ${absorb} daño con su escudo`, tipo: 'carta' });
                     }
 
-                    // 4) Pasivas on_take_damage (Fortaleza reduce daño, Contraataque devuelve, Espinas refleja)
                     if (result.damage > 0) {
                         const dmgCtx = { damage: result.damage, target: yo };
                         const pLogDef = pp(rival.pasivas, rival, yo, 'on_take_damage', dmgCtx, partida);
@@ -402,18 +349,15 @@ io.on('connection', (socket) => {
                         pLogDef.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
                     }
 
-                    // 5) Reflejo Mágico (status.reflect)
                     if (result.damage > 0 && rival.status && rival.status.reflect) {
                         const reflectDmg = Math.floor(result.damage * (rival.status.reflect.valor || 0.5));
                         yo.hp -= reflectDmg;
                         io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} refleja ${reflectDmg} de daño a ${yo.nombre}`, tipo: 'carta' });
                     }
 
-                    // 6) Aplicar daño final
                     rival.hp -= result.damage;
                 }
 
-                // swapHealDamage: si la carta curó, convertirlo a daño; si dañó, convertir a cura
                 if (fsCarta.swapHealDamage) {
                     if (result.healing > 0) {
                         const dmgSwap = result.healing;
@@ -429,20 +373,17 @@ io.on('connection', (socket) => {
                     }
                 }
 
-                // sacredGround after spell damage
                 if (result.damage > 0 && fsCarta.sacredGround > 0 && rival.hp < 1) {
                     rival.hp = 1;
                     io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} se aferra a la vida (Tierra Sagrada)`, tipo: 'fortuna' });
                 }
 
-                // mirrorDamage from spells
                 if (result.damage > 0 && fsCarta.mirrorDamage > 0) {
                     yo.hp -= result.damage;
                     io.to(partidaId).emit('logBatalla', { msg: `[Espejo] ${yo.nombre} recibe ${result.damage} de daño reflejado`, tipo: 'fortuna' });
                     if (fsCarta.sacredGround > 0 && yo.hp < 1) { yo.hp = 1; io.to(partidaId).emit('logBatalla', { msg: `${yo.nombre} se aferra a la vida (Tierra Sagrada)`, tipo: 'fortuna' }); }
                 }
 
-                // sacredGround: protege al lanzador de daño autoinfligido (sacrificio, tormenta)
                 if (fsCarta.sacredGround > 0 && yo.hp < 1) {
                     yo.hp = 1;
                     io.to(partidaId).emit('logBatalla', { msg: `${yo.nombre} se aferra a la vida (Tierra Sagrada)`, tipo: 'fortuna' });
@@ -475,12 +416,10 @@ io.on('connection', (socket) => {
                     }
                     rival.hp -= danoExtra;
                     io.to(partidaId).emit('logBatalla', { msg: `Golpe extra: +${danoExtra} daño`, tipo: 'ataque' });
-                    // sacredGround: proteger al rival en el segundo golpe
                     if (fsCarta.sacredGround > 0 && rival.hp < 1) {
                         rival.hp = 1;
                         io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} se aferra a la vida (Tierra Sagrada)`, tipo: 'fortuna' });
                     }
-                    // Process on_hit for the extra attack
                     const pHit2 = pp(yo.pasivas, yo, rival, 'on_hit', { damage: danoExtra, target: rival }, partida);
                     [...pHit2].forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
                     gp.procesarEfectosOnHit(yo, rival).forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'ataque' }));
@@ -491,25 +430,21 @@ io.on('connection', (socket) => {
             case 'atacar': {
                 const fs = partida.fortunaStatus || {};
 
-                // clumsy: 50% fail
                 if (fs.clumsy > 0 && Math.random() < 0.5) {
                     io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} falla por torpeza`, tipo: 'fortuna' });
                     break;
                 }
 
-                // pacifism: no direct attacks
                 if (fs.pacifism > 0) {
                     io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} no puede atacar (pacifismo forzado)`, tipo: 'fortuna' });
                     break;
                 }
 
-                // ghost: ethereal player can't attack
                 if (statsYo._ghostNoAttack) {
                     io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} es etéreo y no puede atacar`, tipo: 'fortuna' });
                     break;
                 }
 
-                // noAttack: strongest can't attack
                 if (fs.noAttack > 0) {
                     const statsRivNoAtk = gp.calcularStatsConBuffs(rival);
                     if (statsYo.fuerza >= statsRivNoAtk.fuerza) {
@@ -518,14 +453,12 @@ io.on('connection', (socket) => {
                     }
                 }
 
-                // Cubo Perfecto: negate entire attack if defender has it active
                 if (rival.status && rival.status.perfectCube) {
                     delete rival.status.perfectCube;
                     io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} evade todo daño con su Cubo Perfecto`, tipo: 'carta' });
                     break;
                 }
 
-                // Process on_attack passives FIRST so critBonus from passives applies this turn
                 const pLogAtk = pp(yo.pasivas, yo, rival, 'on_attack', {}, partida);
                 pLogAtk.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
 
@@ -535,25 +468,21 @@ io.on('connection', (socket) => {
                 let dado = Math.floor(Math.random() * 6) + 1;
                 diceRoll(dado, partida, partidaId);
 
-                // beastNumber: 6 on dice = 30 self damage
                 if (fs.beastNumber > 0 && dado === 6) {
                     yo.hp -= 30;
                     io.to(partidaId).emit('logBatalla', { msg: `¡${statsYoAtk.nombre} sacó 6 y recibe 30 de daño (Número de la Bestia)!`, tipo: 'fortuna' });
                 }
 
-                // antiStrength: more strength = less damage
                 let fuerzaEfectiva = statsYoAtk.fuerza;
                 if (fs.antiStrength > 0) {
                     fuerzaEfectiva = Math.max(0, 6 - Math.floor(statsYoAtk.fuerza / 2));
                 }
 
-                // invertResistance: resistance adds to damage instead of reducing
                 let resistenciaEfectiva = statsRivAtk.resistencia;
                 if (fs.invertResistance > 0) {
                     resistenciaEfectiva = 0;
                 }
 
-                // Combo: Fractura — ignora 50% resistencia rival
                 let resEfectiva = resistenciaEfectiva;
                 if (yo._comboFractura) {
                     resEfectiva = Math.floor(resEfectiva * 0.5);
@@ -565,7 +494,6 @@ io.on('connection', (socket) => {
                     danoBase += statsRivAtk.resistencia;
                 }
 
-                // Combo: Impacto — +40% daño base
                 if (yo._comboImpacto) {
                     danoBase = Math.floor(danoBase * 1.4);
                     io.to(partidaId).emit('logBatalla', { msg: `[Combo] Impacto +40% daño base (→${danoBase})`, tipo: 'combo' });
@@ -576,7 +504,6 @@ io.on('connection', (socket) => {
                 let danoFinal = Math.floor(danoBase * (1 + critMulti));
                 if (yo.enrageBonus) { danoFinal += yo.enrageBonus; yo.enrageBonus = 0; }
 
-                // Combo: Reflejos — auto-esquiva
                 if (rival._comboReflejos) {
                     delete rival._comboReflejos;
                     io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} esquiva automáticamente por Reflejos`, tipo: 'combo' });
@@ -597,13 +524,11 @@ io.on('connection', (socket) => {
                         yo.mareado = true;
                         io.to(partidaId).emit('logBatalla', { msg: `¡${rival.nombre} hace PARRY! ${statsYoAtk.nombre} recibe ${reflectedDmg} de contraataque y queda mareado`, tipo: 'pose' });
                         rival.pose = null;
-                        // Check sacredGround after parry damage
                         if (yo.hp < 1 && fs.sacredGround > 0) { yo.hp = 1; io.to(partidaId).emit('logBatalla', { msg: `${yo.nombre} se aferra a la vida (Tierra Sagrada)`, tipo: 'fortuna' }); }
                         return partidaFinalizarAccion(partidaId, partida);
                     } else {
                         poseFallida = true;
                     }
-                    // electricField: failed pose deals 8 damage
                     if (poseFallida && fs.electricField) {
                         rival.hp -= 8;
                         io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} recibe 8 de daño por campo eléctrico`, tipo: 'fortuna' });
@@ -612,7 +537,6 @@ io.on('connection', (socket) => {
                     rival.pose = null;
                 }
 
-                // swapHealDamage: damage heals instead
                 if (fs.swapHealDamage) {
                     const healAmt = danoFinal;
                     rival.hp = Math.min(rival.maxHp, rival.hp + healAmt);
@@ -620,7 +544,6 @@ io.on('connection', (socket) => {
                     io.to(partidaId).emit('logBatalla', { msg: `[Caos] El daño se convierte en curación: +${healAmt} HP a ${rival.nombre}`, tipo: 'fortuna' });
                 }
 
-                // Process on_take_damage BEFORE applying damage so fortaleza etc works (skip if swapHealDamage nullified it)
                 if (danoFinal > 0) {
                     const dmgCtx = { damage: danoFinal, target: yo };
                     const pLogDef = pp(rival.pasivas, rival, yo, 'on_take_damage', dmgCtx, partida);
@@ -628,14 +551,12 @@ io.on('connection', (socket) => {
                     pLogDef.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
                 }
 
-                // Combo: Contragolpe — devuelve 30% daño al atacante
                 if (rival._comboContragolpe && danoFinal > 0) {
                     const devuelto = Math.floor(danoFinal * 0.3);
                     yo.hp -= devuelto;
                     io.to(partidaId).emit('logBatalla', { msg: `[Combo] Contragolpe devuelve ${devuelto} daño a ${yo.nombre}`, tipo: 'combo' });
                     delete rival._comboContragolpe;
                 }
-                // Combo: Baluarte — -50% daño recibido
                 if (rival._baluarteActivo && danoFinal > 0) {
                     const reducido = Math.floor(danoFinal * 0.5);
                     io.to(partidaId).emit('logBatalla', { msg: `[Combo] Baluarte reduce daño 50% (${danoFinal}→${reducido})`, tipo: 'combo' });
@@ -658,13 +579,11 @@ io.on('connection', (socket) => {
 
                 rival.hp -= danoFinal;
 
-                // sacredGround: clamp HP to 1
                 if (fs.sacredGround > 0 && rival.hp < 1) {
                     rival.hp = 1;
                     io.to(partidaId).emit('logBatalla', { msg: `${rival.nombre} se aferra a la vida (Tierra Sagrada)`, tipo: 'fortuna' });
                 }
 
-                // mirrorDamage: same damage to attacker
                 if (fs.mirrorDamage > 0 && danoFinal > 0) {
                     yo.hp -= danoFinal;
                     io.to(partidaId).emit('logBatalla', { msg: `[Espejo] ${yo.nombre} recibe ${danoFinal} de daño reflejado`, tipo: 'fortuna' });
@@ -674,14 +593,12 @@ io.on('connection', (socket) => {
                 if (danoFinal > 0) {
                     const pLog1 = pp(yo.pasivas, yo, rival, 'on_hit', { damage: danoFinal, target: rival }, partida);
                     [...pLog1].forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
-
                     gp.procesarEfectosOnHit(yo, rival).forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'ataque' }));
                 }
 
                 log += critMulti > 0 ? ` (Crítico x${1+critMulti}) → ${danoFinal}` : ` → ${danoFinal}`;
                 io.to(partidaId).emit('logBatalla', { msg: log, tipo: 'ataque' });
 
-                // reflejo magico: check if target has reflect status
                 if (rival.status && rival.status.reflect && danoFinal > 0) {
                     const reflected = Math.floor(danoFinal * rival.status.reflect.valor);
                     if (reflected > 0) {
@@ -697,6 +614,7 @@ io.on('connection', (socket) => {
                     }
                     io.to(partidaId).emit('logBatalla', { msg: `${statsYoAtk.nombre} pierde ${statsYoAtk.ataquePenalty} accion(es) extra por el peso del arma`, tipo: 'ataque' });
                 }
+
                 break;
             }
             case 'descansar': {
@@ -704,13 +622,11 @@ io.on('connection', (socket) => {
                 let hpGain = Math.floor(Math.random() * 5) + 1;
                 let enGain = Math.floor(Math.random() * 5) + 1;
 
-                // warZone: cap at 1 each
                 if (fsDesc.warZone) {
                     hpGain = Math.min(hpGain, 1);
                     enGain = Math.min(enGain, 1);
                 }
 
-                // bloodthirstyRest: descansar hace daño en vez de curar
                 if (fsDesc.bloodthirstyRest > 0) {
                     yo.hp -= hpGain;
                     yo.energia = Math.min(100, yo.energia + enGain);
@@ -849,7 +765,6 @@ io.on('connection', (socket) => {
             }
             case 'recibir': {
                 if (!yo.objetosRecibidos || yo.objetosRecibidos.length === 0) { socket.emit('errorAccion', 'No hay objetos para recibir'); break; }
-                // butterHands: auto-fail
                 if ((partida.fortunaStatus || {}).butterHands > 0) {
                     yo.objetosRecibidos.pop();
                     io.to(partidaId).emit('logBatalla', { msg: `${statsYo.nombre} deja caer el objeto (manos de manteca)`, tipo: 'fortuna' });
@@ -1030,7 +945,6 @@ io.on('connection', (socket) => {
             }
         }
 
-        // Trigger on_hp_loss for any player who lost HP
         if (yo.hp < hpAntesYo) {
             const perdidaYo = hpAntesYo - Math.max(0, yo.hp);
             const hl1 = pp(yo.pasivas, yo, rival, 'on_hp_loss', { hpLost: perdidaYo }, partida);
@@ -1042,7 +956,6 @@ io.on('connection', (socket) => {
             hl2.forEach(r => { if (r.log) io.to(partidaId).emit('logBatalla', { msg: r.log, tipo: 'pasiva' }); });
         }
 
-        // ── SISTEMA DE COMBOS POR TAGS ──
         const accTag = (tipo === 'carta' && cartaId && SKILLS_DATA.activas[cartaId]) ? SKILLS_DATA.activas[cartaId].tag
                      : (tipo === 'atacar') ? TAGS.FISICO
                      : (tipo === 'descansar') ? TAGS.INSTINTIVO
@@ -1052,24 +965,17 @@ io.on('connection', (socket) => {
                 const combo = aplicarCombo(yo, rival, yo.comboOpener, accTag);
                 if (combo) {
                     combo.logs.forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'combo' }));
-                    // Procesar efectos inmediatos de combo que modifican cálculos
                     if (combo.effects.nombre === 'Ventaja') {
                         partida.accionesMax = (partida.accionesMax || 2) + 1;
                     }
                 }
-                // Reiniciar opener para próxima secuencia
                 yo.comboOpener = accTag;
                 yo.comboInterrupted = false;
             } else {
-                // Primera acción del turno o interrupted: actualizar opener
                 yo.comboOpener = accTag;
                 yo.comboInterrupted = false;
             }
             yo.lastTag = accTag;
-        } else if (tipo === 'pose') {
-            // Pose marca interrupción (ya seteada arriba)
-        } else {
-            // Acciones no-combat no actualizan tag pero tampoco resetean
         }
 
         partidaFinalizarAccion(partidaId, partida);
@@ -1146,7 +1052,6 @@ io.on('connection', (socket) => {
         });
         peLogs.forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'curacion' }));
 
-        // ----- fortune status decrement -----
         const fsTurno = partida.fortunaStatus || {};
         const turnosToDecrement = ['swapHealDamage', 'swapStats', 'reversePassives', 'slowFast', 'antiStrength', 'mirrorDamage', 'pacifism', 'bloodthirstyRest', 'invertResistance', 'sharedTurn', 'statLottery', 'beastNumber', 'butterHands', 'clumsy', 'mute', 'wasteAction', 'noAttack', 'sacredGround', 'chaosFog', 'clone', 'ghost', 'amnesia'];
         turnosToDecrement.forEach(k => {
@@ -1155,7 +1060,6 @@ io.on('connection', (socket) => {
                 if (fsTurno[k] <= 0) delete fsTurno[k];
             }
         });
-        // statLottery revert when timer expires
         if (partida._statLotteryTimer !== undefined) {
             partida._statLotteryTimer--;
             if (partida._statLotteryTimer <= 0) {
@@ -1195,12 +1099,8 @@ io.on('connection', (socket) => {
 
         partida.turnoActual = rival.socketId;
 
-        // ----- frozen check -----
-
-        // If the player whose turn just started is frozen, skip them immediately
-        // Loop in case both players are frozen
         let jugTurno;
-        let maxSkips = 4; // safety limit
+        let maxSkips = 4;
         while (maxSkips-- > 0) {
             jugTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador1 : partida.jugador2;
             if (!(jugTurno.status && jugTurno.status.frozen > 0)) break;
@@ -1209,7 +1109,6 @@ io.on('connection', (socket) => {
             partida.turnoActual = otro.socketId;
         }
 
-        // Procesar efectos de combo al inicio del turno del jugador
         const comboL1 = procesarCombosTurno(jugTurno || (partida.turnoActual === partida.jugador1.socketId ? partida.jugador1 : partida.jugador2));
         comboL1.forEach(l => io.to(partidaId).emit('logBatalla', { msg: l, tipo: 'combo' }));
 
@@ -1231,20 +1130,17 @@ io.on('connection', (socket) => {
         jugTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador1 : partida.jugador2;
         let rivTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador2 : partida.jugador1;
 
-        // ----- slowFast: faster player (by velocidad stat) skips turn -----
         if (fsTurno.slowFast > 0) {
             const statsJug = gp.calcularStatsConBuffs(jugTurno);
             const statsRiv = gp.calcularStatsConBuffs(rivTurno);
             if (statsJug.velocidad > statsRiv.velocidad) {
                 partida.turnoActual = rivTurno.socketId;
                 io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} salta su turno (slowFast)`, tipo: 'fortuna' });
-                // re-evaluate who goes
                 jugTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador1 : partida.jugador2;
                 rivTurno = partida.turnoActual === partida.jugador1.socketId ? partida.jugador2 : partida.jugador1;
             }
         }
 
-        // ----- clone: clone of current player attacks rival with half stats -----
         if (fsTurno.clone > 0) {
             const statsCloneAtk = gp.calcularStatsConBuffs(jugTurno);
             const statsCloneDef = gp.calcularStatsConBuffs(rivTurno);
@@ -1262,7 +1158,6 @@ io.on('connection', (socket) => {
             if (partidaCheckMuerte(partidaId, partida)) return;
         }
 
-        // ----- ghost: lower-HP player is immune but cannot attack -----
         jugTurno._ghostNoAttack = false;
         rivTurno._ghostNoAttack = false;
         if (fsTurno.ghost > 0) {
@@ -1277,13 +1172,10 @@ io.on('connection', (socket) => {
             }
         }
 
-        // ----- amnesia: forget ALL passives -----
         if (fsTurno.amnesia > 0 && jugTurno.pasivas && jugTurno.pasivas.length > 0) {
-            const olvidadas = jugTurno.pasivas.map(p => p.nombre || p).join(', ');
             jugTurno.pasivas = [];
             io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} olvida todas sus pasivas (amnesia)`, tipo: 'fortuna' });
         }
-        // sharedTurn: both players get an extra action
         if (fsTurno.sharedTurn > 0) {
             jugTurno.extraAction = true;
             rivTurno.extraAction = true;
@@ -1298,7 +1190,6 @@ io.on('connection', (socket) => {
         const claseRegen = gp.aplicarHPRegenClase(jugTurno);
         if (claseRegen > 0) io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} regenera +${claseRegen} HP (clase)`, tipo: 'curacion' });
 
-        // First-turn class bonuses for whoever is starting their first turn
         const esPrimerTurnoJ1 = partida.primerTurnoJ1 && jugTurno === partida.jugador1;
         const esPrimerTurnoJ2 = partida.primerTurnoJ2 && jugTurno === partida.jugador2;
         if (esPrimerTurnoJ1) {
@@ -1325,7 +1216,6 @@ io.on('connection', (socket) => {
             jugTurno.mareado = false;
         }
 
-        // wasteAction: faster player wastes 1 action (after accionesMax is set)
         if (fsTurno.wasteAction > 0) {
             const statsJug = gp.calcularStatsConBuffs(jugTurno);
             const statsRiv = gp.calcularStatsConBuffs(rivTurno);
@@ -1344,7 +1234,6 @@ io.on('connection', (socket) => {
             }
         }
 
-        // _fortunaTA: El Elegido extra action
         if (jugTurno._fortunaTA) {
             partida.accionesMax++;
             io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} recibe una acción extra (El Elegido)`, tipo: 'fortuna' });
@@ -1355,317 +1244,6 @@ io.on('connection', (socket) => {
         io.to(partidaId).emit('logBatalla', { msg: `${jugTurno.nombre} recupera ${enRegen} energía`, tipo: 'energia' });
         partidaEmitirEstado(partidaId, partida);
     }
-
-    socket.on('crearCuenta', async ({ nombre, password }) => {
-        try {
-            const existe = await Cuenta.findOne({ nombre });
-            if (existe) { socket.emit('errorCuenta', 'Ya existe esa cuenta.'); return; }
-            const hash = bcrypt.hashSync(password, 10);
-            const cuenta = await Cuenta.create({ nombre, password: hash });
-            socket.emit('cuentaCreada', {
-                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
-                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
-                inventarioSkills: cuenta.inventarioSkills || [],
-                inventarioPasivas: cuenta.inventarioPasivas || []
-            });
-        } catch (err) {
-            socket.emit('errorCuenta', 'Error al crear cuenta.');
-        }
-    });
-
-    socket.on('iniciarSesion', async ({ nombre, password }) => {
-        try {
-            const cuenta = await Cuenta.findOne({ nombre });
-            if (!cuenta) { socket.emit('errorLogin', 'Cuenta no encontrada.'); return; }
-            const valida = bcrypt.compareSync(password, cuenta.password);
-            if (!valida) { socket.emit('errorLogin', 'Contraseña incorrecta.'); return; }
-            socketNombres.set(socket.id, cuenta.nombre);
-            socket.emit('loginExitoso', {
-                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
-                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
-                inventarioSkills: cuenta.inventarioSkills || [],
-                inventarioPasivas: cuenta.inventarioPasivas || []
-            });
-        } catch (err) {
-            socket.emit('errorLogin', 'Error al iniciar sesión.');
-        }
-    });
-
-    socket.on('reconectarCuenta', async ({ cuenta_id }) => {
-        try {
-            const cuenta = await Cuenta.findById(cuenta_id);
-            if (!cuenta) { socket.emit('errorReconexion', 'Cuenta no encontrada.'); return; }
-            socketNombres.set(socket.id, cuenta.nombre);
-            socket.emit('loginExitoso', {
-                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
-                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
-                inventarioSkills: cuenta.inventarioSkills || [],
-                inventarioPasivas: cuenta.inventarioPasivas || []
-            });
-        } catch (err) {
-            socket.emit('errorReconexion', 'Error al reconectar.');
-        }
-    });
-
-    socket.on('actualizarPerfil', async ({ cuenta_id, nombre, password, foto }) => {
-        try {
-            const update = {};
-            if (foto) update.foto = foto;
-            if (nombre) update.nombre = nombre;
-            if (password) update.password = bcrypt.hashSync(password, 10);
-            const cuenta = await Cuenta.findByIdAndUpdate(cuenta_id, update, { new: true });
-            if (!cuenta) { socket.emit('errorPerfil', 'Cuenta no encontrada.'); return; }
-            socket.emit('perfilActualizado', { nombre: cuenta.nombre, foto: cuenta.foto || '' });
-        } catch (err) {
-            socket.emit('errorPerfil', 'Error al actualizar.');
-        }
-    });
-
-    socket.on('guardarPersonaje', async (datos) => {
-        const suma = datos.fuerza + datos.resistencia + datos.velocidad + datos.magia + datos.suerte;
-        if (suma !== 20 || datos.fuerza < 3 || datos.resistencia < 3 || datos.velocidad < 3 || datos.magia < 3 || datos.suerte < 3) {
-            if (suma !== 20) {
-                socket.emit('errorPersonaje', 'Los puntos deben sumar 20.');
-            } else {
-                socket.emit('errorPersonaje', 'Cada estadística debe tener al menos 3 puntos.');
-            }
-            return;
-        }
-        const mods = CLASS_DATA[datos.clase];
-        if (!mods) { socket.emit('errorPersonaje', 'Clase inválida.'); return; }
-        const finales = aplicarModsClase(datos.clase, datos);
-        const maxHP = getMaxHP(datos.clase);
-        try {
-            const cuenta = await Cuenta.findById(datos.cuenta_id);
-            if (!cuenta) { socket.emit('errorPersonaje', 'Cuenta no encontrada.'); return; }
-            cuenta.personajes.push({
-                nombre: datos.nombre, clase: datos.clase,
-                fuerza: finales.fuerza,
-                resistencia: finales.resistencia,
-                velocidad: finales.velocidad,
-                magia: finales.magia,
-                suerte: finales.suerte,
-                hp: maxHP,
-                energia: 100,
-                foto: datos.foto || '',
-                activasIniciales: datos.activasIniciales || []
-            });
-            await cuenta.save();
-            const nuevoPJ = cuenta.personajes[cuenta.personajes.length - 1];
-            socket.emit('personajeGuardado', nuevoPJ);
-        } catch (err) {
-            socket.emit('errorPersonaje', 'Error al guardar.');
-        }
-    });
-
-    socket.on('eliminarPersonaje', async ({ cuenta_id, personaje_id }) => {
-        try {
-            const cuenta = await Cuenta.findById(cuenta_id);
-            if (!cuenta) { socket.emit('errorPersonaje', 'Cuenta no encontrada.'); return; }
-            cuenta.personajes.pull(personaje_id);
-            await cuenta.save();
-            socket.emit('personajeEliminado', {
-                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
-                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
-                inventarioSkills: cuenta.inventarioSkills || [],
-                inventarioPasivas: cuenta.inventarioPasivas || []
-            });
-        } catch (err) {
-            socket.emit('errorPersonaje', 'Error al eliminar.');
-        }
-    });
-
-    socket.on('actualizarFotoPJ', async ({ cuenta_id, personaje_id, foto }) => {
-        try {
-            const cuenta = await Cuenta.findById(cuenta_id);
-            if (!cuenta) { socket.emit('errorPersonaje', 'Cuenta no encontrada.'); return; }
-            const pj = cuenta.personajes.id(personaje_id);
-            if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-            pj.foto = foto || '';
-            await cuenta.save();
-            socket.emit('loadoutGuardado', {
-                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
-                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
-                inventarioSkills: cuenta.inventarioSkills || [],
-                inventarioPasivas: cuenta.inventarioPasivas || []
-            });
-        } catch (err) {
-            socket.emit('errorPersonaje', 'Error al actualizar foto.');
-        }
-    });
-
-    socket.on('asignarStats', async ({ cuenta_id, personaje_id, stats }) => {
-        try {
-            const cuenta = await Cuenta.findById(cuenta_id);
-            if (!cuenta) { socket.emit('errorPersonaje', 'Cuenta no encontrada.'); return; }
-            const pj = cuenta.personajes.id(personaje_id);
-            if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-            const pts = pj.puntosStats || 0;
-            const usados = (stats.fuerza - pj.fuerza) + (stats.resistencia - pj.resistencia) +
-                           (stats.velocidad - pj.velocidad) + (stats.magia - pj.magia) +
-                           (stats.suerte - pj.suerte);
-            if (usados > pts) { socket.emit('errorPersonaje', 'No tenés suficientes puntos.'); return; }
-            if (stats.fuerza < 0 || stats.resistencia < 0 || stats.velocidad < 0 || stats.magia < 0 || stats.suerte < 0) {
-                socket.emit('errorPersonaje', 'Mínimo 0 puntos por estadística.'); return;
-            }
-            pj.fuerza = stats.fuerza;
-            pj.resistencia = stats.resistencia;
-            pj.velocidad = stats.velocidad;
-            pj.magia = stats.magia;
-            pj.suerte = stats.suerte;
-            pj.puntosStats = pts - usados;
-            await cuenta.save();
-            socket.emit('statsAsignados', {
-                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
-                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
-                inventarioSkills: cuenta.inventarioSkills || [],
-                inventarioPasivas: cuenta.inventarioPasivas || []
-            });
-        } catch (err) {
-            socket.emit('errorPersonaje', 'Error al asignar stats.');
-        }
-    });
-
-    socket.on('guardarLoadout', async ({ cuenta_id, personaje_id, activas }) => {
-        try {
-            if (!Array.isArray(activas) || activas.length > 5) {
-                socket.emit('errorPersonaje', 'Máximo 5 activas equipadas.'); return;
-            }
-            const cuenta = await Cuenta.findById(cuenta_id);
-            if (!cuenta) { socket.emit('errorPersonaje', 'Cuenta no encontrada.'); return; }
-            const pj = cuenta.personajes.id(personaje_id);
-            if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-            pj.activasEquipadas = activas;
-            await cuenta.save();
-            socket.emit('loadoutGuardado', {
-                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
-                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
-                inventarioSkills: cuenta.inventarioSkills,
-                inventarioPasivas: cuenta.inventarioPasivas
-            });
-        } catch (err) {
-            socket.emit('errorPersonaje', 'Error al guardar loadout.');
-        }
-    });
-
-    socket.on('guardarPasivasSeleccionadas', async ({ cuenta_id, personaje_id, pasivas }) => {
-        try {
-            if (!Array.isArray(pasivas) || pasivas.length > 4) {
-                socket.emit('errorPersonaje', 'Máximo 4 pasivas.'); return;
-            }
-            const cuenta = await Cuenta.findById(cuenta_id);
-            if (!cuenta) { socket.emit('errorPersonaje', 'Cuenta no encontrada.'); return; }
-            const pj = cuenta.personajes.id(personaje_id);
-            if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-            pj.pasivasSeleccionadas = pasivas;
-            await cuenta.save();
-            socket.emit('loadoutGuardado', {
-                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
-                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
-                inventarioSkills: cuenta.inventarioSkills,
-                inventarioPasivas: cuenta.inventarioPasivas
-            });
-        } catch (err) {
-            socket.emit('errorPersonaje', 'Error al guardar pasivas.');
-        }
-    });
-
-    socket.on('devComando', async ({ cuenta_id, accion, params }) => {
-        try {
-            const devCuenta = await Cuenta.findById(cuenta_id);
-            if (!devCuenta || !devCuenta.dev) { socket.emit('errorPersonaje', 'Acceso denegado.'); return; }
-            if (accion === 'buscarUsuario') {
-                const target = await Cuenta.findOne({ nombre: params.username });
-                if (!target) { socket.emit('errorPersonaje', 'Usuario no encontrado.'); return; }
-                socket.emit('devUsuarioEncontrado', {
-                    id: target._id, nombre: target.nombre, dinero: target.dinero,
-                    nivel: target.nivel, experiencia: target.experiencia,
-                    foto: target.foto, personajes: target.personajes
-                });
-                return;
-            }
-            if (accion === 'listarUsuarios') {
-                const usuarios = await Cuenta.find({}, 'nombre dinero nivel personajes');
-                const lista = usuarios.map(u => ({
-                    id: u._id,
-                    nombre: u.nombre,
-                    dinero: u.dinero,
-                    nivel: u.nivel,
-                    personajesCount: u.personajes ? u.personajes.length : 0
-                }));
-                socket.emit('devListaUsuarios', lista);
-                return;
-            }
-            if (accion === 'obtenerUsuario') {
-                const target = await Cuenta.findById(params.userId);
-                if (!target) { socket.emit('errorPersonaje', 'Usuario no encontrado.'); return; }
-                socket.emit('devUsuarioEncontrado', {
-                    id: target._id, nombre: target.nombre, dinero: target.dinero,
-                    nivel: target.nivel, experiencia: target.experiencia,
-                    foto: target.foto, personajes: target.personajes
-                });
-                return;
-            }
-            const targetId = params.targetId || cuenta_id;
-            const cuenta = await Cuenta.findById(targetId);
-            if (!cuenta) { socket.emit('errorPersonaje', 'Cuenta destino no encontrada.'); return; }
-            if (accion === 'addDinero') {
-                cuenta.dinero = Math.max(0, (cuenta.dinero || 0) + params.valor);
-            } else if (accion === 'addXP') {
-                const pj = cuenta.personajes.id(params.personaje_id);
-                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-                pj.experiencia = Math.max(0, (pj.experiencia || 0) + params.valor);
-                while (pj.experiencia >= pj.nivel) { pj.experiencia -= pj.nivel; pj.nivel++; pj.puntosStats = (pj.puntosStats || 0) + 3; }
-            } else if (accion === 'addPuntosStats') {
-                const pj = cuenta.personajes.id(params.personaje_id);
-                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-                pj.puntosStats = Math.max(0, (pj.puntosStats || 0) + params.valor);
-            } else if (accion === 'eliminarPJ') {
-                cuenta.personajes.pull(params.personaje_id);
-            } else if (accion === 'setXP') {
-                const pj = cuenta.personajes.id(params.personaje_id);
-                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-                pj.experiencia = Math.max(0, params.valor);
-                while (pj.experiencia >= pj.nivel) { pj.experiencia -= pj.nivel; pj.nivel++; pj.puntosStats = (pj.puntosStats || 0) + 3; }
-            } else if (accion === 'setPuntosStats') {
-                const pj = cuenta.personajes.id(params.personaje_id);
-                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-                pj.puntosStats = Math.max(0, params.valor);
-            } else if (accion === 'setNivel') {
-                const pj = cuenta.personajes.id(params.personaje_id);
-                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-                pj.nivel = Math.max(1, params.valor);
-            } else if (accion === 'setStats') {
-                const pj = cuenta.personajes.id(params.personaje_id);
-                if (!pj) { socket.emit('errorPersonaje', 'Personaje no encontrado.'); return; }
-                if (params.fuerza !== undefined) pj.fuerza = Math.max(2, params.fuerza);
-                if (params.resistencia !== undefined) pj.resistencia = Math.max(2, params.resistencia);
-                if (params.velocidad !== undefined) pj.velocidad = Math.max(2, params.velocidad);
-                if (params.magia !== undefined) pj.magia = Math.max(2, params.magia);
-                if (params.suerte !== undefined) pj.suerte = Math.max(2, params.suerte);
-            } else {
-                socket.emit('errorPersonaje', 'Comando desconocido.'); return;
-            }
-            await cuenta.save();
-            socket.emit('devResultado', {
-                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
-                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
-                inventarioSkills: cuenta.inventarioSkills || [],
-                inventarioPasivas: cuenta.inventarioPasivas || []
-            });
-        } catch (err) {
-            socket.emit('errorPersonaje', 'Error al ejecutar comando.');
-        }
-    });
 
     socket.on('buscarPartida', async ({ cuenta_id, personaje }) => {
         console.log('Buscando partida para:', personaje.nombre);
@@ -1770,11 +1348,9 @@ io.on('connection', (socket) => {
             const enInicial = gp.calcularRegeneracionEnergia(pJug.personaje.magia, pRiv.personaje.magia);
             pJug.energia = Math.min(100, pJug.energia + enInicial);
 
-            // Aplicar efectos de clase de primer turno
             gp.aplicarEfectosClase(pJug, false);
             gp.aplicarEfectosClase(pRiv, false);
 
-            // Aplicar crítico de clase
             gp.aplicarCritClase(pJug);
             gp.aplicarCritClase(pRiv);
 
@@ -1826,7 +1402,6 @@ io.on('connection', (socket) => {
             emitirRival(jugador1.socketId, partidas[partidaId].jugador1, partidas[partidaId].jugador2, esJ1Primero);
             emitirRival(jugador2.socketId, partidas[partidaId].jugador2, partidas[partidaId].jugador1, !esJ1Primero);
 
-            // Initial fortune card
             const cardInicial = FORTUNE_CARDS[Math.floor(Math.random() * FORTUNE_CARDS.length)];
             const flogsInicial = gp.aplicarFortuna(cardInicial, partidas[partidaId], partidas[partidaId].jugador1, partidas[partidaId].jugador2);
             partidas[partidaId]._fortunaTriggered = true;
@@ -1961,7 +1536,6 @@ io.on('connection', (socket) => {
             recetas: MAZOS.recetas
         });
 
-        // Initial fortune card
         const cardInicial = FORTUNE_CARDS[Math.floor(Math.random() * FORTUNE_CARDS.length)];
         const flogsInicial = gp.aplicarFortuna(cardInicial, partidas[partidaId], partidas[partidaId].jugador1, partidas[partidaId].jugador2);
         partidas[partidaId]._fortunaTriggered = true;
@@ -1976,54 +1550,6 @@ io.on('connection', (socket) => {
 
     socket.on('cancelarBusqueda', () => {
         colaEspera = colaEspera.filter(j => j.socketId !== socket.id);
-    });
-
-    socket.on('obtenerTienda', async ({ cuenta_id }) => {
-        const cuenta = await Cuenta.findById(cuenta_id);
-        if (!cuenta) return;
-        const migrado = migrarInventario(cuenta);
-        if (migrado) await cuenta.save();
-        socket.emit('tiendaData', {
-            skills: Object.entries(SKILLS_DATA.activas).map(([id, s]) => ({ id, ...s, precio: SKILL_PRICES.activas[id] || 500 })),
-            pasivas: Object.entries(SKILLS_DATA.pasivas).map(([id, s]) => ({ id, ...s, precio: SKILL_PRICES.pasivas[id] || 800 })),
-            inventarioSkills: cuenta.inventarioSkills || [],
-            inventarioPasivas: cuenta.inventarioPasivas || []
-        });
-    });
-
-    socket.on('comprarCarta', async ({ cuenta_id, tipo, skillId }) => {
-        try {
-            const cuenta = await Cuenta.findById(cuenta_id);
-            if (!cuenta) { socket.emit('errorTienda', 'Cuenta no encontrada'); return; }
-            migrarInventario(cuenta);
-
-            const precio = tipo === 'activa' ? (SKILL_PRICES.activas[skillId] || 500) : (SKILL_PRICES.pasivas[skillId] || 800);
-            if (cuenta.dinero < precio) { socket.emit('errorTienda', 'No tenes suficiente oro'); return; }
-
-            if (tipo === 'activa') {
-                const yaTiene = (cuenta.inventarioSkills || []).includes(skillId);
-                if (yaTiene) { socket.emit('errorTienda', 'Ya tenes esta carta'); return; }
-                if (cuenta.inventarioSkills) { cuenta.inventarioSkills.push(skillId); }
-                else { cuenta.inventarioSkills = [skillId]; }
-            } else {
-                const yaTiene = (cuenta.inventarioPasivas || []).includes(skillId);
-                if (yaTiene) { socket.emit('errorTienda', 'Ya tenes esta pasiva'); return; }
-                if (cuenta.inventarioPasivas) { cuenta.inventarioPasivas.push(skillId); }
-                else { cuenta.inventarioPasivas = [skillId]; }
-            }
-
-            cuenta.dinero -= precio;
-            await cuenta.save();
-            socket.emit('compraExitosa', {
-                id: cuenta._id, nombre: cuenta.nombre, dinero: cuenta.dinero,
-                nivel: cuenta.nivel, experiencia: cuenta.experiencia,
-                foto: cuenta.foto, dev: cuenta.dev || false, personajes: cuenta.personajes,
-                inventarioSkills: cuenta.inventarioSkills,
-                inventarioPasivas: cuenta.inventarioPasivas
-            });
-        } catch (err) {
-            socket.emit('errorTienda', 'Error al comprar: ' + err.message);
-        }
     });
 
     socket.on('disconnect', () => {
@@ -2044,7 +1570,6 @@ io.on('connection', (socket) => {
     });
 });
 
-// Periodically clean up stale matches (safety net)
 setInterval(() => {
   for (const [id, partida] of Object.entries(partidas)) {
     const j1ok = io.sockets.sockets.has(partida.jugador1.socketId);

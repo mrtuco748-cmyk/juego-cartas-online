@@ -3,49 +3,78 @@
 ╚══════════════════════════════════════════════════════════╝
 
 ============================================================
- ARCHIVOS PRINCIPALES
+ ARCHIVOS DEL SERVIDOR
 ============================================================
 
 server.js
-  - Servidor Express + Socket.IO
+  - Punto de entrada del servidor (Express + Socket.IO)
   - Conexion a MongoDB Atlas mediante Mongoose
-  - Manejo de cuentas: registro, inicio de sesion, reconexion
-  - Manejo de personajes: creacion, eliminacion, stats
-  - Tienda: compra de skills activas y pasivas
-  - Logica de combate: acciones (atacar, carta, descansar, pose,
-    investigar, crear, negociar, robar, lanzar, recibir, desviar,
-    reforzar, equipar, desequipar, usar_objeto, summon_attack)
-  - Procesamiento de dano de cartas con escudo/pasivas/reflejo
-  - Sistema de combos por tags (validacion y aplicacion en 2da accion)
-  - Turnos: orden, frozen skip, cartas de fortuna cada 7 turnos
-  - Finalizacion de partida: muerte, XP, desconexion
-  - Bot de practica con IA simple
-  - Sistema de inventario en combate y equipamiento
+  - Importa y orquesta todos los modulos del servidor
+  - Define helpers de combate: getSkillsParaClase, migrarInventario,
+    getPasivasClase, partidaEmitirEstado, otorgarXP, etc.
+  - Contiene el handler de ejecutarAccion (todo el combate en tiempo real)
+    con los 20+ tipos de accion, procesamiento de dano de cartas con
+    escudo/pasivas/reflejo, sistema de combos, turnos, frozen skip,
+    y fortuna
+  - Define partidas[], colaEspera, socketNombres (estado en memoria)
+  - Handlers de conexion: buscarPartida, buscarPractica, disconnect
+  - Limpieza periodica de partidas huerfanas
 
-gameEngine.js
-  - SKILLS_DATA: definicion de 21 skills activas y 18 pasivas
-    (nombre, coste, efecto, tag del combo, etc.)
-  - CLASS_DATA: estadisticas de 18 clases (mods, hpBonus, tipo)
-  - MAZOS: definiciones de items, recetas de crafteo, cofres
-  - FORTUNE_CARDS: 30 cartas de fortuna con efectos
-  - GameProcessor: clase con metodos de logica de juego
-    * executeCard(): ejecuta efectos de skills activas
-    * processPassives(): ejecuta pasivas por trigger
-    * calcularStatsConBuffs(): calcula stats con buffs/debuffs/equip
-    * applyStatusEffects(): decrementa frozen, silenced, bleed, etc.
-    * calcularCritico(): calculo de critico por velocidad
-    * calcularRegeneracionEnergia(): regeneracion segun magia
-    * aplicarFortuna(): aplica efectos de cartas de fortuna
-    * aplicarEfectosClase(): bonificaciones de clase (primer turno)
-    * metodo de invocacion (summon): creacion y stats
-    * Sistema de objetos: equipar, desequipar, crear, efectos on-hit
-    * Metodos de inventario: capacidad, peso, etc.
-  - COMBO_SYNERGIES: tabla de 16 combinaciones de tags con efectos
-  - aplicarCombo(): aplica efectos de combo entre 2 acciones
-  - procesarCombosTurno(): procesa efectos diferidos de combo
+server/models/
+  Cuenta.js
+    - Modelo Mongoose: cuentaSchema (nombre, password, dinero, nivel,
+      foto, dev, personajes[], inventarioSkills[], inventarioPasivas[])
+    - Sub-schema: personajeSchema (nombre, clase, stats, hp, energia,
+      nivel, experiencia, activas, pasivas, loadout, foto)
+
+server/combat/
+  engine.js
+    - SKILLS_DATA: definicion de 21 skills activas y 18 pasivas
+      (nombre, coste, efecto, tag del combo, etc.)
+    - CLASS_DATA: estadisticas de 18 clases (mods, hpBonus, tipo)
+    - MAZOS: definiciones de items, recetas de crafteo, cofres
+    - GameProcessor: clase con metodos de logica de juego
+      * executeCard(): ejecuta efectos de skills activas
+      * processPassives(): ejecuta pasivas por trigger
+      * calcularStatsConBuffs(): calcula stats con buffs/debuffs/equip
+      * applyStatusEffects(): decrementa frozen, silenced, bleed, etc.
+      * calcularCritico(): calculo de critico por velocidad
+      * calcularRegeneracionEnergia(): regeneracion segun magia
+      * aplicarFortuna(): aplica efectos de cartas de fortuna
+      * aplicarEfectosClase(): bonificaciones de clase (primer turno)
+      * metodo de invocacion (summon): creacion y stats
+      * Sistema de objetos: equipar, desequipar, crear, efectos on-hit
+      * Metodos de inventario: capacidad, peso, etc.
+      * aplicarModsClase(), getMaxHP(): funciones de estadisticas
+
+  combos.js
+    - TAGS: constantes de 4 tags (FISICO, TECNICO, MENTAL, INSTINTIVO)
+    - COMBO_SYNERGIES: tabla de 16 combinaciones de tags con efectos
+    - aplicarCombo(): aplica efectos de combo entre 2 acciones
+    - procesarCombosTurno(): procesa efectos diferidos de combo
+
+  fortune.js
+    - FORTUNE_CARDS: array con las 30 cartas de fortuna (datos puros)
+
+server/routes/
+  auth.js
+    - Handlers socket: crearCuenta, iniciarSesion, reconectarCuenta,
+      actualizarPerfil
+    - Recibe inyeccion de dependencias (io, socket, { Cuenta,
+      socketNombres })
+
+  characters.js
+    - Handlers socket: guardarPersonaje, eliminarPersonaje,
+      actualizarFotoPJ, asignarStats, guardarLoadout,
+      guardarPasivasSeleccionadas, devComando
+    - Validacion de stats, migracion de inventario, comandos dev
+
+  shop.js
+    - Handlers socket: obtenerTienda, comprarCarta
+    - Precios desde SKILL_PRICES, validacion de oro e inventario
 
 ============================================================
- ARCHIVOS DEL CLIENTE (public/)
+ ARCHIVOS DEL CLIENTE
 ============================================================
 
 public/index.html
